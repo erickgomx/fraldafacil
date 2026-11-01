@@ -3,6 +3,8 @@ import prisma from '@/lib/prisma';
 import { hashPassword, signJwt, AUTH_COOKIE_NAME } from '@/lib/auth';
 import { DEFAULT_GIFT_ITEMS } from '@/lib/default-gifts';
 
+export const dynamic = 'force-dynamic';
+
 function sanitizeSlug(text: string): string {
   return text
     .toLowerCase()

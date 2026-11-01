@@ -3,6 +3,8 @@ import prisma from '@/lib/prisma';
 import PublicEventClient from './PublicEventClient';
 import type { Metadata } from 'next';
 
+export const dynamic = 'force-dynamic';
+
 interface Props {
   params: { slug: string };
 }
