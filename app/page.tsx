@@ -24,12 +24,18 @@ export default function HomePage() {
             </span>
           </Link>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Link
+              href="/demo"
+              className="text-xs md:text-sm font-bold text-slate-600 hover:text-slate-900 px-2 sm:px-3 py-2 transition"
+            >
+              Ver Exemplo
+            </Link>
             <Link
               href="/login"
-              className="text-xs md:text-sm font-bold text-slate-600 hover:text-slate-900 px-3 py-2 transition"
+              className="text-xs md:text-sm font-bold text-slate-600 hover:text-slate-900 px-2 sm:px-3 py-2 transition"
             >
-              Já tenho conta
+              Entrar
             </Link>
             <Link
               href="/cadastro"
@@ -71,10 +77,13 @@ export default function HomePage() {
             </Link>
 
             <Link
-              href="/login"
-              className="w-full sm:w-auto py-4 px-6 rounded-2xl font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 shadow-sm transition flex items-center justify-center"
+              href="/demo"
+              className="w-full sm:w-auto py-4 px-6 rounded-2xl font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 shadow-sm transition flex items-center justify-center gap-2"
             >
-              Ver Demonstração
+              <span>Ver Demonstração</span>
+              <span className="text-[10px] bg-rose-100 text-rose-700 px-2 py-0.5 rounded-full font-extrabold uppercase">
+                Ao Vivo
+              </span>
             </Link>
           </div>
 

@@ -18,7 +18,10 @@ export const metadata: Metadata = {
   description:
     'Crie sua página personalizada de Chá Revelação e Chá de Fralda com arrecadação Pix transparente e o bolão interativo Menino ou Menina.',
   icons: {
-    icon: '/favicon.ico',
+    icon: [
+      { url: '/icon.svg', type: 'image/svg+xml' },
+      { url: '/favicon.ico' },
+    ],
   },
 };
 
