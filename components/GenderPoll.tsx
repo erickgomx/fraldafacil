@@ -2,7 +2,10 @@
 
 import { useState } from 'react';
 import confetti from 'canvas-confetti';
+import { AnimatePresence, motion } from 'framer-motion';
 import { CheckCircle2, User } from 'lucide-react';
+
+const EASE = [0.22, 1, 0.36, 1] as const;
 
 interface GenderPollProps {
   eventId: string;
@@ -78,7 +81,13 @@ export default function GenderPoll({
 
   return (
     <section className="my-12 max-w-2xl mx-auto px-6">
-      <div className="bg-white rounded-xl p-6 sm:p-8 border border-warm-border shadow-subtle">
+      <motion.div
+        initial={{ opacity: 0, y: 24 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: '-80px' }}
+        transition={{ duration: 0.8, ease: EASE }}
+        className="bg-white rounded-2xl p-6 sm:p-8 border border-warm-border shadow-card"
+      >
         <div className="text-center mb-6">
           <span className="text-[11px] font-mono uppercase tracking-widest text-charcoal-500 block mb-1">
             Bolão Interativo
@@ -109,13 +118,17 @@ export default function GenderPoll({
           </div>
 
           <div className="h-3 bg-cream-100 rounded-full overflow-hidden flex border border-warm-border p-0.5">
-            <div
-              style={{ width: `${boyPercent}%` }}
-              className="h-full bg-dusty-blue rounded-l-full transition-all duration-700"
+            <motion.div
+              initial={{ width: '50%' }}
+              animate={{ width: `${boyPercent}%` }}
+              transition={{ duration: 1.1, ease: EASE }}
+              className="h-full bg-gradient-to-r from-dusty-blue/80 to-dusty-blue rounded-l-full"
             />
-            <div
-              style={{ width: `${girlPercent}%` }}
-              className="h-full bg-dusty-rose rounded-r-full transition-all duration-700"
+            <motion.div
+              initial={{ width: '50%' }}
+              animate={{ width: `${girlPercent}%` }}
+              transition={{ duration: 1.1, ease: EASE }}
+              className="h-full bg-gradient-to-l from-dusty-rose/80 to-dusty-rose rounded-r-full"
             />
           </div>
         </div>
@@ -124,31 +137,53 @@ export default function GenderPoll({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <button
             onClick={() => handleOpenVoteModal('BOY')}
-            className="py-3 px-4 rounded-lg font-medium text-xs bg-dusty-blue-light border border-dusty-blue/30 text-dusty-blue hover:bg-dusty-blue/15 active:scale-[0.99] transition flex items-center justify-center gap-2"
+            className="py-3 px-4 rounded-lg font-medium text-xs bg-dusty-blue-light border border-dusty-blue/30 text-dusty-blue hover:bg-dusty-blue/15 hover:-translate-y-0.5 hover:shadow-card active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-2"
           >
             <span>Torço por Menino</span>
           </button>
 
           <button
             onClick={() => handleOpenVoteModal('GIRL')}
-            className="py-3 px-4 rounded-lg font-medium text-xs bg-dusty-rose-light border border-dusty-rose/30 text-dusty-rose hover:bg-dusty-rose/15 active:scale-[0.99] transition flex items-center justify-center gap-2"
+            className="py-3 px-4 rounded-lg font-medium text-xs bg-dusty-rose-light border border-dusty-rose/30 text-dusty-rose hover:bg-dusty-rose/15 hover:-translate-y-0.5 hover:shadow-card active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-2"
           >
             <span>Torço por Menina</span>
           </button>
         </div>
 
+        <AnimatePresence>
         {hasVoted && (
-          <div className="mt-4 p-3 rounded-lg bg-cream-50 border border-warm-border text-charcoal-700 text-xs font-sans flex items-center justify-center gap-2 text-center">
+          <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: EASE }}
+            className="mt-4 p-3 rounded-lg bg-cream-50 border border-warm-border text-charcoal-700 text-xs font-sans flex items-center justify-center gap-2 text-center"
+          >
             <CheckCircle2 className="w-3.5 h-3.5 text-stone-700" />
             <span>Seu palpite foi registrado com sucesso. Obrigado por participar!</span>
-          </div>
+          </motion.div>
         )}
-      </div>
+        </AnimatePresence>
+      </motion.div>
 
       {/* Modal de Voto */}
+      <AnimatePresence>
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-charcoal-900/40 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-xl p-6 sm:p-8 max-w-sm w-full shadow-card border border-warm-border">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.25 }}
+          onClick={() => setIsModalOpen(false)}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-charcoal-900/40 backdrop-blur-sm"
+        >
+          <motion.div
+            initial={{ opacity: 0, y: 24, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 12, scale: 0.97 }}
+            transition={{ duration: 0.4, ease: EASE }}
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-2xl p-6 sm:p-8 max-w-sm w-full shadow-elevated border border-warm-border"
+          >
             <div className="text-center mb-6">
               <span className="text-xs font-mono uppercase tracking-wider text-charcoal-400 block mb-1">
                 Confirmar Voto
@@ -210,9 +245,10 @@ export default function GenderPoll({
                 </button>
               </div>
             </form>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
+      </AnimatePresence>
     </section>
   );
 }

@@ -35,6 +35,37 @@ p {
   font-variant-numeric: tabular-nums;
 }
 
+/* Borda animada em gradiente para o card em destaque */
+.featured-ring {
+  background: conic-gradient(
+    from 0deg,
+    rgba(194, 118, 91, 0) 0deg,
+    rgba(194, 118, 91, 0.9) 70deg,
+    rgba(239, 232, 220, 0.95) 120deg,
+    rgba(184, 107, 119, 0.85) 170deg,
+    rgba(194, 118, 91, 0) 240deg,
+    rgba(194, 118, 91, 0) 360deg
+  );
+}
+
+/* Textura de grão muito sutil para superfícies escuras */
+.grain {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+  background-size: 3px 3px;
+}
+
+/* Respeita usuários que preferem menos movimento */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* Imagens com acabamento fotográfico sutil */
 img {
   outline: 1px solid rgba(28, 25, 23, 0.06);

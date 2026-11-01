@@ -1,5 +1,9 @@
 'use client';
 
+import { motion } from 'framer-motion';
+
+const EASE = [0.22, 1, 0.36, 1] as const;
+
 export interface GuestMessageData {
   id: string;
   name: string;
@@ -19,7 +23,13 @@ interface GuestbookWallProps {
 export default function GuestbookWall({ messages, onOpenGiftModal }: GuestbookWallProps) {
   return (
     <section className="my-16 max-w-4xl mx-auto px-6">
-      <div className="text-center mb-10">
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: '-80px' }}
+        transition={{ duration: 0.8, ease: EASE }}
+        className="text-center mb-10"
+      >
         <span className="text-[11px] font-mono uppercase tracking-widest text-charcoal-500 block mb-1">
           Livro de Recados
         </span>
@@ -29,10 +39,16 @@ export default function GuestbookWall({ messages, onOpenGiftModal }: GuestbookWa
         <p className="text-xs sm:text-sm text-charcoal-500 mt-1 font-sans">
           Palavras de afeto deixadas pelos convidados para os pais guardarem
         </p>
-      </div>
+      </motion.div>
 
       {messages.length === 0 ? (
-        <div className="bg-white rounded-xl p-10 text-center border border-warm-border shadow-subtle max-w-md mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.7, ease: EASE }}
+          className="bg-white rounded-2xl p-10 text-center border border-warm-border shadow-subtle max-w-md mx-auto"
+        >
           <p className="font-serif text-lg text-charcoal-800 font-normal mb-1">
             O mural ainda está vazio
           </p>
@@ -45,13 +61,19 @@ export default function GuestbookWall({ messages, onOpenGiftModal }: GuestbookWa
           >
             Deixar a primeira mensagem
           </button>
-        </div>
+        </motion.div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {messages.map((item) => (
-            <div
+          {messages.map((item, i) => (
+            <motion.div
               key={item.id}
-              className="bg-white p-6 rounded-xl border border-warm-border shadow-subtle flex flex-col justify-between"
+              layout
+              initial={{ opacity: 0, y: 22 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-40px' }}
+              whileHover={{ y: -4, transition: { duration: 0.35, ease: EASE } }}
+              transition={{ duration: 0.7, ease: EASE, delay: (i % 2) * 0.08 }}
+              className="bg-white p-6 rounded-2xl border border-warm-border shadow-subtle flex flex-col justify-between transition-[box-shadow,border-color] duration-500 hover:shadow-lift hover:border-stone-300"
             >
               <div>
                 <div className="flex items-start justify-between gap-3 mb-3">
@@ -94,7 +116,7 @@ export default function GuestbookWall({ messages, onOpenGiftModal }: GuestbookWa
                   </span>
                 </div>
               )}
-            </div>
+            </motion.div>
           ))}
         </div>
       )}
