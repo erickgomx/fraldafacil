@@ -1,214 +1,233 @@
 import Link from 'next/link';
-import {
-  Baby,
-  Sparkles,
-  Heart,
-  QrCode,
-  CheckCircle2,
-  ArrowRight,
-  Gift,
-} from 'lucide-react';
+import { ArrowRight, Check } from 'lucide-react';
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-sky-50 via-rose-50/30 to-amber-50/40 text-slate-800">
-      {/* Navbar */}
-      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-200/60">
-        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-sky-400 to-rose-400 flex items-center justify-center text-white shadow-md shadow-rose-200">
-              <Baby className="w-6 h-6" />
+    <div className="min-h-screen bg-cream-50 text-charcoal-900">
+      {/* Topo / Navegação */}
+      <header className="sticky top-0 z-40 bg-cream-50/90 backdrop-blur-md border-b border-warm-border/70">
+        <div className="max-w-5xl mx-auto px-6 h-20 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2.5 group">
+            <span className="w-8 h-8 rounded-lg bg-charcoal-900 text-cream-50 flex items-center justify-center font-serif text-lg font-medium shadow-sm">
+              F
             </span>
-            <span className="font-black text-xl tracking-tight text-slate-800">
-              Fralda<span className="text-rose-500">Fácil</span>
-            </span>
+            <div className="flex flex-col">
+              <span className="font-serif text-xl tracking-tight font-medium text-charcoal-900">
+                Fralda Fácil
+              </span>
+              <span className="text-[10px] tracking-wider uppercase font-sans text-charcoal-500 -mt-1">
+                Chá & Revelação
+              </span>
+            </div>
           </Link>
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          <nav className="flex items-center gap-3">
             <Link
               href="/demo"
-              className="text-xs md:text-sm font-bold text-slate-600 hover:text-slate-900 px-2 sm:px-3 py-2 transition"
+              className="text-xs sm:text-sm font-medium text-charcoal-600 hover:text-charcoal-900 px-3 py-2 transition"
             >
-              Ver Exemplo
+              Ver Exemplo Real
             </Link>
             <Link
               href="/login"
-              className="text-xs md:text-sm font-bold text-slate-600 hover:text-slate-900 px-2 sm:px-3 py-2 transition"
+              className="text-xs sm:text-sm font-medium text-charcoal-600 hover:text-charcoal-900 px-3 py-2 transition"
             >
               Entrar
             </Link>
             <Link
               href="/cadastro"
-              className="py-2.5 px-4 md:px-5 rounded-xl font-bold text-xs md:text-sm text-white bg-gradient-to-r from-sky-500 to-rose-500 hover:opacity-95 shadow-md shadow-rose-500/20 active:scale-95 transition"
+              className="text-xs sm:text-sm font-medium px-4 py-2.5 rounded-lg bg-charcoal-900 text-white hover:bg-charcoal-800 transition shadow-subtle"
             >
               Criar meu Chá
             </Link>
-          </div>
+          </nav>
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="relative pt-12 pb-20 px-4 overflow-hidden">
-        <div className="max-w-4xl mx-auto text-center relative z-10">
-          <div className="inline-flex items-center gap-2 py-1.5 px-4 rounded-full bg-white/90 border border-slate-200 shadow-sm text-slate-700 text-xs font-bold mb-6">
-            <Sparkles className="w-4 h-4 text-amber-500" />
-            <span>A melhor forma de receber fraldas e presentes dos amigos</span>
+      {/* Hero Editorial */}
+      <section className="pt-16 pb-20 px-6 border-b border-warm-border/60">
+        <div className="max-w-3xl mx-auto text-center">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cream-100 border border-warm-border text-xs font-sans text-charcoal-600 mb-8">
+            <span className="w-1.5 h-1.5 rounded-full bg-terracotta" />
+            <span>Arrecadação de presentes via Pix e bolão interativo</span>
           </div>
 
-          <h1 className="text-4xl md:text-6xl font-black text-slate-900 tracking-tight leading-[1.15] mb-6">
-            Seu Chá de Fralda & Revelação moderno,{' '}
-            <span className="bg-gradient-to-r from-sky-600 via-purple-600 to-rose-500 bg-clip-text text-transparent">
-              arrecadando no Pix
-            </span>
+          <h1 className="font-serif text-4xl sm:text-6xl text-charcoal-900 font-normal tracking-tight leading-[1.12] mb-6">
+            O chá de bebê pensado para a{' '}
+            <span className="italic font-normal">vida real dos pais</span>.
           </h1>
 
-          <p className="text-base md:text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed mb-8">
-            Em menos de 2 minutos, crie uma página com bolão interativo &ldquo;Menino ou Menina?&rdquo;,
-            lista de fraldas virtuais e receba o valor em dinheiro para comprar tudo no tamanho certo.
+          <p className="text-base sm:text-lg text-charcoal-600 font-sans max-w-xl mx-auto leading-relaxed mb-10">
+            Crie em minutos uma página elegante. Receba o valor das fraldas direto no Pix para comprar os tamanhos certos conforme o bebê cresce — sem estoque acumulado na sala.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 max-w-md mx-auto">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 max-w-md mx-auto">
             <Link
               href="/cadastro"
-              className="w-full sm:w-auto py-4 px-8 rounded-2xl font-black text-white bg-gradient-to-r from-sky-500 via-purple-500 to-rose-500 hover:opacity-95 shadow-xl shadow-rose-400/25 active:scale-95 transition flex items-center justify-center gap-2"
+              className="w-full sm:w-auto px-6 py-3.5 rounded-lg text-sm font-medium bg-charcoal-900 text-white hover:bg-charcoal-800 transition shadow-subtle flex items-center justify-center gap-2 group"
             >
-              <span>Criar Minha Página Grátis</span>
-              <ArrowRight className="w-5 h-5" />
+              <span>Começar meu Chá</span>
+              <ArrowRight className="w-4 h-4 text-stone-400 group-hover:translate-x-0.5 transition-transform" />
             </Link>
 
             <Link
               href="/demo"
-              className="w-full sm:w-auto py-4 px-6 rounded-2xl font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 shadow-sm transition flex items-center justify-center gap-2"
+              className="w-full sm:w-auto px-6 py-3.5 rounded-lg text-sm font-medium bg-white text-charcoal-800 border border-warm-border hover:bg-stone-50 transition shadow-subtle flex items-center justify-center"
             >
-              <span>Ver Demonstração</span>
-              <span className="text-[10px] bg-rose-100 text-rose-700 px-2 py-0.5 rounded-full font-extrabold uppercase">
-                Ao Vivo
-              </span>
+              Ver Demonstração Interativa
             </Link>
           </div>
 
-          <div className="mt-8 flex items-center justify-center gap-6 text-xs text-slate-500 font-semibold">
+          <div className="mt-12 pt-8 border-t border-warm-border/50 flex flex-wrap items-center justify-center gap-8 text-xs text-charcoal-500 font-sans">
             <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-              Sem marcas repetidas
+              <Check className="w-3.5 h-3.5 text-stone-700" />
+              Sem marcas ou tamanhos repetidos
             </span>
             <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-              Pix transparente
+              <Check className="w-3.5 h-3.5 text-stone-700" />
+              Chave Pix direta para saque
             </span>
             <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-              Bolão em tempo real
+              <Check className="w-3.5 h-3.5 text-stone-700" />
+              Bolão & mural em tempo real
             </span>
           </div>
         </div>
       </section>
 
-      {/* Grid de Benefícios */}
-      <section className="py-16 px-4 bg-white/70 border-y border-slate-200/60">
+      {/* Grid de Pilares do Produto (Sóbrio & Direto) */}
+      <section className="py-20 px-6 bg-[#FCFAF6] border-b border-warm-border/60">
         <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-2xl md:text-4xl font-black text-slate-800">
-              Por que os pais preferem o Fralda Fácil?
+          <div className="max-w-xl mb-14">
+            <span className="text-xs font-mono uppercase tracking-wider text-charcoal-500 block mb-2">
+              Funcionalidades
+            </span>
+            <h2 className="font-serif text-3xl sm:text-4xl text-charcoal-900 font-normal tracking-tight">
+              Tudo o que os convidados precisam para participar com carinho.
             </h2>
-            <p className="text-sm text-slate-500 mt-2">
-              Praticidade total para você e para os seus convidados.
-            </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white p-7 rounded-3xl border border-slate-100 shadow-md">
-              <span className="w-12 h-12 rounded-2xl bg-sky-100 text-sky-600 flex items-center justify-center mb-4">
-                <Sparkles className="w-6 h-6" />
-              </span>
-              <h3 className="text-lg font-bold text-slate-800 mb-2">Bolão Menino ou Menina</h3>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                Seus convidados apostam no sexo do bebê em um gráfico animado. Cada voto pode vir acompanhado de uma doação no Pix!
-              </p>
+            {/* Pilar 1 */}
+            <div className="bg-white p-8 rounded-xl border border-warm-border shadow-subtle flex flex-col justify-between">
+              <div>
+                <span className="text-xs font-mono text-charcoal-400 block mb-4">01</span>
+                <h3 className="font-serif text-xl text-charcoal-900 font-normal mb-2.5">
+                  Bolão do Sexo do Bebê
+                </h3>
+                <p className="text-xs text-charcoal-600 leading-relaxed font-sans">
+                  Uma votação interativa e discreta. Os convidados deixam o palpite sobre Menino ou Menina e podem acompanhar as porcentagens atualizadas.
+                </p>
+              </div>
+              <div className="mt-6 pt-4 border-t border-warm-border/50 text-[11px] font-mono text-dusty-blue font-medium">
+                Votação gratuita ou com presente
+              </div>
             </div>
 
-            <div className="bg-white p-7 rounded-3xl border border-slate-100 shadow-md">
-              <span className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mb-4">
-                <QrCode className="w-6 h-6" />
-              </span>
-              <h3 className="text-lg font-bold text-slate-800 mb-2">Pix Direto e Rápido</h3>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                Integração com Mercado Pago para gerar QR Code e Copia e Cola instantâneo, com confirmação e mural em tempo real.
-              </p>
+            {/* Pilar 2 */}
+            <div className="bg-white p-8 rounded-xl border border-warm-border shadow-subtle flex flex-col justify-between">
+              <div>
+                <span className="text-xs font-mono text-charcoal-400 block mb-4">02</span>
+                <h3 className="font-serif text-xl text-charcoal-900 font-normal mb-2.5">
+                  Vitrine com Valores Reais
+                </h3>
+                <p className="text-xs text-charcoal-600 leading-relaxed font-sans">
+                  Pacotes de fraldas nos tamanhos RN a G, lenços umedecidos e cuidados essenciais pré-cadastrados, com fotos e descrições claras.
+                </p>
+              </div>
+              <div className="mt-6 pt-4 border-t border-warm-border/50 text-[11px] font-mono text-charcoal-500 font-medium">
+                10 itens prontos de início
+              </div>
             </div>
 
-            <div className="bg-white p-7 rounded-3xl border border-slate-100 shadow-md">
-              <span className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center mb-4">
-                <Gift className="w-6 h-6" />
-              </span>
-              <h3 className="text-lg font-bold text-slate-800 mb-2">Vitrine Pronta de Fraldas</h3>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                Seu evento já nasce com 10 presentes pré-cadastrados (RN, P, M, G, lenços e pomadas). Não precisa cadastrar nada do zero!
-              </p>
+            {/* Pilar 3 */}
+            <div className="bg-white p-8 rounded-xl border border-warm-border shadow-subtle flex flex-col justify-between">
+              <div>
+                <span className="text-xs font-mono text-charcoal-400 block mb-4">03</span>
+                <h3 className="font-serif text-xl text-charcoal-900 font-normal mb-2.5">
+                  Mural de Mensagens
+                </h3>
+                <p className="text-xs text-charcoal-600 leading-relaxed font-sans">
+                  As palavras de afeto deixadas pela família e amigos aparecem organizadas em um mural limpo, que os pais guardam de recordação.
+                </p>
+              </div>
+              <div className="mt-6 pt-4 border-t border-warm-border/50 text-[11px] font-mono text-terracotta font-medium">
+                Atualização imediata via Pix
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Como Funciona */}
-      <section className="py-16 px-4">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-2xl md:text-3xl font-black text-slate-800 mb-10">
-            Tudo pronto em 3 passos simples
-          </h2>
+      {/* Como Funciona em 3 Passos */}
+      <section className="py-20 px-6">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-16">
+            <span className="text-xs font-mono uppercase tracking-wider text-charcoal-500 block mb-2">
+              Fluxo
+            </span>
+            <h2 className="font-serif text-3xl sm:text-4xl text-charcoal-900 font-normal tracking-tight">
+              Simples de configurar, fácil de compartilhar.
+            </h2>
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="flex flex-col items-center">
-              <div className="w-12 h-12 rounded-full bg-slate-900 text-white font-black text-lg flex items-center justify-center mb-4">
-                1
-              </div>
-              <h4 className="font-bold text-slate-800 mb-1">Cadastre seu Chá</h4>
-              <p className="text-xs text-slate-500">
-                Informe os nomes dos pais, do bebê e escolha seu link personalizado.
+            <div className="border-l-2 border-warm-border pl-6">
+              <span className="text-xs font-mono text-charcoal-400 block mb-2">Etapa 1</span>
+              <h4 className="font-serif text-lg text-charcoal-900 font-medium mb-1.5">
+                Crie seu evento
+              </h4>
+              <p className="text-xs text-charcoal-600 font-sans leading-relaxed">
+                Informe o nome dos pais, data prevista e escolha o endereço único da página do seu bebê.
               </p>
             </div>
 
-            <div className="flex flex-col items-center">
-              <div className="w-12 h-12 rounded-full bg-slate-900 text-white font-black text-lg flex items-center justify-center mb-4">
-                2
-              </div>
-              <h4 className="font-bold text-slate-800 mb-1">Compartilhe no WhatsApp</h4>
-              <p className="text-xs text-slate-500">
-                Envie o link para a família e amigos participarem do bolão e enviarem os presentes.
+            <div className="border-l-2 border-warm-border pl-6">
+              <span className="text-xs font-mono text-charcoal-400 block mb-2">Etapa 2</span>
+              <h4 className="font-serif text-lg text-charcoal-900 font-medium mb-1.5">
+                Compartilhe o link
+              </h4>
+              <p className="text-xs text-charcoal-600 font-sans leading-relaxed">
+                Envie no WhatsApp da família. Os convidados acessam sem precisar baixar nenhum aplicativo.
               </p>
             </div>
 
-            <div className="flex flex-col items-center">
-              <div className="w-12 h-12 rounded-full bg-slate-900 text-white font-black text-lg flex items-center justify-center mb-4">
-                3
-              </div>
-              <h4 className="font-bold text-slate-800 mb-1">Receba no Pix</h4>
-              <p className="text-xs text-slate-500">
-                Acompanhe as mensagens no mural e receba o valor direto na sua conta bancária.
+            <div className="border-l-2 border-warm-border pl-6">
+              <span className="text-xs font-mono text-charcoal-400 block mb-2">Etapa 3</span>
+              <h4 className="font-serif text-lg text-charcoal-900 font-medium mb-1.5">
+                Receba o saldo via Pix
+              </h4>
+              <p className="text-xs text-charcoal-600 font-sans leading-relaxed">
+                Acompanhe os recados no painel e solicite a transferência do valor direto para sua chave Pix.
               </p>
             </div>
           </div>
 
-          <div className="mt-12">
+          <div className="mt-16 text-center">
             <Link
               href="/cadastro"
-              className="inline-flex items-center gap-2 py-4 px-8 rounded-2xl font-black text-white bg-gradient-to-r from-sky-500 to-rose-500 hover:opacity-95 shadow-xl shadow-sky-500/20 active:scale-95 transition"
+              className="inline-flex items-center gap-2 px-6 py-3.5 rounded-lg text-sm font-medium bg-charcoal-900 text-white hover:bg-charcoal-800 transition shadow-subtle"
             >
-              <span>Começar Agora Gratuitamente</span>
-              <ArrowRight className="w-5 h-5" />
+              <span>Criar Página do meu Chá</span>
+              <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="py-8 bg-slate-900 text-slate-400 text-center text-xs">
-        <p className="flex items-center justify-center gap-1 mb-1">
-          <span>Feito com</span>
-          <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500" />
-          <span>para tornar o nascimento do seu bebê inesquecível.</span>
-        </p>
-        <p>© {new Date().getFullYear()} Fralda Fácil — Todos os direitos reservados.</p>
+      {/* Rodapé Editorial */}
+      <footer className="py-12 px-6 border-t border-warm-border bg-[#F7F3EC] text-charcoal-600 text-xs font-sans">
+        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <span className="font-serif font-medium text-sm text-charcoal-900">Fralda Fácil</span>
+            <span className="text-charcoal-400">·</span>
+            <span>A plataforma independente para Chás de Bebê & Revelação</span>
+          </div>
+
+          <div className="text-charcoal-500">
+            © {new Date().getFullYear()} — Feito para famílias brasileiras.
+          </div>
+        </div>
       </footer>
     </div>
   );

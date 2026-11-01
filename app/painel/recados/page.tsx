@@ -1,7 +1,6 @@
 import { getSession } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { redirect } from 'next/navigation';
-import { MessageSquare } from 'lucide-react';
 
 export default async function RecadosPage() {
   const session = await getSession();
@@ -25,21 +24,20 @@ export default async function RecadosPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-black text-slate-800">
-          Mural de Mensagens dos Convidados
+      <div className="pb-4 border-b border-warm-border">
+        <h1 className="font-serif text-2xl font-normal text-charcoal-900">
+          Livro de Recados dos Convidados
         </h1>
-        <p className="text-xs text-slate-500 mt-1">
-          Todas as palavras de carinho e votos de felicidade enviados pelos amigos e família
+        <p className="text-xs text-charcoal-500 font-sans mt-0.5">
+          Todas as mensagens de carinho deixadas pelos convidados durante a confirmação de presentes
         </p>
       </div>
 
       {messages.length === 0 ? (
-        <div className="bg-white rounded-3xl p-12 text-center border border-slate-100 shadow-sm max-w-md mx-auto">
-          <MessageSquare className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-          <h3 className="text-sm font-bold text-slate-700">Nenhum recado ainda</h3>
-          <p className="text-xs text-slate-500 mt-1">
-            Assim que os convidados presentearem e deixarem uma mensagem, ela aparecerá aqui em tempo real!
+        <div className="bg-white rounded-xl p-12 text-center border border-warm-border shadow-subtle max-w-md mx-auto">
+          <h3 className="font-serif text-base text-charcoal-800 font-normal">Nenhum recado ainda</h3>
+          <p className="text-xs text-charcoal-500 font-sans mt-1">
+            Assim que os convidados presentearem e deixarem uma mensagem, ela aparecerá aqui.
           </p>
         </div>
       ) : (
@@ -47,16 +45,16 @@ export default async function RecadosPage() {
           {messages.map((m) => (
             <div
               key={m.id}
-              className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex flex-col justify-between"
+              className="bg-white rounded-xl p-5 border border-warm-border shadow-subtle flex flex-col justify-between"
             >
               <div>
                 <div className="flex items-start justify-between gap-2 mb-3">
                   <div>
-                    <h3 className="text-sm font-bold text-slate-800">{m.name}</h3>
-                    <span className="text-[11px] text-slate-400">
+                    <h3 className="font-serif text-sm font-medium text-charcoal-900">{m.name}</h3>
+                    <span className="text-[11px] font-mono text-charcoal-400">
                       {new Date(m.createdAt).toLocaleDateString('pt-BR', {
                         day: '2-digit',
-                        month: 'long',
+                        month: 'short',
                         hour: '2-digit',
                         minute: '2-digit',
                       })}
@@ -65,25 +63,25 @@ export default async function RecadosPage() {
 
                   {m.order.pollGuess && (
                     <span
-                      className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
+                      className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
                         m.order.pollGuess === 'BOY'
-                          ? 'bg-sky-100 text-sky-700'
-                          : 'bg-pink-100 text-pink-700'
+                          ? 'bg-dusty-blue-light border-dusty-blue/30 text-dusty-blue'
+                          : 'bg-dusty-rose-light border-dusty-rose/30 text-dusty-rose'
                       }`}
                     >
-                      {m.order.pollGuess === 'BOY' ? '💙 Apostou Menino' : '💖 Apostou Menina'}
+                      {m.order.pollGuess === 'BOY' ? 'Apostou: Menino' : 'Apostou: Menina'}
                     </span>
                   )}
                 </div>
 
-                <p className="text-xs text-slate-600 italic bg-slate-50 p-3.5 rounded-xl border border-slate-100 leading-relaxed">
+                <p className="text-xs text-charcoal-700 italic bg-cream-50/70 p-3.5 rounded-lg border border-warm-border/60 leading-relaxed font-sans">
                   &ldquo;{m.message}&rdquo;
                 </p>
               </div>
 
-              <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-                <span className="text-slate-400 font-medium">Presente enviado:</span>
-                <span className="font-extrabold text-emerald-600">
+              <div className="mt-4 pt-3 border-t border-warm-border/60 flex items-center justify-between text-xs">
+                <span className="text-charcoal-500 text-[11px] font-sans">Presente via Pix:</span>
+                <span className="font-mono text-xs font-semibold text-charcoal-900 tabular-nums">
                   R$ {m.order.amount.toFixed(2).replace('.', ',')}
                 </span>
               </div>

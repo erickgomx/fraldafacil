@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import confetti from 'canvas-confetti';
-import { Sparkles, CheckCircle2, User } from 'lucide-react';
+import { CheckCircle2, User } from 'lucide-react';
 
 interface GenderPollProps {
   eventId: string;
@@ -57,15 +57,14 @@ export default function GenderPoll({
         setHasVoted(true);
         setIsModalOpen(false);
 
-        // Confetes coloridos
         const colors =
           selectedGuess === 'BOY'
-            ? ['#38bdf8', '#0284c7', '#ffffff']
-            : ['#f472b6', '#db2777', '#ffffff'];
+            ? ['#4A6B82', '#7D9EAF', '#FAF8F5']
+            : ['#B86B77', '#D6949E', '#FAF8F5'];
 
         confetti({
-          particleCount: 70,
-          spread: 60,
+          particleCount: 60,
+          spread: 50,
           origin: { y: 0.7 },
           colors,
         });
@@ -78,122 +77,115 @@ export default function GenderPoll({
   };
 
   return (
-    <section className="my-10 max-w-3xl mx-auto px-4">
-      <div className="bg-white/90 backdrop-blur-xl rounded-3xl p-6 md:p-8 shadow-xl shadow-slate-200/60 border border-white">
+    <section className="my-12 max-w-2xl mx-auto px-6">
+      <div className="bg-white rounded-xl p-6 sm:p-8 border border-warm-border shadow-subtle">
         <div className="text-center mb-6">
-          <div className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-600 bg-amber-50 px-3 py-1 rounded-full uppercase tracking-wider mb-2">
-            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-            <span>O Grande Bolão</span>
-          </div>
-          <h2 className="text-2xl md:text-3xl font-black text-slate-800">
-            Menino ou Menina? Qual é o seu palpite?
+          <span className="text-[11px] font-mono uppercase tracking-widest text-charcoal-500 block mb-1">
+            Bolão Interativo
+          </span>
+          <h2 className="font-serif text-2xl sm:text-3xl text-charcoal-900 font-normal">
+            Qual é o seu palpite?
           </h2>
-          <p className="text-sm text-slate-500 mt-1">
-            Participe do bolão e deixe sua aposta gravada com carinho no coração dos pais!
+          <p className="text-xs text-charcoal-500 mt-1 font-sans">
+            Vote para registrar sua torcida no placar oficial do evento
           </p>
         </div>
 
-        {/* Barra de Porcentagem */}
-        <div className="mb-6">
-          <div className="flex justify-between items-center text-sm md:text-base font-extrabold mb-2.5">
-            <span className="text-sky-600 flex items-center gap-1.5">
-              <span>💙 Menino</span>
-              <span className="text-xs bg-sky-100 text-sky-700 py-0.5 px-2 rounded-full font-bold">
-                {boyPercent}% ({boyVotes} votos)
+        {/* Barra de Porcentagem Sóbria */}
+        <div className="mb-8">
+          <div className="flex justify-between items-baseline text-xs font-mono mb-2">
+            <span className="text-dusty-blue font-medium flex items-center gap-1.5">
+              <span>Menino</span>
+              <span className="text-charcoal-500 tabular-nums font-normal">
+                {boyPercent}% ({boyVotes} {boyVotes === 1 ? 'voto' : 'votos'})
               </span>
             </span>
-            <span className="text-pink-600 flex items-center gap-1.5">
-              <span className="text-xs bg-pink-100 text-pink-700 py-0.5 px-2 rounded-full font-bold">
-                {girlPercent}% ({girlVotes} votos)
+            <span className="text-dusty-rose font-medium flex items-center gap-1.5">
+              <span className="text-charcoal-500 tabular-nums font-normal">
+                ({girlVotes} {girlVotes === 1 ? 'voto' : 'votos'}) {girlPercent}%
               </span>
-              <span>Menina 💖</span>
+              <span>Menina</span>
             </span>
           </div>
 
-          <div className="h-5 bg-slate-100 rounded-full overflow-hidden flex p-1 border border-slate-200">
+          <div className="h-3 bg-cream-100 rounded-full overflow-hidden flex border border-warm-border p-0.5">
             <div
               style={{ width: `${boyPercent}%` }}
-              className="h-full bg-gradient-to-r from-sky-400 to-sky-500 rounded-l-full transition-all duration-700 shadow-sm"
+              className="h-full bg-dusty-blue rounded-l-full transition-all duration-700"
             />
             <div
               style={{ width: `${girlPercent}%` }}
-              className="h-full bg-gradient-to-r from-pink-400 to-pink-500 rounded-r-full transition-all duration-700 shadow-sm"
+              className="h-full bg-dusty-rose rounded-r-full transition-all duration-700"
             />
           </div>
         </div>
 
-        {/* Botões de Aposta */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-2">
+        {/* Botões de Aposta Sóbrios */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <button
             onClick={() => handleOpenVoteModal('BOY')}
-            className="py-3.5 px-4 rounded-2xl font-black text-white bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 shadow-lg shadow-sky-400/25 active:scale-[0.98] transition flex items-center justify-center gap-2 group"
+            className="py-3 px-4 rounded-lg font-medium text-xs bg-dusty-blue-light border border-dusty-blue/30 text-dusty-blue hover:bg-dusty-blue/15 active:scale-[0.99] transition flex items-center justify-center gap-2"
           >
-            <span className="text-xl group-hover:scale-125 transition-transform">👦</span>
-            <span>Apostar em Menino</span>
+            <span>Torço por Menino</span>
           </button>
 
           <button
             onClick={() => handleOpenVoteModal('GIRL')}
-            className="py-3.5 px-4 rounded-2xl font-black text-white bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 shadow-lg shadow-pink-400/25 active:scale-[0.98] transition flex items-center justify-center gap-2 group"
+            className="py-3 px-4 rounded-lg font-medium text-xs bg-dusty-rose-light border border-dusty-rose/30 text-dusty-rose hover:bg-dusty-rose/15 active:scale-[0.99] transition flex items-center justify-center gap-2"
           >
-            <span className="text-xl group-hover:scale-125 transition-transform">👧</span>
-            <span>Apostar em Menina</span>
+            <span>Torço por Menina</span>
           </button>
         </div>
 
         {hasVoted && (
-          <div className="mt-4 p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center justify-center gap-2 text-center">
-            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-            <span>Seu palpite foi registrado com sucesso! Obrigado por participar!</span>
+          <div className="mt-4 p-3 rounded-lg bg-cream-50 border border-warm-border text-charcoal-700 text-xs font-sans flex items-center justify-center gap-2 text-center">
+            <CheckCircle2 className="w-3.5 h-3.5 text-stone-700" />
+            <span>Seu palpite foi registrado com sucesso. Obrigado por participar!</span>
           </div>
         )}
       </div>
 
       {/* Modal de Voto */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl border border-slate-100">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-charcoal-900/40 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-xl p-6 sm:p-8 max-w-sm w-full shadow-card border border-warm-border">
             <div className="text-center mb-6">
-              <span className="text-4xl inline-block mb-2">
-                {selectedGuess === 'BOY' ? '👦' : '👧'}
+              <span className="text-xs font-mono uppercase tracking-wider text-charcoal-400 block mb-1">
+                Confirmar Voto
               </span>
-              <h3 className="text-xl font-black text-slate-800">
-                Seu palpite é {selectedGuess === 'BOY' ? 'Menino 💙' : 'Menina 💖'}
+              <h3 className="font-serif text-xl text-charcoal-900 font-normal">
+                Você aposta em {selectedGuess === 'BOY' ? 'Menino' : 'Menina'}
               </h3>
-              <p className="text-xs text-slate-500 mt-1">
-                Como você prefere registrar o seu voto no bolão?
+              <p className="text-xs text-charcoal-500 mt-1 font-sans">
+                Informe seu nome para que os pais vejam seu palpite
               </p>
             </div>
 
             <form onSubmit={handleFreeVote} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">
+                <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
                   Seu Nome ou Apelido
                 </label>
                 <div className="relative">
-                  <User className="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <User className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-charcoal-400" />
                   <input
                     type="text"
                     required
                     value={voterName}
                     onChange={(e) => setVoterName(e.target.value)}
-                    placeholder="Ex: Tio Lucas / Vovó Cida"
-                    className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-400/50"
+                    placeholder="Ex: Tio Ricardo / Mariana"
+                    className="w-full pl-9 pr-3.5 py-2.5 rounded-lg border border-warm-border bg-cream-50/50 text-charcoal-900 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-charcoal-900"
                   />
                 </div>
               </div>
 
-              <div className="space-y-2 pt-2">
+              <div className="space-y-2 pt-1">
                 <button
                   type="submit"
                   disabled={loading}
-                  className={`w-full py-3 px-4 rounded-xl font-bold text-white transition flex items-center justify-center gap-2 shadow-md ${
-                    selectedGuess === 'BOY'
-                      ? 'bg-sky-500 hover:bg-sky-600 shadow-sky-500/20'
-                      : 'bg-pink-500 hover:bg-pink-600 shadow-pink-500/20'
-                  }`}
+                  className="w-full py-2.5 px-4 rounded-lg font-medium text-xs text-white bg-charcoal-900 hover:bg-charcoal-800 transition"
                 >
-                  {loading ? 'Registrando...' : 'Confirmar Voto Grátis no Bolão'}
+                  {loading ? 'Gravando...' : 'Confirmar Voto no Bolão'}
                 </button>
 
                 {onOpenPixModalWithGuess && (
@@ -203,17 +195,16 @@ export default function GenderPoll({
                       setIsModalOpen(false);
                       onOpenPixModalWithGuess(selectedGuess);
                     }}
-                    className="w-full py-3 px-4 rounded-xl font-bold text-slate-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 transition text-xs flex items-center justify-center gap-1.5"
+                    className="w-full py-2.5 px-4 rounded-lg font-medium text-charcoal-700 bg-cream-100 hover:bg-cream-200/80 border border-warm-border text-xs transition"
                   >
-                    <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                    <span>Votar e Enviar um Presente Pix Junto!</span>
+                    Votar e enviar um presente via Pix junto
                   </button>
                 )}
 
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="w-full py-2 text-xs font-semibold text-slate-400 hover:text-slate-600 transition"
+                  className="w-full py-1.5 text-xs text-charcoal-400 hover:text-charcoal-600 transition"
                 >
                   Cancelar
                 </button>

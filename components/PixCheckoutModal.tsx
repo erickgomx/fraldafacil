@@ -4,12 +4,8 @@ import { useState, useEffect, useCallback } from 'react';
 import confetti from 'canvas-confetti';
 import {
   X,
-  QrCode,
   Copy,
   Check,
-  Heart,
-  Sparkles,
-  MessageSquare,
   ShieldCheck,
   Zap,
 } from 'lucide-react';
@@ -44,7 +40,7 @@ export default function PixCheckoutModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Dados do Pix gerado
+  // Dados do Pix
   const [orderId, setOrderId] = useState<string>('');
   const [qrCode, setQrCode] = useState<string>('');
   const [qrCodeBase64, setQrCodeBase64] = useState<string>('');
@@ -55,8 +51,8 @@ export default function PixCheckoutModal({
   const handleSuccess = useCallback(() => {
     setStep('SUCCESS');
     confetti({
-      particleCount: 100,
-      spread: 70,
+      particleCount: 80,
+      spread: 60,
       origin: { y: 0.6 },
     });
     if (onPaymentSuccess) {
@@ -64,7 +60,6 @@ export default function PixCheckoutModal({
     }
   }, [onPaymentSuccess]);
 
-  // Sincroniza presente selecionado
   useEffect(() => {
     if (selectedGift) {
       setCustomAmount(String(selectedGift.price));
@@ -78,7 +73,6 @@ export default function PixCheckoutModal({
     setError('');
   }, [selectedGift, initialGuess, isOpen]);
 
-  // Polling de verificação de pagamento Pix quando no step PIX
   useEffect(() => {
     if (step !== 'PIX' || !orderId) return;
 
@@ -176,33 +170,34 @@ export default function PixCheckoutModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm animate-fade-in">
-      <div className="bg-white rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl border border-slate-100 relative">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-charcoal-900/40 backdrop-blur-sm animate-fade-in">
+      <div className="bg-white rounded-xl max-w-lg w-full overflow-hidden shadow-card border border-warm-border relative">
         {/* Fechar */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 z-10 w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition"
+          className="absolute top-4 right-4 z-10 w-8 h-8 rounded-lg bg-cream-100 hover:bg-cream-200 text-charcoal-600 flex items-center justify-center transition"
+          aria-label="Fechar"
         >
-          <X className="w-5 h-5" />
+          <X className="w-4 h-4" />
         </button>
 
-        {/* ETAPA 1: FORMULÁRIO DE PRESENTE */}
+        {/* ETAPA 1: FORMULÁRIO */}
         {step === 'FORM' && (
-          <div className="p-6 md:p-8 max-h-[90vh] overflow-y-auto">
+          <div className="p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
             <div className="text-center mb-6">
-              <span className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-500 inline-flex items-center justify-center mb-2">
-                <Heart className="w-6 h-6 fill-rose-400 text-rose-400" />
+              <span className="text-[11px] font-mono uppercase tracking-widest text-charcoal-400 block mb-1">
+                Presentear via Pix
               </span>
-              <h3 className="text-xl font-black text-slate-800">
+              <h3 className="font-serif text-2xl text-charcoal-900 font-normal">
                 {selectedGift ? selectedGift.title : 'Presentear com Valor Livre'}
               </h3>
-              <p className="text-xs text-slate-500 mt-1">
-                Para o Chá de <strong className="text-slate-700">{parentsNames}</strong>
+              <p className="text-xs text-charcoal-500 mt-1 font-sans">
+                Para o Chá de <strong className="font-medium text-charcoal-800">{parentsNames}</strong>
               </p>
             </div>
 
             {error && (
-              <div className="mb-4 p-3 rounded-xl bg-rose-50 text-rose-700 text-xs font-semibold border border-rose-200">
+              <div className="mb-4 p-3 rounded-lg bg-dusty-rose-light text-dusty-rose text-xs font-sans border border-dusty-rose/30">
                 {error}
               </div>
             )}
@@ -210,16 +205,16 @@ export default function PixCheckoutModal({
             <form onSubmit={handleGeneratePix} className="space-y-4">
               {/* Valor */}
               <div>
-                <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">
+                <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
                   Valor do Presente (R$)
                 </label>
                 {selectedGift ? (
-                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-lg font-black text-slate-800">
+                  <div className="p-3 bg-cream-50 rounded-lg border border-warm-border font-mono text-base font-semibold text-charcoal-900 tabular-nums">
                     R$ {selectedGift.price.toFixed(2).replace('.', ',')}
                   </div>
                 ) : (
                   <div className="relative">
-                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-slate-400">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 font-mono text-xs text-charcoal-400">
                       R$
                     </span>
                     <input
@@ -230,15 +225,15 @@ export default function PixCheckoutModal({
                       value={customAmount}
                       onChange={(e) => setCustomAmount(e.target.value)}
                       placeholder="50,00"
-                      className="w-full pl-12 pr-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 font-bold focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-400/50"
+                      className="w-full pl-10 pr-3.5 py-2.5 rounded-lg border border-warm-border bg-cream-50/50 text-charcoal-900 font-mono text-sm font-semibold focus:bg-white focus:outline-none focus:ring-1 focus:ring-charcoal-900"
                     />
                   </div>
                 )}
               </div>
 
-              {/* Nome do Padrinho / Convidado */}
+              {/* Nome */}
               <div>
-                <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">
+                <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
                   Seu Nome *
                 </label>
                 <input
@@ -247,14 +242,14 @@ export default function PixCheckoutModal({
                   value={payerName}
                   onChange={(e) => setPayerName(e.target.value)}
                   placeholder="Ex: Tio Ricardo e Família"
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-400/50"
+                  className="w-full px-3.5 py-2.5 rounded-lg border border-warm-border bg-cream-50/50 text-charcoal-900 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-charcoal-900"
                 />
               </div>
 
-              {/* E-mail & WhatsApp */}
+              {/* E-mail & Telefone */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">
+                  <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
                     Seu E-mail *
                   </label>
                   <input
@@ -263,12 +258,12 @@ export default function PixCheckoutModal({
                     value={payerEmail}
                     onChange={(e) => setPayerEmail(e.target.value)}
                     placeholder="seuemail@exemplo.com"
-                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-400/50"
+                    className="w-full px-3.5 py-2.5 rounded-lg border border-warm-border bg-cream-50/50 text-charcoal-900 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-charcoal-900"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">
+                  <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
                     WhatsApp (Opcional)
                   </label>
                   <input
@@ -276,175 +271,162 @@ export default function PixCheckoutModal({
                     value={payerPhone}
                     onChange={(e) => setPayerPhone(e.target.value)}
                     placeholder="(11) 99999-9999"
-                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-400/50"
+                    className="w-full px-3.5 py-2.5 rounded-lg border border-warm-border bg-cream-50/50 text-charcoal-900 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-charcoal-900"
                   />
                 </div>
               </div>
 
-              {/* Palpite no Bolão (Opcional) */}
+              {/* Palpite no Bolão */}
               <div>
-                <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                  <span>Aproveitar e dar palpite no Bolão?</span>
+                <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1.5">
+                  Registrar palpite no bolão com este presente:
                 </label>
                 <div className="grid grid-cols-3 gap-2">
                   <button
                     type="button"
                     onClick={() => setPollGuess('BOY')}
-                    className={`py-2 px-2 text-xs font-bold rounded-xl border transition ${
+                    className={`py-2 px-2 text-xs font-medium rounded-lg border transition ${
                       pollGuess === 'BOY'
-                        ? 'border-sky-500 bg-sky-50 text-sky-700 ring-2 ring-sky-300/40'
-                        : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                        ? 'border-dusty-blue bg-dusty-blue-light text-dusty-blue'
+                        : 'border-warm-border bg-white text-charcoal-600 hover:bg-stone-50'
                     }`}
                   >
-                    👦 Menino
+                    Menino
                   </button>
                   <button
                     type="button"
                     onClick={() => setPollGuess('GIRL')}
-                    className={`py-2 px-2 text-xs font-bold rounded-xl border transition ${
+                    className={`py-2 px-2 text-xs font-medium rounded-lg border transition ${
                       pollGuess === 'GIRL'
-                        ? 'border-pink-500 bg-pink-50 text-pink-700 ring-2 ring-pink-300/40'
-                        : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                        ? 'border-dusty-rose bg-dusty-rose-light text-dusty-rose'
+                        : 'border-warm-border bg-white text-charcoal-600 hover:bg-stone-50'
                     }`}
                   >
-                    👧 Menina
+                    Menina
                   </button>
                   <button
                     type="button"
                     onClick={() => setPollGuess('')}
-                    className={`py-2 px-2 text-xs font-bold rounded-xl border transition ${
+                    className={`py-2 px-2 text-xs font-medium rounded-lg border transition ${
                       pollGuess === ''
-                        ? 'border-slate-400 bg-slate-100 text-slate-700'
-                        : 'border-slate-200 bg-white text-slate-400 hover:bg-slate-50'
+                        ? 'border-charcoal-900 bg-charcoal-900 text-white'
+                        : 'border-warm-border bg-white text-charcoal-400 hover:bg-stone-50'
                     }`}
                   >
-                    Sem Palpite
+                    Sem palpite
                   </button>
                 </div>
               </div>
 
               {/* Mensagem no Mural */}
               <div>
-                <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1 flex items-center gap-1">
-                  <MessageSquare className="w-3.5 h-3.5 text-slate-400" />
-                  <span>Mensagem para os Pais (Aparece no Mural)</span>
+                <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
+                  Mensagem para os Pais (Aparece no Mural)
                 </label>
                 <textarea
                   rows={3}
                   value={payerMessage}
                   onChange={(e) => setPayerMessage(e.target.value)}
-                  placeholder="Deixe aqui uma mensagem carinhosa para os pais lerem..."
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-400/50 resize-none"
+                  placeholder="Escreva aqui uma mensagem carinhosa para os pais lerem..."
+                  className="w-full px-3.5 py-2.5 rounded-lg border border-warm-border bg-cream-50/50 text-charcoal-900 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-charcoal-900 resize-none"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3.5 px-6 rounded-xl font-bold text-white bg-gradient-to-r from-emerald-500 to-teal-600 hover:opacity-95 shadow-lg shadow-emerald-500/20 active:scale-[0.99] transition flex items-center justify-center gap-2 disabled:opacity-60"
+                className="w-full py-3 px-4 rounded-lg font-medium text-xs text-white bg-charcoal-900 hover:bg-charcoal-800 transition shadow-subtle flex items-center justify-center gap-2 disabled:opacity-60"
               >
-                {loading ? (
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : (
-                  <>
-                    <QrCode className="w-4 h-4" />
-                    <span>Gerar Pix do Presente</span>
-                  </>
-                )}
+                {loading ? 'Gerando código Pix...' : 'Avançar para Pagamento Pix'}
               </button>
 
-              <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-400 font-medium pt-1">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-                <span>Pagamento instantâneo e seguro via Pix</span>
+              <div className="flex items-center justify-center gap-1.5 text-[11px] font-sans text-charcoal-400 pt-1">
+                <ShieldCheck className="w-3.5 h-3.5 text-stone-500" />
+                <span>Transação segura processada via Pix transparente</span>
               </div>
             </form>
           </div>
         )}
 
-        {/* ETAPA 2: QR CODE & COPIA E COLA PIX */}
+        {/* ETAPA 2: QR CODE */}
         {step === 'PIX' && (
-          <div className="p-6 md:p-8 text-center max-h-[90vh] overflow-y-auto">
-            <h3 className="text-xl font-black text-slate-800 mb-1">
-              Escaneie o QR Code ou Copie o Código
+          <div className="p-6 sm:p-8 text-center max-h-[90vh] overflow-y-auto">
+            <span className="text-[11px] font-mono uppercase tracking-widest text-charcoal-400 block mb-1">
+              Pagamento Pix
+            </span>
+            <h3 className="font-serif text-2xl text-charcoal-900 font-normal mb-1">
+              Escaneie ou copie o código
             </h3>
-            <p className="text-xs text-slate-500 mb-5">
-              Abra o app do seu banco e selecione a opção Pix
+            <p className="text-xs text-charcoal-500 mb-6 font-sans">
+              Abra o aplicativo do seu banco para concluir a transferência
             </p>
 
-            {/* Imagem do QR Code */}
             {qrCodeBase64 && (
-              <div className="mx-auto w-52 h-52 bg-white p-2 rounded-2xl border-2 border-slate-200 shadow-sm mb-5 flex items-center justify-center">
+              <div className="mx-auto w-48 h-48 bg-white p-2 rounded-lg border border-warm-border shadow-subtle mb-6 flex items-center justify-center">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={qrCodeBase64} alt="QR Code Pix" className="w-full h-full object-contain" />
               </div>
             )}
 
-            {/* Botão Copia e Cola */}
             <div className="mb-6">
               <button
                 onClick={handleCopyPix}
-                className="w-full py-3 px-4 rounded-xl font-bold text-sm bg-slate-900 text-white hover:bg-slate-800 transition flex items-center justify-center gap-2 shadow-md"
+                className="w-full py-3 px-4 rounded-lg font-medium text-xs bg-charcoal-900 text-white hover:bg-charcoal-800 transition flex items-center justify-center gap-2 shadow-subtle"
               >
                 {copied ? (
                   <>
-                    <Check className="w-4 h-4 text-emerald-400" />
-                    <span>Código Pix Copiado com Sucesso!</span>
+                    <Check className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Código Pix copiado!</span>
                   </>
                 ) : (
                   <>
-                    <Copy className="w-4 h-4" />
-                    <span>Copiar Código Pix (Copia e Cola)</span>
+                    <Copy className="w-3.5 h-3.5 text-stone-400" />
+                    <span>Copiar código Pix (Copia e Cola)</span>
                   </>
                 )}
               </button>
             </div>
 
-            {/* Indicador de Aguardando Pagamento */}
-            <div className="flex items-center justify-center gap-2 text-xs font-semibold text-sky-700 bg-sky-50 py-2.5 px-4 rounded-xl border border-sky-200 mb-4 animate-pulse">
-              <div className="w-2.5 h-2.5 rounded-full bg-sky-500 animate-ping" />
-              <span>Aguardando confirmação do Pix em tempo real...</span>
+            <div className="flex items-center justify-center gap-2 text-xs font-mono text-charcoal-600 bg-cream-100/70 py-2.5 px-4 rounded-lg border border-warm-border mb-4">
+              <span className="w-2 h-2 rounded-full bg-stone-500 animate-pulse" />
+              <span>Aguardando confirmação do pagamento...</span>
             </div>
 
-            {/* Simulação em Ambiente de Teste */}
             {isSimulated && (
-              <div className="pt-2 border-t border-slate-100">
-                <p className="text-[11px] text-slate-400 mb-2">
-                  Ambiente de demonstração / testes rápidos:
-                </p>
+              <div className="pt-3 border-t border-warm-border">
                 <button
                   onClick={handleSimulatePayment}
                   disabled={simulatingPayment}
-                  className="w-full py-2.5 px-4 rounded-xl text-xs font-bold text-amber-800 bg-amber-100/70 hover:bg-amber-200/70 transition flex items-center justify-center gap-1.5 border border-amber-300/60"
+                  className="w-full py-2 px-3 rounded-lg text-xs font-medium text-charcoal-700 bg-stone-100 hover:bg-stone-200 transition flex items-center justify-center gap-1.5 border border-stone-250"
                 >
-                  <Zap className="w-3.5 h-3.5 text-amber-600 fill-amber-600" />
-                  <span>{simulatingPayment ? 'Confirmando...' : '⚡ Confirmar Pagamento de Teste (Simulador)'}</span>
+                  <Zap className="w-3.5 h-3.5 text-amber-600" />
+                  <span>{simulatingPayment ? 'Confirmando...' : 'Confirmar pagamento de teste (Demonstração)'}</span>
                 </button>
               </div>
             )}
           </div>
         )}
 
-        {/* ETAPA 3: SUCESSO & AGRADECIMENTO */}
+        {/* ETAPA 3: SUCESSO */}
         {step === 'SUCCESS' && (
-          <div className="p-8 text-center animate-scale-up">
-            <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 mx-auto flex items-center justify-center mb-4">
-              <Check className="w-8 h-8 stroke-[3]" />
+          <div className="p-8 text-center">
+            <div className="w-12 h-12 rounded-full bg-cream-100 text-charcoal-900 mx-auto flex items-center justify-center mb-4 border border-warm-border">
+              <Check className="w-6 h-6 stroke-[2.5]" />
             </div>
 
-            <h3 className="text-2xl font-black text-slate-800 mb-2">
-              Presente Confirmado! 🎉
+            <h3 className="font-serif text-2xl text-charcoal-900 font-normal mb-2">
+              Presente confirmado
             </h3>
 
-            <p className="text-sm text-slate-600 max-w-sm mx-auto mb-6 leading-relaxed">
-              Muito obrigado pelo carinho com os futuros pais e com o bebê! Sua mensagem já está disponível no mural de recados.
+            <p className="text-xs sm:text-sm text-charcoal-600 max-w-sm mx-auto mb-6 leading-relaxed font-sans">
+              Muito obrigado pelo carinho com a família! Sua mensagem já está disponível no mural de recados.
             </p>
 
             <button
               onClick={onClose}
-              className="py-3 px-8 rounded-xl font-bold text-sm bg-slate-900 text-white hover:bg-slate-800 transition shadow-md shadow-slate-900/10"
+              className="py-2.5 px-6 rounded-lg font-medium text-xs bg-charcoal-900 text-white hover:bg-charcoal-800 transition shadow-subtle"
             >
-              Voltar para o Chá
+              Voltar à página do Chá
             </button>
           </div>
         )}

@@ -1,22 +1,25 @@
 import type { Metadata } from 'next';
-import localFont from 'next/font/local';
+import { Lora, Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css';
 
-const geistSans = localFont({
-  src: './fonts/GeistVF.woff',
-  variable: '--font-geist-sans',
-  weight: '100 900',
+const serif = Lora({
+  subsets: ['latin'],
+  style: ['normal', 'italic'],
+  variable: '--font-serif',
+  display: 'swap',
 });
-const geistMono = localFont({
-  src: './fonts/GeistMonoVF.woff',
-  variable: '--font-geist-mono',
-  weight: '100 900',
+
+const sans = Plus_Jakarta_Sans({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-sans',
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
   title: 'Fralda Fácil - Chá de Bebê, Fralda & Revelação com Pix',
   description:
-    'Crie sua página personalizada de Chá Revelação e Chá de Fralda com arrecadação Pix transparente e o bolão interativo Menino ou Menina.',
+    'A plataforma elegante para futuros pais receberem fraldas em dinheiro e engajarem a família com o bolão do bebê.',
   icons: {
     icon: [
       { url: '/icon.svg', type: 'image/svg+xml' },
@@ -31,8 +34,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-slate-50 font-sans`}>
+    <html lang="pt-BR" className={`${serif.variable} ${sans.variable}`}>
+      <body className="font-sans bg-cream-50 text-charcoal-900 antialiased selection:bg-stone-200">
         {children}
       </body>
     </html>

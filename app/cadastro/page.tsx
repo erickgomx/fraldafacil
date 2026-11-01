@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Baby, Lock, Mail, ArrowRight, Sparkles, User, Link2, Calendar, Heart } from 'lucide-react';
+import { Lock, Mail, ArrowRight, User, Link2, Calendar } from 'lucide-react';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -17,7 +17,6 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Auto-gerar sugestão de slug ao digitar o nome dos pais ou do bebê
   const handleBabyNameChange = (val: string) => {
     setBabyName(val);
     if (!slug || slug.startsWith('cha-do-') || slug.startsWith('cha-da-')) {
@@ -80,35 +79,36 @@ export default function RegisterPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-sky-50 via-rose-50/40 to-amber-50/50 flex flex-col justify-center items-center p-4 py-12">
+    <main className="min-h-screen bg-cream-50 text-charcoal-900 flex flex-col justify-center items-center p-6 py-12">
       <div className="w-full max-w-lg">
         {/* Header */}
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2 text-2xl font-black tracking-tight text-slate-800 hover:opacity-90 transition">
-            <span className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-sky-400 to-rose-400 flex items-center justify-center text-white shadow-md shadow-rose-200">
-              <Baby className="w-6 h-6" />
+          <Link href="/" className="inline-flex items-center gap-2 mb-2 group">
+            <span className="w-8 h-8 rounded-lg bg-charcoal-900 text-cream-50 flex items-center justify-center font-serif text-base font-medium shadow-sm">
+              F
             </span>
-            <span>Fralda<span className="text-rose-500">Fácil</span></span>
+            <span className="font-serif text-xl tracking-tight font-medium text-charcoal-900">
+              Fralda Fácil
+            </span>
           </Link>
-          <p className="text-sm text-slate-500 mt-2 font-medium">
-            Crie a página do seu Chá com arrecadação Pix e bolão interativo em 2 minutos!
+          <p className="text-xs text-charcoal-500 font-sans">
+            Configure sua página com lista de presentes e bolão em 2 minutos
           </p>
         </div>
 
         {/* Card */}
-        <div className="bg-white/85 backdrop-blur-xl rounded-3xl p-8 shadow-xl shadow-slate-200/50 border border-white">
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+        <div className="bg-white rounded-xl p-8 shadow-subtle border border-warm-border">
+          <div className="flex items-center justify-between mb-6 pb-4 border-b border-warm-border/60">
+            <h1 className="font-serif text-xl font-normal text-charcoal-900">
               Criar meu Chá
-              <Sparkles className="w-4 h-4 text-amber-400" />
             </h1>
-            <span className="text-xs bg-rose-100 text-rose-700 px-2.5 py-1 rounded-full font-semibold">
-              Grátis para começar
+            <span className="text-[11px] font-mono text-charcoal-500">
+              Gratuito para começar
             </span>
           </div>
 
           {error && (
-            <div className="mb-5 p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm font-medium">
+            <div className="mb-5 p-3 rounded-lg bg-dusty-rose-light border border-dusty-rose/30 text-dusty-rose text-xs font-sans">
               {error}
             </div>
           )}
@@ -116,8 +116,8 @@ export default function RegisterPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Tipo do Evento */}
             <div>
-              <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">
-                Tipo do Evento
+              <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1.5">
+                Modalidade do Evento
               </label>
               <div className="grid grid-cols-3 gap-2">
                 {[
@@ -129,10 +129,10 @@ export default function RegisterPage() {
                     key={type.id}
                     type="button"
                     onClick={() => setEventType(type.id as 'REVELACAO' | 'FRALDA' | 'AMBOS')}
-                    className={`py-2 px-2 text-xs font-bold rounded-xl border text-center transition ${
+                    className={`py-2 px-2 text-xs font-medium rounded-lg border text-center transition ${
                       eventType === type.id
-                        ? 'border-sky-500 bg-sky-50 text-sky-700 ring-2 ring-sky-300/30'
-                        : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                        ? 'border-charcoal-900 bg-charcoal-900 text-white'
+                        : 'border-warm-border bg-white text-charcoal-600 hover:bg-stone-50'
                     }`}
                   >
                     {type.label}
@@ -143,108 +143,105 @@ export default function RegisterPage() {
 
             {/* Nomes dos Pais */}
             <div>
-              <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">
+              <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
                 Nome dos Pais (ou da Mãe) *
               </label>
               <div className="relative">
-                <User className="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                <User className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-charcoal-400" />
                 <input
                   type="text"
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Ex: Mariana e Rafael"
-                  className="w-full pl-11 pr-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 text-slate-800 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-400/50 focus:border-sky-400 transition"
+                  className="w-full pl-9 pr-3.5 py-2.5 rounded-lg border border-warm-border bg-cream-50/50 text-charcoal-900 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-charcoal-900"
                 />
               </div>
             </div>
 
             {/* Nome do Bebê */}
             <div>
-              <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">
-                Nome do Bebê (ou prováveis nomes)
+              <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
+                Nome do Bebê (ou opções de nomes)
               </label>
-              <div className="relative">
-                <Heart className="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="text"
-                  value={babyName}
-                  onChange={(e) => handleBabyNameChange(e.target.value)}
-                  placeholder="Ex: Leo (ou Noah / Maya)"
-                  className="w-full pl-11 pr-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 text-slate-800 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-400/50 focus:border-sky-400 transition"
-                />
-              </div>
+              <input
+                type="text"
+                value={babyName}
+                onChange={(e) => handleBabyNameChange(e.target.value)}
+                placeholder="Ex: Leonardo (ou Clara / Arthur)"
+                className="w-full px-3.5 py-2.5 rounded-lg border border-warm-border bg-cream-50/50 text-charcoal-900 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-charcoal-900"
+              />
             </div>
 
             {/* Link Personalizado */}
             <div>
-              <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">
-                Link da sua página pública *
+              <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
+                Endereço da Página Pública *
               </label>
               <div className="relative">
-                <Link2 className="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Link2 className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-charcoal-400" />
                 <input
                   type="text"
                   required
                   value={slug}
                   onChange={(e) => handleSlugChange(e.target.value)}
                   placeholder="ex: cha-do-leo"
-                  className="w-full pl-11 pr-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 text-slate-800 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-400/50 focus:border-sky-400 transition font-mono text-xs"
+                  className="w-full pl-9 pr-3.5 py-2.5 rounded-lg border border-warm-border bg-cream-50/50 text-charcoal-900 font-mono text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-charcoal-900"
                 />
               </div>
-              <p className="text-[11px] text-slate-400 mt-1 font-mono">
-                Seu link será: <span className="text-sky-600 font-bold">fraldafacil.com.br/{slug || 'seu-link'}</span>
+              <p className="text-[11px] text-charcoal-400 mt-1 font-mono">
+                Link: <span className="text-charcoal-800 font-medium">fraldafacil.com.br/{slug || 'seu-link'}</span>
               </p>
             </div>
 
-            {/* Data Prevista do Evento */}
+            {/* Data Prevista */}
             <div>
-              <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">
-                Data do Evento ou do Chá
+              <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
+                Data do Evento
               </label>
               <div className="relative">
-                <Calendar className="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Calendar className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-charcoal-400" />
                 <input
                   type="date"
                   value={eventDate}
                   onChange={(e) => setEventDate(e.target.value)}
-                  className="w-full pl-11 pr-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 text-slate-800 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-400/50 focus:border-sky-400 transition"
+                  className="w-full pl-9 pr-3.5 py-2.5 rounded-lg border border-warm-border bg-cream-50/50 text-charcoal-900 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-charcoal-900"
                 />
               </div>
             </div>
 
-            {/* Credenciais de Acesso */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+            {/* Credenciais */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
               <div>
-                <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">
+                <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
                   E-mail *
                 </label>
                 <div className="relative">
-                  <Mail className="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <Mail className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-charcoal-400" />
                   <input
                     type="email"
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="email@exemplo.com"
-                    className="w-full pl-11 pr-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 text-slate-800 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-400/50 focus:border-sky-400 transition"
+                    className="w-full pl-9 pr-3.5 py-2.5 rounded-lg border border-warm-border bg-cream-50/50 text-charcoal-900 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-charcoal-900"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">
+                <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
                   Senha *
                 </label>
                 <div className="relative">
-                  <Lock className="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-charcoal-400" />
                   <input
                     type="password"
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Mínimo 6 dígitos"
-                    className="w-full pl-11 pr-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 text-slate-800 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-400/50 focus:border-sky-400 transition"
+                    className="w-full pl-9 pr-3.5 py-2.5 rounded-lg border border-warm-border bg-cream-50/50 text-charcoal-900 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-charcoal-900"
                   />
                 </div>
               </div>
@@ -254,24 +251,24 @@ export default function RegisterPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3.5 px-6 rounded-xl font-bold text-white bg-gradient-to-r from-sky-500 via-purple-500 to-rose-500 hover:opacity-95 shadow-lg shadow-rose-500/20 active:scale-[0.99] transition flex items-center justify-center gap-2 disabled:opacity-60"
+                className="w-full py-3 px-4 rounded-lg font-medium text-xs text-white bg-charcoal-900 hover:bg-charcoal-800 transition shadow-subtle flex items-center justify-center gap-2 disabled:opacity-60"
               >
                 {loading ? (
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span>Criando página...</span>
                 ) : (
                   <>
-                    <span>Criar Minha Página Agora</span>
-                    <ArrowRight className="w-4 h-4" />
+                    <span>Criar Minha Página de Chá</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
                   </>
                 )}
               </button>
             </div>
           </form>
 
-          <div className="mt-6 pt-5 border-t border-slate-100 text-center">
-            <p className="text-sm text-slate-600">
-              Já tem uma conta?{' '}
-              <Link href="/login" className="font-bold text-sky-600 hover:text-sky-700 underline underline-offset-4">
+          <div className="mt-6 pt-5 border-t border-warm-border/60 text-center">
+            <p className="text-xs text-charcoal-500 font-sans">
+              Já possui uma página cadastrada?{' '}
+              <Link href="/login" className="font-medium text-charcoal-900 underline underline-offset-2">
                 Fazer login
               </Link>
             </p>

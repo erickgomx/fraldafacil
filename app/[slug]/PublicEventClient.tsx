@@ -7,7 +7,8 @@ import DiaperCatalog, { GiftItemData } from '@/components/DiaperCatalog';
 import GuestbookWall, { GuestMessageData } from '@/components/GuestbookWall';
 import PixCheckoutModal from '@/components/PixCheckoutModal';
 import { useRouter } from 'next/navigation';
-import { Baby, Share2, Check } from 'lucide-react';
+import { Share2, Check } from 'lucide-react';
+import Link from 'next/link';
 
 interface PublicEventClientProps {
   event: {
@@ -62,31 +63,31 @@ export default function PublicEventClient({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-sky-50/60 via-rose-50/40 to-slate-50 text-slate-800">
-      {/* Top Bar com Compartilhamento */}
-      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-200/60">
-        <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="w-8 h-8 rounded-xl bg-gradient-to-tr from-sky-400 to-rose-400 flex items-center justify-center text-white shadow-sm">
-              <Baby className="w-4 h-4" />
+    <div className="min-h-screen bg-cream-50 text-charcoal-900">
+      {/* Top Bar Sóbria */}
+      <header className="sticky top-0 z-40 bg-cream-50/90 backdrop-blur-md border-b border-warm-border/70">
+        <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2">
+            <span className="w-7 h-7 rounded-md bg-charcoal-900 text-cream-50 flex items-center justify-center font-serif text-sm font-medium">
+              F
             </span>
-            <span className="font-extrabold text-sm tracking-tight text-slate-800">
-              Fralda<span className="text-rose-500">Fácil</span>
+            <span className="font-serif text-lg tracking-tight font-medium text-charcoal-900">
+              Fralda Fácil
             </span>
-          </div>
+          </Link>
 
           <button
             onClick={handleShare}
-            className="inline-flex items-center gap-1.5 py-1.5 px-3.5 rounded-full text-xs font-bold bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 shadow-sm transition active:scale-95"
+            className="inline-flex items-center gap-1.5 py-1.5 px-3.5 rounded-lg text-xs font-medium bg-white hover:bg-stone-50 border border-warm-border text-charcoal-700 shadow-subtle transition active:scale-[0.98]"
           >
             {copiedLink ? (
               <>
-                <Check className="w-3.5 h-3.5 text-emerald-500" />
-                <span className="text-emerald-600">Link Copiado!</span>
+                <Check className="w-3.5 h-3.5 text-stone-900" />
+                <span>Link Copiado</span>
               </>
             ) : (
               <>
-                <Share2 className="w-3.5 h-3.5 text-slate-500" />
+                <Share2 className="w-3.5 h-3.5 text-charcoal-400" />
                 <span>Compartilhar Chá</span>
               </>
             )}
@@ -94,7 +95,7 @@ export default function PublicEventClient({
         </div>
       </header>
 
-      {/* Hero do Chá */}
+      {/* Hero */}
       <BabyHero
         parentsNames={event.parentsNames}
         babyName={event.babyName}
@@ -106,7 +107,7 @@ export default function PublicEventClient({
         eventType={event.eventType}
       />
 
-      {/* Bolão Menino ou Menina (visível principalmente se for Chá Revelação ou Ambos) */}
+      {/* Bolão */}
       {event.eventType !== 'FRALDA' && (
         <GenderPoll
           eventId={event.id}
@@ -116,19 +117,19 @@ export default function PublicEventClient({
         />
       )}
 
-      {/* Catálogo de Fraldas e Mimos */}
+      {/* Catálogo de Presentes */}
       <DiaperCatalog
         items={initialItems}
         onSelectGift={(gift) => handleOpenPixModal(gift)}
       />
 
-      {/* Mural de Mensagens */}
+      {/* Mural de Recados */}
       <GuestbookWall
         messages={initialMessages}
         onOpenGiftModal={() => handleOpenPixModal(null)}
       />
 
-      {/* Modal de Checkout Pix */}
+      {/* Checkout Modal */}
       <PixCheckoutModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -141,11 +142,13 @@ export default function PublicEventClient({
         }}
       />
 
-      {/* Footer */}
-      <footer className="mt-20 py-8 border-t border-slate-200/60 bg-white/50 text-center text-xs text-slate-400">
-        <p className="font-medium">
-          Criado com muito carinho através do{' '}
-          <strong className="text-slate-600">Fralda Fácil</strong> — Plataforma para Chás de Bebê & Revelação.
+      {/* Rodapé Discreto */}
+      <footer className="mt-24 py-8 border-t border-warm-border/60 bg-cream-100/50 text-center text-xs text-charcoal-500 font-sans">
+        <p>
+          Página do Chá de {event.parentsNames} — Organizado com carinho via{' '}
+          <Link href="/" className="font-serif text-charcoal-800 underline underline-offset-2">
+            Fralda Fácil
+          </Link>
         </p>
       </footer>
     </div>

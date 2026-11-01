@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Gift, Heart, Sparkles, PlusCircle } from 'lucide-react';
+import { Plus } from 'lucide-react';
 
 export interface GiftItemData {
   id: string;
@@ -22,10 +22,10 @@ export default function DiaperCatalog({ items, onSelectGift }: DiaperCatalogProp
   const [selectedCategory, setSelectedCategory] = useState<string>('todos');
 
   const categories = [
-    { id: 'todos', label: 'Todos os Mimos' },
-    { id: 'fraldas', label: 'Pacotes de Fraldas 🍼' },
-    { id: 'higiene', label: 'Banho & Higiene 🛁' },
-    { id: 'brincadeiras', label: 'Brincadeiras & Pais ☕' },
+    { id: 'todos', label: 'Todos os Itens' },
+    { id: 'fraldas', label: 'Fraldas' },
+    { id: 'higiene', label: 'Higiene & Banho' },
+    { id: 'brincadeiras', label: 'Cuidados com os Pais' },
   ];
 
   const filteredItems = items.filter((item) => {
@@ -35,31 +35,30 @@ export default function DiaperCatalog({ items, onSelectGift }: DiaperCatalogProp
   });
 
   return (
-    <section className="my-12 max-w-5xl mx-auto px-4">
+    <section className="my-16 max-w-5xl mx-auto px-6">
       {/* Header */}
-      <div className="text-center mb-8">
-        <div className="inline-flex items-center gap-1.5 text-xs font-bold text-rose-600 bg-rose-50 px-3 py-1 rounded-full uppercase tracking-wider mb-2">
-          <Gift className="w-3.5 h-3.5 text-rose-500" />
-          <span>Lista de Presentes & Fraldas</span>
-        </div>
-        <h2 className="text-2xl md:text-4xl font-black text-slate-800 tracking-tight">
-          Escolha um mimo para abençoar essa nova vida
+      <div className="text-center mb-10">
+        <span className="text-[11px] font-mono uppercase tracking-widest text-charcoal-500 block mb-1">
+          Lista de Presentes
+        </span>
+        <h2 className="font-serif text-3xl sm:text-4xl text-charcoal-900 font-normal">
+          Fraldas & Mimos para o Bebê
         </h2>
-        <p className="text-sm text-slate-500 max-w-xl mx-auto mt-2">
-          Os presentes são convertidos em dinheiro via Pix diretamente para os pais comprarem tudo no tamanho certo!
+        <p className="text-xs sm:text-sm text-charcoal-500 max-w-md mx-auto mt-2 font-sans">
+          Os valores são repassados aos pais via Pix para que possam adquirir cada item no momento e tamanho exatos.
         </p>
       </div>
 
-      {/* Categorias */}
-      <div className="flex flex-wrap justify-center gap-2 mb-8">
+      {/* Categorias Sóbrias */}
+      <div className="flex flex-wrap justify-center gap-1.5 mb-10">
         {categories.map((cat) => (
           <button
             key={cat.id}
             onClick={() => setSelectedCategory(cat.id)}
-            className={`py-2 px-4 rounded-full text-xs md:text-sm font-bold transition shadow-sm ${
+            className={`py-1.5 px-3.5 rounded-lg text-xs font-medium transition ${
               selectedCategory === cat.id
-                ? 'bg-slate-900 text-white shadow-slate-900/10'
-                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                ? 'bg-charcoal-900 text-white shadow-subtle'
+                : 'bg-white text-charcoal-600 hover:text-charcoal-900 hover:bg-stone-50 border border-warm-border'
             }`}
           >
             {cat.label}
@@ -67,22 +66,22 @@ export default function DiaperCatalog({ items, onSelectGift }: DiaperCatalogProp
         ))}
       </div>
 
-      {/* Grid de Presentes */}
+      {/* Grade de Presentes */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredItems.map((item) => (
           <div
             key={item.id}
-            className="group bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-md hover:shadow-xl transition-all duration-300 flex flex-col hover:-translate-y-1"
+            className="group bg-white rounded-xl overflow-hidden border border-warm-border shadow-subtle flex flex-col justify-between hover:border-stone-300 transition"
           >
             {/* Imagem */}
-            <div className="relative h-48 w-full overflow-hidden bg-slate-100">
+            <div className="relative h-44 w-full overflow-hidden bg-cream-100">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={item.imageUrl}
                 alt={item.title}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                className="w-full h-full object-cover transition duration-300 group-hover:opacity-95"
               />
-              <span className="absolute top-3 right-3 text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full bg-white/90 backdrop-blur-md text-slate-700 shadow-sm">
+              <span className="absolute top-2.5 right-2.5 text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-white/90 backdrop-blur-sm text-charcoal-600 border border-warm-border/50">
                 {item.category}
               </span>
             </div>
@@ -90,28 +89,29 @@ export default function DiaperCatalog({ items, onSelectGift }: DiaperCatalogProp
             {/* Conteúdo */}
             <div className="p-5 flex-1 flex flex-col justify-between">
               <div>
-                <h3 className="text-base font-bold text-slate-800 line-clamp-1 group-hover:text-sky-600 transition">
+                <h3 className="font-serif text-base text-charcoal-900 font-medium line-clamp-1">
                   {item.title}
                 </h3>
-                <p className="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed">
-                  {item.description || 'Presente com muito amor para a chegada do bebê.'}
+                <p className="text-xs text-charcoal-500 mt-1 line-clamp-2 leading-relaxed font-sans">
+                  {item.description || 'Presente especial para a chegada do bebê.'}
                 </p>
               </div>
 
-              <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between">
+              <div className="mt-5 pt-3.5 border-t border-warm-border/60 flex items-center justify-between">
                 <div>
-                  <span className="text-[10px] text-slate-400 block font-semibold uppercase">Valor Simbólico</span>
-                  <span className="text-lg font-black text-slate-800">
+                  <span className="text-[10px] font-mono text-charcoal-400 block uppercase">
+                    Valor sugerido
+                  </span>
+                  <span className="font-mono text-sm font-semibold text-charcoal-900 tabular-nums">
                     R$ {item.price.toFixed(2).replace('.', ',')}
                   </span>
                 </div>
 
                 <button
                   onClick={() => onSelectGift(item)}
-                  className="py-2.5 px-4 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-sky-500 to-rose-500 hover:opacity-95 shadow-md shadow-sky-500/20 active:scale-95 transition flex items-center gap-1.5"
+                  className="py-2 px-3.5 rounded-lg text-xs font-medium text-white bg-charcoal-900 hover:bg-charcoal-800 transition active:scale-[0.98] shadow-subtle"
                 >
-                  <Heart className="w-3.5 h-3.5 fill-white" />
-                  <span>Presentear</span>
+                  Presentear
                 </button>
               </div>
             </div>
@@ -119,19 +119,20 @@ export default function DiaperCatalog({ items, onSelectGift }: DiaperCatalogProp
         ))}
       </div>
 
-      {/* Botão de Contribuição Livre */}
-      <div className="mt-10 max-w-xl mx-auto bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/60 rounded-3xl p-6 text-center shadow-sm">
-        <Sparkles className="w-6 h-6 text-amber-500 mx-auto mb-2" />
-        <h3 className="text-lg font-bold text-slate-800">Quer contribuir com outro valor?</h3>
-        <p className="text-xs text-slate-600 mt-1 mb-4">
-          Você pode escolher qualquer quantia livre para enviar diretamente no Pix dos pais.
+      {/* Caixa de Contribuição Livre */}
+      <div className="mt-12 max-w-xl mx-auto bg-white border border-warm-border rounded-xl p-6 text-center shadow-subtle">
+        <h3 className="font-serif text-lg text-charcoal-900 font-normal">
+          Deseja contribuir com outro valor?
+        </h3>
+        <p className="text-xs text-charcoal-500 mt-1 mb-4 font-sans max-w-md mx-auto">
+          Você pode definir qualquer quantia livre para enviar diretamente pelo Pix aos pais.
         </p>
         <button
           onClick={() => onSelectGift(null)}
-          className="inline-flex items-center gap-2 py-3 px-6 rounded-xl font-bold text-sm bg-slate-900 text-white hover:bg-slate-800 shadow-md shadow-slate-900/10 active:scale-95 transition"
+          className="inline-flex items-center gap-1.5 py-2.5 px-5 rounded-lg text-xs font-medium bg-cream-100 hover:bg-cream-200/70 border border-warm-border text-charcoal-800 transition"
         >
-          <PlusCircle className="w-4 h-4 text-amber-400" />
-          <span>Presentear com Valor Personalizado</span>
+          <Plus className="w-3.5 h-3.5 text-charcoal-500" />
+          <span>Presentear com valor personalizado</span>
         </button>
       </div>
     </section>

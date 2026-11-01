@@ -11,7 +11,6 @@ import Link from 'next/link';
 import { ArrowRight, Eye, RefreshCw } from 'lucide-react';
 import { DEFAULT_GIFT_ITEMS } from '@/lib/default-gifts';
 
-// Presentes padrão com IDs fictícios
 const DEMO_GIFTS: GiftItemData[] = DEFAULT_GIFT_ITEMS.map((item, index) => ({
   id: `demo-gift-${index + 1}`,
   title: item.title,
@@ -22,33 +21,32 @@ const DEMO_GIFTS: GiftItemData[] = DEFAULT_GIFT_ITEMS.map((item, index) => ({
   active: true,
 }));
 
-// Mensagens fictícias do mural
 const INITIAL_MESSAGES: GuestMessageData[] = [
   {
     id: 'msg-1',
     name: 'Tia Camila & Tio Bruno',
-    message: 'Estamos tão ansiosos para ver o rostinho desse anjinho! Que venha com muita saúde para encher a casa de risadas!',
+    message: 'Estamos tão ansiosos para ver o rostinho desse anjinho! Que venha com muita saúde para encher a casa de risadas.',
     createdAt: new Date(Date.now() - 2 * 3600000),
     order: { pollGuess: 'BOY', amount: 80.0 },
   },
   {
     id: 'msg-2',
     name: 'Vovó Cida',
-    message: 'O coração da vovó já não aguenta de tanto amor! Meu palpite é que vai ser a cara do pai, mas um meninão lindo!',
+    message: 'O coração da vovó já transborda de alegria! Meu palpite é que vai ser um menino com a calma da mãe.',
     createdAt: new Date(Date.now() - 8 * 3600000),
     order: { pollGuess: 'BOY', amount: 150.0 },
   },
   {
     id: 'msg-3',
     name: 'Dinda Carol',
-    message: 'Presentinho de coração para o amorzinho da dinda! Já comprei vários laços rosas no meu coração, vamos ver quem ganha o bolão!',
+    message: 'Presentinho de coração para o amor da dinda! Mal posso esperar para segurar no colo.',
     createdAt: new Date(Date.now() - 24 * 3600000),
     order: { pollGuess: 'GIRL', amount: 100.0 },
   },
   {
     id: 'msg-4',
     name: 'Lucas & Família',
-    message: 'Mari e Rafa, parabéns por esse momento abençoado! Que essa nova fase traga uma felicidade sem tamanho para vocês.',
+    message: 'Mari e Rafa, parabéns por esse momento abençoado! Toda a felicidade do mundo para vocês.',
     createdAt: new Date(Date.now() - 48 * 3600000),
     order: { pollGuess: 'BOY', amount: 55.0 },
   },
@@ -63,7 +61,6 @@ export default function DemoClient() {
   const [boyVotes, setBoyVotes] = useState(38);
   const [girlVotes, setGirlVotes] = useState(24);
 
-  // Data fictícia daqui a 22 dias
   const demoDate = new Date(Date.now() + 22 * 24 * 60 * 60 * 1000);
 
   const handleOpenGiftModal = (gift: GiftItemData | null, guess?: 'BOY' | 'GIRL') => {
@@ -82,79 +79,77 @@ export default function DemoClient() {
     setRevealedGender(gender);
     if (gender === 'BOY') {
       confetti({
-        particleCount: 120,
-        spread: 80,
-        colors: ['#38bdf8', '#0284c7', '#ffffff'],
+        particleCount: 80,
+        spread: 60,
+        colors: ['#4A6B82', '#7D9EAF', '#FAF8F5'],
       });
     } else if (gender === 'GIRL') {
       confetti({
-        particleCount: 120,
-        spread: 80,
-        colors: ['#f472b6', '#db2777', '#ffffff'],
+        particleCount: 80,
+        spread: 60,
+        colors: ['#B86B77', '#D6949E', '#FAF8F5'],
       });
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-sky-50/60 via-rose-50/40 to-slate-50 text-slate-800">
-      {/* BARRA SUPERIOR FIXA DE DEMONSTRAÇÃO */}
-      <div className="sticky top-0 z-50 bg-slate-900 text-white shadow-lg py-2.5 px-4 border-b border-slate-800">
-        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
+    <div className="min-h-screen bg-cream-50 text-charcoal-900 pb-24">
+      {/* BARRA SUPERIOR DE DEMONSTRAÇÃO SÓBRIA */}
+      <div className="sticky top-0 z-50 bg-[#F5F1E9] border-b border-warm-border py-2 px-6">
+        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2.5 text-center sm:text-left">
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-xs font-bold tracking-wide">
-              👀 <span className="text-amber-300 font-extrabold uppercase">Modo Demonstração:</span> Veja como os convidados verão a página do seu Chá!
+            <span className="w-2 h-2 rounded-full bg-stone-700" />
+            <span className="text-xs font-mono text-charcoal-700">
+              Modo Demonstração Interativo — Esta é a experiência exata que seus convidados terão
             </span>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Link
-              href="/cadastro"
-              className="py-1.5 px-4 rounded-xl text-xs font-black bg-gradient-to-r from-sky-400 via-purple-400 to-rose-400 text-slate-950 hover:opacity-95 shadow-md transition flex items-center gap-1.5"
-            >
-              <span>Criar Minha Página Grátis</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
+          <Link
+            href="/cadastro"
+            className="py-1 px-3.5 rounded-lg text-xs font-medium bg-charcoal-900 text-white hover:bg-charcoal-800 transition flex items-center gap-1.5 shadow-subtle shrink-0"
+          >
+            <span>Criar meu Chá</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
         </div>
       </div>
 
-      {/* CONTROLES DE EXPERIMENTAÇÃO (SIMULAR REVELAÇÃO) */}
-      <div className="max-w-5xl mx-auto px-4 pt-4">
-        <div className="bg-white/80 backdrop-blur-md rounded-2xl p-3 border border-slate-200/80 shadow-sm flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2 text-xs font-bold text-slate-600">
-            <Eye className="w-4 h-4 text-purple-500" />
-            <span>Simulador de Revelação:</span>
+      {/* CONTROLE DISCRETO DE SIMULAÇÃO DE REVELAÇÃO */}
+      <div className="max-w-2xl mx-auto px-6 pt-4">
+        <div className="bg-white rounded-xl p-3 border border-warm-border shadow-subtle flex flex-wrap items-center justify-between gap-2 text-xs">
+          <div className="flex items-center gap-1.5 font-mono text-charcoal-500">
+            <Eye className="w-3.5 h-3.5 text-charcoal-400" />
+            <span>Simulador do Chá:</span>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <button
               onClick={() => handleToggleReveal('BOY')}
-              className={`py-1.5 px-3 rounded-xl text-xs font-bold transition flex items-center gap-1 ${
+              className={`py-1 px-2.5 rounded text-[11px] font-medium transition ${
                 revealedGender === 'BOY'
-                  ? 'bg-sky-500 text-white shadow-sm'
-                  : 'bg-sky-50 text-sky-700 hover:bg-sky-100'
+                  ? 'bg-dusty-blue text-white'
+                  : 'bg-dusty-blue-light text-dusty-blue hover:bg-dusty-blue/20'
               }`}
             >
-              <span>Testar: Revelar Menino 💙</span>
+              Revelar: Menino
             </button>
 
             <button
               onClick={() => handleToggleReveal('GIRL')}
-              className={`py-1.5 px-3 rounded-xl text-xs font-bold transition flex items-center gap-1 ${
+              className={`py-1 px-2.5 rounded text-[11px] font-medium transition ${
                 revealedGender === 'GIRL'
-                  ? 'bg-pink-500 text-white shadow-sm'
-                  : 'bg-pink-50 text-pink-700 hover:bg-pink-100'
+                  ? 'bg-dusty-rose text-white'
+                  : 'bg-dusty-rose-light text-dusty-rose hover:bg-dusty-rose/20'
               }`}
             >
-              <span>Testar: Revelar Menina 💖</span>
+              Revelar: Menina
             </button>
 
             {revealedGender && (
               <button
                 onClick={() => handleToggleReveal(null)}
-                className="py-1.5 px-2.5 rounded-xl text-xs font-semibold text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition flex items-center gap-1"
-                title="Voltar ao estado antes da revelação"
+                className="py-1 px-2 rounded text-[11px] font-mono text-charcoal-500 hover:text-charcoal-800 flex items-center gap-1"
+                title="Voltar ao início"
               >
                 <RefreshCw className="w-3 h-3" />
                 <span>Resetar</span>
@@ -164,19 +159,19 @@ export default function DemoClient() {
         </div>
       </div>
 
-      {/* HERO DA DEMONSTRAÇÃO */}
+      {/* HERO */}
       <BabyHero
         parentsNames="Mariana & Rafael"
-        babyName="Leonardo (Leo)"
+        babyName="Leonardo"
         eventDate={demoDate}
-        storyMessage="Estamos muito felizes e ansiosos pela chegada do nosso maior tesouro! Criamos esta página com muito amor para compartilhar esse momento mágico com cada um de vocês."
+        storyMessage="Estamos muito felizes e ansiosos pela chegada do nosso primeiro filho. Criamos este espaço para compartilhar essa alegria com quem amamos."
         coverImageUrl="https://images.unsplash.com/photo-1544126592-807ade215a0b?w=800&auto=format&fit=crop&q=80"
-        themeColor="#38BDF8"
+        themeColor="#4A6B82"
         revealedGender={revealedGender}
         eventType="REVELACAO"
       />
 
-      {/* BOLÃO INTERATIVO */}
+      {/* BOLÃO */}
       <GenderPoll
         eventId="demo-event-id"
         initialBoyVotes={boyVotes}
@@ -184,19 +179,19 @@ export default function DemoClient() {
         onOpenPixModalWithGuess={handleOpenWithGuessOnly}
       />
 
-      {/* CATÁLOGO DE FRALDAS E MIMOS */}
+      {/* CATÁLOGO DE PRESENTES */}
       <DiaperCatalog
         items={DEMO_GIFTS}
         onSelectGift={(gift) => handleOpenGiftModal(gift)}
       />
 
-      {/* MURAL DE RECADOS */}
+      {/* MURAL */}
       <GuestbookWall
         messages={messages}
         onOpenGiftModal={() => handleOpenGiftModal(null)}
       />
 
-      {/* MODAL DE CHECKOUT PIX */}
+      {/* CHECKOUT MODAL */}
       <PixCheckoutModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -205,12 +200,11 @@ export default function DemoClient() {
         selectedGift={selectedGift}
         initialGuess={modalGuess}
         onPaymentSuccess={() => {
-          // Insere mensagem fictícia no mural
           setMessages((prev) => [
             {
               id: `msg-${Date.now()}`,
-              name: 'Você (Convidado Especial)',
-              message: 'Parabéns aos papais! Que o Leo traga bênçãos sem medida!',
+              name: 'Você (Convidado)',
+              message: 'Parabéns Mariana e Rafael! Muita saúde para o Leonardo!',
               createdAt: new Date(),
               order: {
                 pollGuess: modalGuess || 'BOY',
@@ -225,22 +219,22 @@ export default function DemoClient() {
         }}
       />
 
-      {/* BANNER FLUTUANTE INCENTIVANDO A CRIAÇÃO */}
-      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 max-w-md w-[92%] bg-slate-900/90 backdrop-blur-md text-white p-3.5 rounded-2xl shadow-2xl border border-slate-700 flex items-center justify-between gap-3">
+      {/* BARRA FLUTUANTE DE CONVERSÃO SÓBRIA */}
+      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 max-w-md w-[92%] bg-charcoal-900 text-white p-3.5 rounded-xl shadow-elevated border border-charcoal-800 flex items-center justify-between gap-3">
         <div className="truncate pr-2">
-          <strong className="text-xs font-bold block text-white">
-            Gostou do resultado?
-          </strong>
-          <span className="text-[11px] text-slate-300 block truncate">
-            Crie a sua página em menos de 2 minutos!
+          <span className="font-serif text-sm font-medium block">
+            Pronto para o seu próprio Chá?
+          </span>
+          <span className="text-[11px] text-stone-400 font-sans block truncate">
+            Crie sua página e receba via Pix em menos de 2 minutos.
           </span>
         </div>
 
         <Link
           href="/cadastro"
-          className="shrink-0 py-2 px-4 rounded-xl text-xs font-black bg-gradient-to-r from-sky-400 to-rose-400 text-slate-950 hover:opacity-95 shadow-md transition"
+          className="shrink-0 py-2 px-3.5 rounded-lg text-xs font-medium bg-cream-50 text-charcoal-900 hover:bg-white transition"
         >
-          Criar Agora
+          Criar Página
         </Link>
       </div>
     </div>

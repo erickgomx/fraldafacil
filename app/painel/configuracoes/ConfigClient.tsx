@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Save, CheckCircle2, QrCode } from 'lucide-react';
+import { Save, CheckCircle2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 interface ConfigClientProps {
@@ -67,32 +67,32 @@ export default function ConfigClient({ event }: ConfigClientProps) {
 
   return (
     <div className="max-w-2xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-black text-slate-800">
-          Configurações do Evento & Chave Pix
+      <div className="pb-4 border-b border-warm-border">
+        <h1 className="font-serif text-2xl font-normal text-charcoal-900">
+          Configurações da Página & Chave Pix
         </h1>
-        <p className="text-xs text-slate-500 mt-1">
-          Atualize os dados que aparecem na sua página pública e configure onde receberá o repasse
+        <p className="text-xs text-charcoal-500 font-sans mt-0.5">
+          Atualize os textos públicos do Chá e a chave onde você receberá o saldo arrecadado
         </p>
       </div>
 
-      <div className="bg-white rounded-3xl p-6 md:p-8 border border-slate-100 shadow-sm">
+      <div className="bg-white rounded-xl p-6 sm:p-8 border border-warm-border shadow-subtle">
         {success && (
-          <div className="mb-5 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-            <span>Configurações salvas com sucesso!</span>
+          <div className="mb-5 p-3 rounded-lg bg-cream-100 border border-warm-border text-charcoal-800 text-xs font-sans flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-stone-700" />
+            <span>Configurações salvas com sucesso.</span>
           </div>
         )}
 
         {error && (
-          <div className="mb-5 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-bold">
+          <div className="mb-5 p-3 rounded-lg bg-dusty-rose-light border border-dusty-rose/30 text-dusty-rose text-xs font-sans">
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-bold text-slate-600 uppercase mb-1">
+            <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
               Nome dos Pais / Organizadores *
             </label>
             <input
@@ -100,64 +100,61 @@ export default function ConfigClient({ event }: ConfigClientProps) {
               required
               value={parentsNames}
               onChange={(e) => setParentsNames(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400/50"
+              className="w-full px-3.5 py-2.5 rounded-lg border border-warm-border text-xs text-charcoal-900 focus:outline-none focus:ring-1 focus:ring-charcoal-900"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-600 uppercase mb-1">
-              Nome do Bebê (ou prováveis opções)
+            <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
+              Nome do Bebê (ou opções de nomes)
             </label>
             <input
               type="text"
               value={babyName}
               onChange={(e) => setBabyName(e.target.value)}
               placeholder="Ex: Gabriel (ou Clara / Arthur)"
-              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400/50"
+              className="w-full px-3.5 py-2.5 rounded-lg border border-warm-border text-xs text-charcoal-900 focus:outline-none focus:ring-1 focus:ring-charcoal-900"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-600 uppercase mb-1">
-              Data do Chá / Evento
+            <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
+              Data do Chá
             </label>
             <input
               type="date"
               value={eventDate}
               onChange={(e) => setEventDate(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400/50"
+              className="w-full px-3.5 py-2.5 rounded-lg border border-warm-border text-xs text-charcoal-900 focus:outline-none focus:ring-1 focus:ring-charcoal-900"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-600 uppercase mb-1">
-              História ou Mensagem de Boas-Vindas
+            <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
+              Mensagem de Boas-Vindas aos Convidados
             </label>
             <textarea
               rows={3}
               value={storyMessage}
               onChange={(e) => setStoryMessage(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400/50 resize-none"
+              className="w-full px-3.5 py-2.5 rounded-lg border border-warm-border text-xs text-charcoal-900 focus:outline-none focus:ring-1 focus:ring-charcoal-900 resize-none leading-relaxed"
             />
           </div>
 
-          {/* CHAVE PIX DOS PAIS PARA REPASSE */}
-          <div className="pt-4 border-t border-slate-100">
-            <div className="flex items-center gap-2 mb-2">
-              <QrCode className="w-4 h-4 text-emerald-600" />
-              <label className="block text-xs font-bold text-slate-800 uppercase tracking-wide">
-                Sua Chave Pix para Repasse (Saque)
-              </label>
-            </div>
+          {/* CHAVE PIX DE REPASSE */}
+          <div className="pt-4 border-t border-warm-border">
+            <label className="block text-[11px] font-mono uppercase text-charcoal-700 font-medium mb-1">
+              Chave Pix dos Pais para Saque
+            </label>
             <input
               type="text"
               value={pixKey}
               onChange={(e) => setPixKey(e.target.value)}
               placeholder="CPF, E-mail, Celular ou Chave Aleatória"
-              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-emerald-400/50"
+              className="w-full px-3.5 py-2.5 rounded-lg border border-warm-border text-xs font-mono text-charcoal-900 focus:outline-none focus:ring-1 focus:ring-charcoal-900"
             />
-            <p className="text-[11px] text-slate-400 mt-1">
-              Esta é a chave Pix onde a plataforma transferirá o saldo líquido arrecadado no seu Chá.
+            <p className="text-[11px] text-charcoal-400 mt-1 font-sans">
+              O saldo líquido arrecadado na sua página será creditado nesta chave Pix.
             </p>
           </div>
 
@@ -165,9 +162,9 @@ export default function ConfigClient({ event }: ConfigClientProps) {
             <button
               type="submit"
               disabled={loading}
-              className="py-3 px-6 rounded-xl font-bold text-sm bg-slate-900 text-white hover:bg-slate-800 shadow-md transition flex items-center gap-2"
+              className="py-2.5 px-5 rounded-lg font-medium text-xs bg-charcoal-900 text-white hover:bg-charcoal-800 shadow-subtle transition flex items-center gap-2"
             >
-              <Save className="w-4 h-4" />
+              <Save className="w-3.5 h-3.5" />
               <span>{loading ? 'Salvando...' : 'Salvar Alterações'}</span>
             </button>
           </div>
