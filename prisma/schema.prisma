@@ -1,0 +1,93 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String   // Hash bcrypt
+  events    Event[]
+  createdAt DateTime @default(now())
+}
+
+model Event {
+  id              String         @id @default(uuid())
+  userId          String
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  slug            String         @unique // Ex: "cha-do-leo", "revelacao-maya-ou-noah"
+  eventType       String         @default("REVELACAO") // "REVELACAO" | "FRALDA" | "AMBOS"
+  babyName        String?        // Nome do bebê ou nomes prováveis
+  parentsNames    String         // Ex: "Mariana e Rafael"
+  eventDate       DateTime
+  coverImageUrl   String?
+  storyMessage    String?
+  themeColor      String         @default("#38BDF8") // Azul, Rosa, Neutro
+  revealedGender  String?        // "BOY" | "GIRL" | null (liberado após a revelação)
+  pixKey          String?        // Chave Pix dos pais para saque
+  
+  items           GiftItem[]
+  orders          Order[]
+  guestMessages   GuestMessage[]
+  pollVotes       PollVote[]
+  createdAt       DateTime       @default(now())
+}
+
+model GiftItem {
+  id          String   @id @default(uuid())
+  eventId     String
+  event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  title       String   // "Pacote Fralda G"
+  description String?
+  price       Float
+  imageUrl    String
+  category    String   // "fraldas", "higiene", "brincadeiras"
+  active      Boolean  @default(true)
+  orders      Order[]
+  createdAt   DateTime @default(now())
+}
+
+model PollVote {
+  id        String   @id @default(uuid())
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  voterName String
+  guess     String   // "BOY" | "GIRL"
+  createdAt DateTime @default(now())
+}
+
+model Order {
+  id             String        @id @default(uuid())
+  eventId        String
+  event          Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  giftItemId     String?
+  giftItem       GiftItem?     @relation(fields: [giftItemId], references: [id], onDelete: SetNull)
+  amount         Float
+  payerName      String
+  payerEmail     String
+  payerPhone     String?
+  payerMessage   String?
+  pollGuess      String?       // Se o presente veio com palpite no bolão ("BOY" | "GIRL")
+  paymentMethod  String        @default("PIX")
+  mpPaymentId    String?       @unique
+  status         String        @default("PENDING") // "PENDING", "APPROVED", "REJECTED"
+  guestMessage   GuestMessage?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+}
+
+model GuestMessage {
+  id        String   @id @default(uuid())
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  orderId   String   @unique
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  name      String
+  message   String
+  createdAt DateTime @default(now())
+}
