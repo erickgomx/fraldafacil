@@ -58,8 +58,6 @@ export async function createCardPayment(input: CreateCardInput): Promise<CardPay
   const isMarketplace = Boolean(input.sellerAccessToken && input.sellerAccessToken.trim() !== '');
   const token = input.sellerAccessToken || (process.env.MERCADO_PAGO_ACCESS_TOKEN as string);
   const { MercadoPagoConfig, Payment } = await import('mercadopago');
-  const client = new MercadoPagoConfig({ accessToken: token });
-  const payment = new Payment(client);
 
   const nameParts = input.payerName.trim().split(/\s+/);
   const issuer = input.issuerId ? Number(input.issuerId) : undefined;
@@ -67,37 +65,60 @@ export async function createCardPayment(input: CreateCardInput): Promise<CardPay
     ? String(input.identification.number).replace(/\D/g, '')
     : '';
 
-  const res = await payment.create({
-    body: {
-      transaction_amount: Number(input.amount.toFixed(2)),
-      token: input.token,
-      description: input.description,
-      installments: Number(input.installments) || 1,
-      payment_method_id: input.paymentMethodId,
-      ...(isMarketplace && input.applicationFee && input.applicationFee > 0
-        ? { application_fee: Number(input.applicationFee.toFixed(2)) }
+  const rawAppUrl = (process.env.NEXT_PUBLIC_APP_URL || '').trim().replace(/\/$/, '');
+  const notificationUrl = rawAppUrl.startsWith('https://')
+    ? `${rawAppUrl}/api/webhooks/mercadopago`
+    : undefined;
+
+  const buildBody = (includeFee: boolean) => ({
+    transaction_amount: Number(input.amount.toFixed(2)),
+    token: input.token,
+    description: input.description.slice(0, 120),
+    installments: Number(input.installments) || 1,
+    payment_method_id: input.paymentMethodId,
+    ...(includeFee && input.applicationFee && input.applicationFee > 0
+      ? { application_fee: Number(input.applicationFee.toFixed(2)) }
+      : {}),
+    ...(issuer && !isNaN(issuer) ? { issuer_id: issuer } : {}),
+    payer: {
+      email: input.payerEmail,
+      first_name: nameParts[0] || 'Convidado',
+      last_name: nameParts.slice(1).join(' ') || 'Especial',
+      ...(cleanCpf
+        ? {
+            identification: {
+              type: input.identification?.type || 'CPF',
+              number: cleanCpf,
+            },
+          }
         : {}),
-      ...(issuer && !isNaN(issuer) ? { issuer_id: issuer } : {}),
-      payer: {
-        email: input.payerEmail,
-        first_name: nameParts[0] || 'Convidado',
-        last_name: nameParts.slice(1).join(' ') || 'Especial',
-        ...(cleanCpf
-          ? {
-              identification: {
-                type: input.identification?.type || 'CPF',
-                number: cleanCpf,
-              },
-            }
-          : {}),
-      },
-      external_reference: input.orderId,
-      statement_descriptor: 'FRALDAFACIL',
-      binary_mode: false,
-      notification_url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://fraldafacil.com.br'}/api/webhooks/mercadopago`,
     },
-    requestOptions: { idempotencyKey: input.idempotencyKey },
+    external_reference: input.orderId,
+    statement_descriptor: 'FRALDAFACIL',
+    binary_mode: false,
+    ...(notificationUrl ? { notification_url: notificationUrl } : {}),
   });
+
+  const client = new MercadoPagoConfig({ accessToken: token });
+  const payment = new Payment(client);
+
+  let res;
+  try {
+    res = await payment.create({
+      body: buildBody(isMarketplace && Boolean(input.applicationFee && input.applicationFee > 0)),
+      requestOptions: { idempotencyKey: input.idempotencyKey },
+    });
+  } catch (err: unknown) {
+    if (isMarketplace && input.applicationFee && input.applicationFee > 0) {
+      console.warn('Tentativa com application_fee no cartão falhou, tentando direto sem fee...');
+      res = await payment.create({
+        body: buildBody(false),
+        requestOptions: { idempotencyKey: input.idempotencyKey },
+      });
+    } else {
+      throw err;
+    }
+  }
 
   return {
     id: String(res.id),
@@ -130,48 +151,114 @@ export function cardStatusMessage(status: string, detail: string): string {
   return map[detail] || 'O pagamento foi recusado. Tente outro cartão ou pague via Pix.';
 }
 
+/** Extrai a mensagem de erro detalhada retornada pela API do Mercado Pago. */
+export function extractMpErrorMessage(err: unknown): string {
+  if (!err) return 'Erro desconhecido ao comunicar com o Mercado Pago.';
+  if (typeof err === 'string') return err;
+  const mpErr = err as {
+    message?: string;
+    cause?: Array<{ description?: string; message?: string; code?: string | number }> | string;
+    status?: number;
+  };
+  if (mpErr.cause) {
+    if (Array.isArray(mpErr.cause) && mpErr.cause.length > 0) {
+      const descriptions = mpErr.cause
+        .map((c) => c.description || c.message || (c.code ? `Código ${c.code}` : ''))
+        .filter(Boolean);
+      if (descriptions.length > 0) return descriptions.join('; ');
+    } else if (typeof mpErr.cause === 'string') {
+      return mpErr.cause;
+    }
+  }
+  if (mpErr.message) return mpErr.message;
+  return 'Não foi possível gerar a transação no Mercado Pago.';
+}
+
 export async function createPixPayment(input: CreatePixInput): Promise<PixPaymentResponse> {
   const isMarketplace = Boolean(input.sellerAccessToken && input.sellerAccessToken.trim() !== '');
-  const token = input.sellerAccessToken || process.env.MERCADO_PAGO_ACCESS_TOKEN;
+  const primaryToken = input.sellerAccessToken || process.env.MERCADO_PAGO_ACCESS_TOKEN;
+  const platformToken = process.env.MERCADO_PAGO_ACCESS_TOKEN;
 
-  // Se houver token do Mercado Pago configurado, tenta a chamada oficial
-  if (token && token.trim() !== '' && !token.includes('SEU_TOKEN')) {
-    try {
-      const { MercadoPagoConfig, Payment } = await import('mercadopago');
-      const client = new MercadoPagoConfig({ accessToken: token });
+  // Sanitiza URL de notificação webhook (somente envia se for uma URL HTTPS pública válida)
+  const rawAppUrl = (process.env.NEXT_PUBLIC_APP_URL || '').trim().replace(/\/$/, '');
+  const notificationUrl = rawAppUrl.startsWith('https://')
+    ? `${rawAppUrl}/api/webhooks/mercadopago`
+    : undefined;
+
+  const nameParts = input.payerName.trim().split(/\s+/);
+  const firstName = nameParts[0] || 'Convidado';
+  const lastName = nameParts.slice(1).join(' ') || 'Especial';
+  const cleanCpf = input.payerCpf ? input.payerCpf.replace(/\D/g, '') : '';
+
+  // Se houver qualquer token real (do vendedor conectado ou da plataforma), tenta a emissão oficial
+  if (primaryToken && primaryToken.trim() !== '' && !primaryToken.includes('SEU_TOKEN')) {
+    const { MercadoPagoConfig, Payment } = await import('mercadopago');
+
+    // Função interna para criar pagamento no MP
+    const callMpApi = async (tokenToUse: string, includeApplicationFee: boolean) => {
+      const client = new MercadoPagoConfig({ accessToken: tokenToUse });
       const payment = new Payment(client);
 
-      const nameParts = input.payerName.trim().split(/\s+/);
-      const firstName = nameParts[0] || 'Convidado';
-      const lastName = nameParts.slice(1).join(' ') || 'Especial';
-      const cleanCpf = input.payerCpf ? input.payerCpf.replace(/\D/g, '') : '';
-
-      const res = await payment.create({
-        body: {
-          transaction_amount: Number(input.amount.toFixed(2)),
-          description: input.description,
-          payment_method_id: 'pix',
-          ...(isMarketplace && input.applicationFee && input.applicationFee > 0
-            ? { application_fee: Number(input.applicationFee.toFixed(2)) }
+      const body: Record<string, unknown> = {
+        transaction_amount: Number(input.amount.toFixed(2)),
+        description: input.description.slice(0, 120),
+        payment_method_id: 'pix',
+        payer: {
+          email: input.payerEmail || 'contato@fraldafacil.com.br',
+          first_name: firstName,
+          last_name: lastName,
+          ...(cleanCpf && cleanCpf.length === 11
+            ? {
+                identification: {
+                  type: 'CPF',
+                  number: cleanCpf,
+                },
+              }
             : {}),
-          payer: {
-            email: input.payerEmail || 'contato@fraldafacil.com.br',
-            first_name: firstName,
-            last_name: lastName,
-            ...(cleanCpf && cleanCpf.length === 11
-              ? {
-                  identification: {
-                    type: 'CPF',
-                    number: cleanCpf,
-                  },
-                }
-              : {}),
-          },
-          external_reference: input.orderId,
-          notification_url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://fraldafacil.com.br'}/api/webhooks/mercadopago`,
         },
-      });
+        external_reference: input.orderId,
+        ...(notificationUrl ? { notification_url: notificationUrl } : {}),
+      };
 
+      if (includeApplicationFee && input.applicationFee && input.applicationFee > 0) {
+        body.application_fee = Number(input.applicationFee.toFixed(2));
+      }
+
+      return await payment.create({ body });
+    };
+
+    let lastError: unknown = null;
+
+    // Tentativa 1: Token do vendedor COM application_fee (split nativo)
+    if (isMarketplace && input.applicationFee && input.applicationFee > 0) {
+      try {
+        const res = await callMpApi(primaryToken, true);
+        const pointOfInteraction = res.point_of_interaction;
+        const transactionData = pointOfInteraction?.transaction_data;
+
+        if (transactionData?.qr_code) {
+          let base64 = transactionData.qr_code_base64;
+          if (!base64) {
+            base64 = await QRCode.toDataURL(transactionData.qr_code);
+          }
+          return {
+            id: String(res.id),
+            status: (res.status as 'pending' | 'approved' | 'rejected') || 'pending',
+            qrCode: transactionData.qr_code,
+            qrCodeBase64: base64.startsWith('data:image') ? base64 : `data:image/png;base64,${base64}`,
+            ticketUrl: transactionData.ticket_url,
+            isSimulated: false,
+          };
+        }
+      } catch (err: unknown) {
+        lastError = err;
+        console.warn('Tentativa de Pix com application_fee falhou, tentando direto sem fee:', extractMpErrorMessage(err));
+      }
+    }
+
+    // Tentativa 2: Token do vendedor SEM application_fee (ex: mesma conta da aplicação ou sem permissão de fee)
+    try {
+      const res = await callMpApi(primaryToken, false);
       const pointOfInteraction = res.point_of_interaction;
       const transactionData = pointOfInteraction?.transaction_data;
 
@@ -180,7 +267,6 @@ export async function createPixPayment(input: CreatePixInput): Promise<PixPaymen
         if (!base64) {
           base64 = await QRCode.toDataURL(transactionData.qr_code);
         }
-
         return {
           id: String(res.id),
           status: (res.status as 'pending' | 'approved' | 'rejected') || 'pending',
@@ -190,12 +276,45 @@ export async function createPixPayment(input: CreatePixInput): Promise<PixPaymen
           isSimulated: false,
         };
       }
-    } catch (err) {
-      console.error('Erro na API oficial do Mercado Pago, gerando Pix simulado para testes:', err);
+    } catch (err: unknown) {
+      lastError = err;
+      console.warn('Tentativa de Pix direto com token do vendedor falhou:', extractMpErrorMessage(err));
     }
+
+    // Tentativa 3: Se houver token da plataforma configurado e for diferente do vendedor, tenta como contingência
+    if (platformToken && platformToken !== primaryToken && !platformToken.includes('SEU_TOKEN')) {
+      try {
+        console.log('Tentando Pix com token de contingência da plataforma...');
+        const res = await callMpApi(platformToken, false);
+        const pointOfInteraction = res.point_of_interaction;
+        const transactionData = pointOfInteraction?.transaction_data;
+
+        if (transactionData?.qr_code) {
+          let base64 = transactionData.qr_code_base64;
+          if (!base64) {
+            base64 = await QRCode.toDataURL(transactionData.qr_code);
+          }
+          return {
+            id: String(res.id),
+            status: (res.status as 'pending' | 'approved' | 'rejected') || 'pending',
+            qrCode: transactionData.qr_code,
+            qrCodeBase64: base64.startsWith('data:image') ? base64 : `data:image/png;base64,${base64}`,
+            ticketUrl: transactionData.ticket_url,
+            isSimulated: false,
+          };
+        }
+      } catch (err: unknown) {
+        lastError = err;
+        console.error('Tentativa com token da plataforma falhou:', extractMpErrorMessage(err));
+      }
+    }
+
+    // Se falhou em todas as tentativas oficiais com credenciais reais, lança o erro real em vez de gerar Pix falso!
+    const detailedMsg = extractMpErrorMessage(lastError);
+    throw new Error(`Mercado Pago: ${detailedMsg}`);
   }
 
-  // MODO TESTE / SIMULADO (Local ou sem token configurado)
+  // MODO TESTE / SIMULADO (Apenas se nenhuma credencial real existir no ambiente)
   const mockPixPayload = `00020126580014br.gov.bcb.pix0136fraldafacil-${input.orderId.slice(0, 8)}520400005303986540${input.amount.toFixed(2).replace('.', '')}5802BR5916FRALDA FACIL SAAS6009SAO PAULO62070503***6304ABCD`;
   const qrBase64 = await QRCode.toDataURL(mockPixPayload, { width: 300, margin: 2 });
 

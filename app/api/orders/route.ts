@@ -137,11 +137,12 @@ export async function POST(req: NextRequest) {
       baseAmount: feeCalc.baseAmount,
       feePayer: feeCalc.feePayer,
     });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Erro ao criar pedido Pix:', error);
-    return NextResponse.json(
-      { error: 'Ocorreu um erro ao gerar o pagamento Pix. Tente novamente.' },
-      { status: 500 }
-    );
+    const msg =
+      error instanceof Error
+        ? error.message
+        : 'Ocorreu um erro ao gerar o pagamento Pix. Tente novamente.';
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
