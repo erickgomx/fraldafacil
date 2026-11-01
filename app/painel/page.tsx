@@ -27,9 +27,11 @@ export default async function PainelPage() {
     orderBy: { createdAt: 'desc' },
   });
 
+  // O total líquido dos pais considera os valores já calculados no split
   const totalGross = approvedOrders.reduce((sum, order) => sum + order.amount, 0);
-  const platformFee = totalGross * 0.059; // 5.9% taxa
-  const netAmount = totalGross - platformFee;
+  const totalNet = approvedOrders.reduce((sum, order) => sum + (order.netAmount ?? (order.amount * (1 - 0.0499))), 0);
+  const platformFee = approvedOrders.reduce((sum, order) => sum + (order.platformFee ?? (order.amount * 0.0499)), 0);
+  const netAmount = totalNet;
 
   // Bolão
   const [boyVotes, girlVotes] = await Promise.all([
@@ -50,6 +52,8 @@ export default async function PainelPage() {
         parentsNames: event.parentsNames,
         revealedGender: event.revealedGender,
         pixKey: event.pixKey,
+        mpConnected: event.mpConnected,
+        feePayer: (event.feePayer as 'GUEST' | 'PARENTS') || 'GUEST',
       }}
       metrics={{
         totalGross,

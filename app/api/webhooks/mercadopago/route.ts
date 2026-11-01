@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { approveOrder, rejectOrder } from '@/lib/orders';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,9 +22,10 @@ export async function POST(req: NextRequest) {
     }
 
     const token = process.env.MERCADO_PAGO_ACCESS_TOKEN;
-    let paymentStatus = 'approved';
+    let paymentStatus: string | null = null;
     let externalReference: string | undefined;
 
+    // Apenas consulta o Mercado Pago se houver token configurado
     if (token && token.trim() !== '' && !token.includes('SEU_TOKEN')) {
       try {
         const { MercadoPagoConfig, Payment } = await import('mercadopago');
@@ -34,54 +36,30 @@ export async function POST(req: NextRequest) {
         paymentStatus = paymentInfo.status || 'pending';
         externalReference = paymentInfo.external_reference;
       } catch (err) {
-        console.error('Erro ao buscar pagamento no Mercado Pago:', err);
+        console.error('Erro ao verificar status na API oficial do Mercado Pago:', err);
+        // Em caso de falha na consulta oficial, NUNCA assume como aprovado
+        return NextResponse.json({ message: 'Falha ao consultar transação no Mercado Pago' }, { status: 200 });
       }
+    } else {
+      // Sem token de produção configurado, o webhook ignora eventos externos
+      return NextResponse.json({ message: 'Webhook inativo (sem credenciais de produção)' }, { status: 200 });
     }
 
-    if (paymentStatus === 'approved') {
-      // Localiza a ordem por mpPaymentId ou externalReference
-      const order = await prisma.order.findFirst({
-        where: {
-          OR: [
-            { mpPaymentId: String(paymentId) },
-            ...(externalReference ? [{ id: externalReference }] : []),
-          ],
-        },
-      });
+    // Localiza a ordem por mpPaymentId ou externalReference
+    const order = await prisma.order.findFirst({
+      where: {
+        OR: [
+          { mpPaymentId: String(paymentId) },
+          ...(externalReference ? [{ id: externalReference }] : []),
+        ],
+      },
+    });
 
-      if (order && order.status !== 'APPROVED') {
-        await prisma.order.update({
-          where: { id: order.id },
-          data: { status: 'APPROVED' },
-        });
-
-        // Cria mensagem no mural se existir
-        if (order.payerMessage && order.payerMessage.trim() !== '') {
-          await prisma.guestMessage.upsert({
-            where: { orderId: order.id },
-            update: {
-              name: order.payerName,
-              message: order.payerMessage,
-            },
-            create: {
-              eventId: order.eventId,
-              orderId: order.id,
-              name: order.payerName,
-              message: order.payerMessage,
-            },
-          });
-        }
-
-        // Registra palpite no bolão
-        if (order.pollGuess === 'BOY' || order.pollGuess === 'GIRL') {
-          await prisma.pollVote.create({
-            data: {
-              eventId: order.eventId,
-              voterName: order.payerName,
-              guess: order.pollGuess,
-            },
-          });
-        }
+    if (order) {
+      if (paymentStatus === 'approved') {
+        await approveOrder(order.id);
+      } else if (paymentStatus === 'rejected' || paymentStatus === 'cancelled') {
+        await rejectOrder(order.id);
       }
     }
 

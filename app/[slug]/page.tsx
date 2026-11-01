@@ -48,7 +48,6 @@ export default async function PublicEventPage({ params }: Props) {
           order: {
             select: {
               pollGuess: true,
-              amount: true,
             },
           },
         },
@@ -79,6 +78,8 @@ export default async function PublicEventPage({ params }: Props) {
         storyMessage: event.storyMessage,
         themeColor: event.themeColor,
         revealedGender: event.revealedGender,
+        feePayer: (event.feePayer as 'GUEST' | 'PARENTS') || 'GUEST',
+        mpConnected: event.mpConnected,
       }}
       initialItems={event.items}
       initialMessages={event.guestMessages.map((m) => ({

@@ -19,10 +19,25 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Palpite inválido.' }, { status: 400 });
     }
 
+    const cleanName = voterName.trim().slice(0, 100);
+    if (cleanName.length < 2) {
+      return NextResponse.json({ error: 'Nome muito curto.' }, { status: 400 });
+    }
+
+    // Valida se o evento existe antes de registrar voto
+    const event = await prisma.event.findUnique({
+      where: { id: eventId },
+      select: { id: true },
+    });
+
+    if (!event) {
+      return NextResponse.json({ error: 'Evento não encontrado.' }, { status: 404 });
+    }
+
     const vote = await prisma.pollVote.create({
       data: {
-        eventId,
-        voterName: voterName.trim(),
+        eventId: event.id,
+        voterName: cleanName,
         guess,
       },
     });

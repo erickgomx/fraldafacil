@@ -1,6 +1,7 @@
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("POSTGRES_PRISMA_URL")
+  directUrl = env("POSTGRES_URL_NON_POOLING")
 }
 
 generator client {
@@ -30,7 +31,15 @@ model Event {
   storyMessage    String?
   themeColor      String         @default("#38BDF8") // Azul, Rosa, Neutro
   revealedGender  String?        // "BOY" | "GIRL" | null (liberado após a revelação)
-  pixKey          String?        // Chave Pix dos pais para saque
+  pixKey          String?        // Chave Pix dos pais para saque (legado/reserva)
+  
+  // Integração Mercado Pago Marketplace (Split de Pagamentos)
+  mpUserId        String?        // ID da conta dos pais no Mercado Pago
+  mpAccessToken   String?        // Access token dos pais para transacionar em nome deles
+  mpRefreshToken  String?        // Refresh token para renovação
+  mpPublicKey     String?        // Public key do seller (se fornecida)
+  mpConnected     Boolean        @default(false) // Se os pais conectaram a conta MP
+  feePayer        String         @default("GUEST") // "GUEST" (repassa p/ convidado) | "PARENTS" (pais assumem)
   
   items           GiftItem[]
   orders          Order[]
@@ -77,6 +86,11 @@ model Order {
   paymentMethod  String        @default("PIX")
   mpPaymentId    String?       @unique
   status         String        @default("PENDING") // "PENDING", "APPROVED", "REJECTED"
+  netAmount      Float?        // Valor líquido do presente (ex: R$ 50,00)
+  feeAmount      Float?        // Taxa total cobrada/descontada (ex: R$ 2,99)
+  platformFee    Float?        // Comissão de 4,99% da plataforma retida no split
+  gatewayFee     Float?        // Taxa estimada do MP (0,99% Pix ou 3,99% Cartão)
+  feePayer       String        @default("GUEST") // "GUEST" ou "PARENTS"
   guestMessage   GuestMessage?
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt

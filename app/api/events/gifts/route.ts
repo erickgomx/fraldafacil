@@ -14,8 +14,9 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { eventId, title, description, price, imageUrl, category } = body;
 
-    if (!eventId || !title || !price) {
-      return NextResponse.json({ error: 'Título e preço são obrigatórios.' }, { status: 400 });
+    const numPrice = Number(price);
+    if (!eventId || !title?.trim() || isNaN(numPrice) || numPrice <= 0 || numPrice > 50000) {
+      return NextResponse.json({ error: 'Título e preço válido (entre R$ 1 e R$ 50.000) são obrigatórios.' }, { status: 400 });
     }
 
     const event = await prisma.event.findFirst({
@@ -29,9 +30,9 @@ export async function POST(req: NextRequest) {
     const gift = await prisma.giftItem.create({
       data: {
         eventId,
-        title: title.trim(),
-        description: description?.trim() || null,
-        price: Number(price),
+        title: title.trim().slice(0, 150),
+        description: description?.trim().slice(0, 500) || null,
+        price: Math.round(numPrice * 100) / 100,
         imageUrl: imageUrl?.trim() || 'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=500&auto=format&fit=crop&q=80',
         category: category || 'fraldas',
         active: true,
@@ -68,13 +69,22 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: 'Item não encontrado ou não autorizado' }, { status: 404 });
     }
 
+    let parsedPrice: number | undefined;
+    if (price !== undefined) {
+      parsedPrice = Number(price);
+      if (isNaN(parsedPrice) || parsedPrice <= 0 || parsedPrice > 50000) {
+        return NextResponse.json({ error: 'Preço inválido (deve estar entre R$ 1 e R$ 50.000).' }, { status: 400 });
+      }
+      parsedPrice = Math.round(parsedPrice * 100) / 100;
+    }
+
     const updated = await prisma.giftItem.update({
       where: { id },
       data: {
         ...(active !== undefined && { active: Boolean(active) }),
-        ...(title !== undefined && { title: title.trim() }),
-        ...(price !== undefined && { price: Number(price) }),
-        ...(description !== undefined && { description: description.trim() }),
+        ...(title !== undefined && { title: title.trim().slice(0, 150) }),
+        ...(parsedPrice !== undefined && { price: parsedPrice }),
+        ...(description !== undefined && { description: description.trim().slice(0, 500) }),
       },
     });
 

@@ -19,6 +19,22 @@ export async function GET() {
       email: true,
       events: {
         orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          slug: true,
+          eventType: true,
+          babyName: true,
+          parentsNames: true,
+          eventDate: true,
+          coverImageUrl: true,
+          storyMessage: true,
+          themeColor: true,
+          revealedGender: true,
+          pixKey: true,
+          mpConnected: true,
+          feePayer: true,
+          createdAt: true,
+        },
       },
     },
   });

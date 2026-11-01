@@ -22,6 +22,8 @@ interface PublicEventClientProps {
     storyMessage: string | null;
     themeColor: string;
     revealedGender: string | null;
+    feePayer?: 'GUEST' | 'PARENTS';
+    mpConnected?: boolean;
   };
   initialItems: GiftItemData[];
   initialMessages: GuestMessageData[];
@@ -137,6 +139,7 @@ export default function PublicEventClient({
         parentsNames={event.parentsNames}
         selectedGift={selectedGift}
         initialGuess={modalGuess}
+        feePayer={event.feePayer || 'GUEST'}
         onPaymentSuccess={() => {
           router.refresh();
         }}

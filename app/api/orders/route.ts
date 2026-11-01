@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { createPixPayment } from '@/lib/mercadopago';
+import { calculatePaymentFees } from '@/lib/fees';
 
 export const dynamic = 'force-dynamic';
 
@@ -43,21 +44,41 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Evento não encontrado.' }, { status: 404 });
     }
 
-    // Se houver giftItemId, busca o título do presente
+    // Se houver giftItemId, busca o presente, valida propriedade e preço
     let giftTitle = 'Presente em Dinheiro';
+    let basePresentAmount = numAmount;
+    let validGiftId: string | null = null;
     if (giftItemId) {
       const gift = await prisma.giftItem.findUnique({
         where: { id: giftItemId },
       });
-      if (gift) giftTitle = gift.title;
+      if (!gift || gift.eventId !== eventId || !gift.active) {
+        return NextResponse.json({ error: 'Presente indisponível.' }, { status: 400 });
+      }
+      giftTitle = gift.title;
+      basePresentAmount = gift.price;
+      validGiftId = gift.id;
     }
+
+    // Calcula o split de taxas
+    const feePayer = (event.feePayer as 'GUEST' | 'PARENTS') || 'GUEST';
+    const feeCalc = calculatePaymentFees({
+      baseAmount: basePresentAmount,
+      paymentMethod: 'PIX',
+      feePayer,
+    });
 
     // 1. Cria a Order no banco de dados com status PENDING
     const order = await prisma.order.create({
       data: {
         eventId,
-        giftItemId: giftItemId || null,
-        amount: numAmount,
+        giftItemId: validGiftId,
+        amount: feeCalc.chargeAmount,
+        netAmount: feeCalc.parentsNetAmount,
+        feeAmount: feeCalc.totalFee,
+        platformFee: feeCalc.platformFee,
+        gatewayFee: feeCalc.gatewayFee,
+        feePayer: feeCalc.feePayer,
         payerName: payerName.trim(),
         payerEmail: payerEmail.trim().toLowerCase(),
         payerPhone: payerPhone?.trim() || null,
@@ -68,13 +89,15 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // 2. Gera o Pix no Mercado Pago (ou simulador caso em desenvolvimento)
+    // 2. Gera o Pix no Mercado Pago com Split Oficial via application_fee
     const pixData = await createPixPayment({
       orderId: order.id,
-      amount: numAmount,
+      amount: feeCalc.chargeAmount,
       description: `${giftTitle} - ${event.parentsNames}`,
       payerEmail: order.payerEmail,
       payerName: order.payerName,
+      sellerAccessToken: event.mpAccessToken || null,
+      applicationFee: feeCalc.platformFee,
     });
 
     // 3. Atualiza o pedido com o ID da transação
@@ -90,6 +113,9 @@ export async function POST(req: NextRequest) {
       qrCode: pixData.qrCode,
       qrCodeBase64: pixData.qrCodeBase64,
       isSimulated: pixData.isSimulated || false,
+      chargeAmount: feeCalc.chargeAmount,
+      baseAmount: feeCalc.baseAmount,
+      feePayer: feeCalc.feePayer,
     });
   } catch (error) {
     console.error('Erro ao criar pedido Pix:', error);

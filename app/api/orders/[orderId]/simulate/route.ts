@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { approveOrder } from '@/lib/orders';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,6 +9,14 @@ export async function POST(
   { params }: { params: { orderId: string } }
 ) {
   try {
+    // 1. Bloqueia completamente o endpoint em ambiente de produção
+    if (process.env.NODE_ENV === 'production') {
+      return NextResponse.json(
+        { error: 'Simulação de pagamento indisponível em ambiente de produção.' },
+        { status: 403 }
+      );
+    }
+
     const { orderId } = params;
 
     const order = await prisma.order.findUnique({
@@ -22,42 +31,20 @@ export async function POST(
       return NextResponse.json({ message: 'Pedido já aprovado!', order });
     }
 
-    // Atualiza pedido para APPROVED
-    const updatedOrder = await prisma.order.update({
-      where: { id: orderId },
-      data: { status: 'APPROVED' },
-    });
-
-    // Se houver mensagem dos pais/convidados, salva no mural
-    if (order.payerMessage && order.payerMessage.trim() !== '') {
-      await prisma.guestMessage.upsert({
-        where: { orderId: order.id },
-        update: {
-          name: order.payerName,
-          message: order.payerMessage,
-        },
-        create: {
-          eventId: order.eventId,
-          orderId: order.id,
-          name: order.payerName,
-          message: order.payerMessage,
-        },
-      });
+    // 2. Garante que apenas pedidos marcados como simulados podem ser aprovados por este endpoint
+    const isMockPayment = !order.mpPaymentId || order.mpPaymentId.startsWith('sim_');
+    if (!isMockPayment) {
+      return NextResponse.json(
+        { error: 'Não é permitido simular aprovação de transações reais do Mercado Pago.' },
+        { status: 403 }
+      );
     }
 
-    // Se o pedido continha palpite no bolão, registra o voto
-    if (order.pollGuess === 'BOY' || order.pollGuess === 'GIRL') {
-      await prisma.pollVote.create({
-        data: {
-          eventId: order.eventId,
-          voterName: order.payerName,
-          guess: order.pollGuess,
-        },
-      });
-    }
+    await approveOrder(orderId);
+    const updatedOrder = await prisma.order.findUnique({ where: { id: orderId } });
 
     return NextResponse.json({
-      message: 'Pagamento aprovado com sucesso!',
+      message: 'Pagamento simulado aprovado com sucesso!',
       order: updatedOrder,
     });
   } catch (error) {

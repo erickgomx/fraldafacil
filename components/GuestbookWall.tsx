@@ -107,15 +107,6 @@ export default function GuestbookWall({ messages, onOpenGiftModal }: GuestbookWa
                   &ldquo;{item.message}&rdquo;
                 </p>
               </div>
-
-              {item.order?.amount && (
-                <div className="mt-4 pt-3 border-t border-warm-border/50 flex items-center justify-between text-[11px] font-mono text-charcoal-500">
-                  <span>Presente confirmado</span>
-                  <span className="font-semibold text-charcoal-800 tabular-nums">
-                    R$ {item.order.amount.toFixed(2).replace('.', ',')}
-                  </span>
-                </div>
-              )}
             </motion.div>
           ))}
         </div>

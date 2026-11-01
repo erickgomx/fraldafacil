@@ -6,6 +6,7 @@ import {
   Check,
   Share2,
 } from 'lucide-react';
+import Link from 'next/link';
 
 interface DashboardClientProps {
   event: {
@@ -15,6 +16,8 @@ interface DashboardClientProps {
     parentsNames: string;
     revealedGender: string | null;
     pixKey: string | null;
+    mpConnected?: boolean;
+    feePayer?: 'GUEST' | 'PARENTS';
   };
   metrics: {
     totalGross: number;
@@ -125,6 +128,24 @@ export default function DashboardClient({
         </button>
       </div>
 
+      {/* AVISO SE A CONTA MP NÃO ESTIVER CONECTADA */}
+      {!event.mpConnected && (
+        <div className="bg-amber-50 border border-amber-250 p-4 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2.5 text-amber-900">
+            <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse shrink-0" />
+            <span>
+              <strong>Atenção:</strong> Conecte sua conta do Mercado Pago para receber o dinheiro dos presentes diretamente e liberar a página para arrecadação.
+            </span>
+          </div>
+          <Link
+            href="/painel/configuracoes"
+            className="py-1.5 px-3 rounded-lg bg-amber-900 text-white font-medium hover:bg-amber-800 transition text-center shrink-0"
+          >
+            Conectar Mercado Pago
+          </Link>
+        </div>
+      )}
+
       {/* MÉTRICAS FINANCEIRAS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Arrecadado */}
@@ -141,10 +162,10 @@ export default function DashboardClient({
         <div className="bg-white p-5 rounded-xl border border-warm-border shadow-subtle">
           <div className="flex items-center justify-between mb-1">
             <span className="text-[11px] font-mono text-charcoal-500 block uppercase">
-              Saldo Líquido (Saque)
+              Saldo Líquido dos Pais
             </span>
-            <span className="text-[10px] font-mono text-stone-600 bg-cream-100 px-1.5 py-0.2 rounded border border-warm-border">
-              94.1%
+            <span className="text-[10px] font-mono text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
+              Direto no MP
             </span>
           </div>
           <strong className="font-mono text-2xl font-semibold text-charcoal-900 tabular-nums">
@@ -155,7 +176,7 @@ export default function DashboardClient({
         {/* Taxa da Plataforma */}
         <div className="bg-white p-5 rounded-xl border border-warm-border shadow-subtle">
           <span className="text-[11px] font-mono text-charcoal-500 block uppercase mb-1">
-            Taxa de Serviço (5,9%)
+            Comissão Plataforma (4,99%)
           </span>
           <strong className="font-mono text-xl font-medium text-charcoal-500 tabular-nums">
             R$ {metrics.platformFee.toFixed(2).replace('.', ',')}

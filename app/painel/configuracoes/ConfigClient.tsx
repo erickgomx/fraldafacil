@@ -1,7 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { Save, CheckCircle2 } from 'lucide-react';
+import {
+  Save,
+  CheckCircle2,
+  AlertCircle,
+  ExternalLink,
+  ShieldCheck,
+  Unlink,
+} from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 interface ConfigClientProps {
@@ -12,6 +19,8 @@ interface ConfigClientProps {
     eventDate: string;
     storyMessage: string | null;
     pixKey: string | null;
+    mpConnected?: boolean;
+    feePayer?: 'GUEST' | 'PARENTS';
   };
 }
 
@@ -22,7 +31,12 @@ export default function ConfigClient({ event }: ConfigClientProps) {
   const [eventDate, setEventDate] = useState(event.eventDate.split('T')[0] || '');
   const [storyMessage, setStoryMessage] = useState(event.storyMessage || '');
   const [pixKey, setPixKey] = useState(event.pixKey || '');
+  const [feePayer, setFeePayer] = useState<'GUEST' | 'PARENTS'>(event.feePayer || 'GUEST');
+  const [mpConnected, setMpConnected] = useState(Boolean(event.mpConnected));
+
   const [loading, setLoading] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
+  const [simulatingConnect, setSimulatingConnect] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
 
@@ -43,6 +57,7 @@ export default function ConfigClient({ event }: ConfigClientProps) {
           eventDate: eventDate || undefined,
           storyMessage,
           pixKey,
+          feePayer,
         }),
       });
 
@@ -65,35 +80,227 @@ export default function ConfigClient({ event }: ConfigClientProps) {
     }
   };
 
+  const handleDisconnectMP = async () => {
+    if (!confirm('Deseja realmente desconectar sua conta do Mercado Pago? Sua página não poderá receber presentes até ser reconectada.')) {
+      return;
+    }
+    setDisconnecting(true);
+    try {
+      const res = await fetch('/api/auth/mercadopago/disconnect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'DISCONNECT', eventId: event.id }),
+      });
+      if (res.ok) {
+        setMpConnected(false);
+        router.refresh();
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setDisconnecting(false);
+    }
+  };
+
+  const handleSimulateMP = async () => {
+    setSimulatingConnect(true);
+    try {
+      const res = await fetch('/api/auth/mercadopago/disconnect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'SIMULATE_CONNECT', eventId: event.id }),
+      });
+      if (res.ok) {
+        setMpConnected(true);
+        router.refresh();
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSimulatingConnect(false);
+    }
+  };
+
   return (
     <div className="max-w-2xl space-y-6">
       <div className="pb-4 border-b border-warm-border">
-        <h1 className="font-serif text-2xl font-normal text-charcoal-900">
-          Configurações da Página & Chave Pix
+        <h1 className="font-serif text-2xl text-charcoal-900 font-medium">
+          Configurações do Chá
         </h1>
-        <p className="text-xs text-charcoal-500 font-sans mt-0.5">
-          Atualize os textos públicos do Chá e a chave onde você receberá o saldo arrecadado
+        <p className="text-xs text-charcoal-500 mt-1 font-sans">
+          Gerencie a conta recebedora do Mercado Pago, regras de taxas e informações da página pública.
         </p>
       </div>
 
-      <div className="bg-white rounded-xl p-6 sm:p-8 border border-warm-border shadow-subtle">
-        {success && (
-          <div className="mb-5 p-3 rounded-lg bg-cream-100 border border-warm-border text-charcoal-800 text-xs font-sans flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-stone-700" />
-            <span>Configurações salvas com sucesso.</span>
+      {success && (
+        <div className="p-3 rounded-lg bg-emerald-50 text-emerald-800 text-xs font-sans border border-emerald-200 flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+          <span>Configurações salvas com sucesso!</span>
+        </div>
+      )}
+
+      {error && (
+        <div className="p-3 rounded-lg bg-dusty-rose-light text-dusty-rose text-xs font-sans border border-dusty-rose/30 flex items-center gap-2">
+          <AlertCircle className="w-4 h-4" />
+          <span>{error}</span>
+        </div>
+      )}
+
+      {/* BLOCO 1: CONEXÃO MERCADO PAGO OBRIGATÓRIA (SPLIT NATIVO) */}
+      <div className="bg-white p-6 rounded-2xl border border-warm-border shadow-subtle space-y-4">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 rounded bg-cream-100 text-charcoal-600 border border-warm-border">
+                Split Oficial
+              </span>
+              {mpConnected ? (
+                <span className="text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1 font-semibold">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  Conta Conectada
+                </span>
+              ) : (
+                <span className="text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200 font-semibold">
+                  Pendente de Conexão
+                </span>
+              )}
+            </div>
+            <h2 className="font-serif text-lg text-charcoal-900 font-medium">
+              Conta do Mercado Pago dos Pais
+            </h2>
+            <p className="text-xs text-charcoal-500 mt-1 font-sans leading-relaxed">
+              Obrigatório para que os valores dos presentes caiam diretamente na sua conta bancária sem intermediação de terceiros, com total segurança jurídica e fiscal.
+            </p>
+          </div>
+        </div>
+
+        {mpConnected ? (
+          <div className="bg-cream-50 p-4 rounded-xl border border-warm-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0" />
+              <div>
+                <span className="text-xs font-medium text-charcoal-900 block">
+                  Pronto para receber Pix e Cartão!
+                </span>
+                <span className="text-[11px] text-charcoal-500 block">
+                  O dinheiro dos presentes é creditado automaticamente na sua conta Mercado Pago.
+                </span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleDisconnectMP}
+              disabled={disconnecting}
+              className="py-1.5 px-3 rounded-lg text-xs font-medium text-dusty-rose bg-white hover:bg-dusty-rose-light border border-dusty-rose/30 transition flex items-center gap-1.5 shrink-0 self-start sm:self-center"
+            >
+              <Unlink className="w-3.5 h-3.5" />
+              <span>{disconnecting ? 'Desconectando...' : 'Desconectar conta'}</span>
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-3 pt-2">
+            <div className="flex flex-col sm:flex-row gap-2">
+              <a
+                href={`/api/auth/mercadopago/connect?eventId=${event.id}`}
+                className="py-2.5 px-4 rounded-xl text-xs font-semibold bg-[#009EE3] hover:bg-[#0082ba] text-white shadow-subtle transition flex items-center justify-center gap-2"
+              >
+                <span>Conectar com Mercado Pago</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+
+              <button
+                type="button"
+                onClick={handleSimulateMP}
+                disabled={simulatingConnect}
+                className="py-2.5 px-3.5 rounded-xl text-xs font-medium bg-cream-100 hover:bg-cream-200/70 border border-warm-border text-charcoal-700 transition"
+              >
+                {simulatingConnect ? 'Conectando...' : 'Simular Conexão (Ambiente Local/Teste)'}
+              </button>
+            </div>
+            <p className="text-[11px] text-charcoal-400 font-sans">
+              Você será redirecionado para a tela oficial de login do Mercado Pago para autorizar a divisão de valores.
+            </p>
           </div>
         )}
+      </div>
 
-        {error && (
-          <div className="mb-5 p-3 rounded-lg bg-dusty-rose-light border border-dusty-rose/30 text-dusty-rose text-xs font-sans">
-            {error}
-          </div>
-        )}
+      {/* BLOCO 2: REGRA DE REPASSE DAS TAXAS */}
+      <div className="bg-white p-6 rounded-2xl border border-warm-border shadow-subtle space-y-4">
+        <div>
+          <span className="text-[10px] font-mono uppercase tracking-widest text-charcoal-500 block mb-1">
+            Políticas Financeiras
+          </span>
+          <h2 className="font-serif text-lg text-charcoal-900 font-medium">
+            Quem assume as taxas de serviço?
+          </h2>
+          <p className="text-xs text-charcoal-500 mt-1 font-sans">
+            A comissão da plataforma é de <strong>4,99%</strong> + as taxas de processamento do Mercado Pago (0,99% Pix ou 3,99% Cartão).
+          </p>
+        </div>
 
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+          {/* Opção GUEST */}
+          <button
+            type="button"
+            onClick={() => setFeePayer('GUEST')}
+            className={`p-4 rounded-xl border text-left transition flex flex-col justify-between ${
+              feePayer === 'GUEST'
+                ? 'border-charcoal-900 bg-cream-100/70 shadow-subtle'
+                : 'border-warm-border bg-white hover:bg-stone-50'
+            }`}
+          >
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-semibold text-charcoal-900">
+                  Repassar para o Convidado
+                </span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-medium">
+                  Recomendado
+                </span>
+              </div>
+              <p className="text-[11px] text-charcoal-600 leading-relaxed font-sans">
+                As taxas são somadas ao valor final do presente no checkout. Você recebe <strong>100% do valor do presente limpo</strong> na sua conta.
+              </p>
+            </div>
+            <span className="mt-3 text-[10px] font-mono text-charcoal-500 block">
+              Ex: Presente de R$ 50 → Você recebe R$ 50,00 cheios.
+            </span>
+          </button>
+
+          {/* Opção PARENTS */}
+          <button
+            type="button"
+            onClick={() => setFeePayer('PARENTS')}
+            className={`p-4 rounded-xl border text-left transition flex flex-col justify-between ${
+              feePayer === 'PARENTS'
+                ? 'border-charcoal-900 bg-cream-100/70 shadow-subtle'
+                : 'border-warm-border bg-white hover:bg-stone-50'
+            }`}
+          >
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-semibold text-charcoal-900">
+                  Os Pais Assumem as Taxas
+                </span>
+              </div>
+              <p className="text-[11px] text-charcoal-600 leading-relaxed font-sans">
+                O convidado paga o valor exato do presente. As taxas (4,99% + tarifa MP) são descontadas do montante que você recebe.
+              </p>
+            </div>
+            <span className="mt-3 text-[10px] font-mono text-charcoal-500 block">
+              Ex: Presente de R$ 50 → Convidado paga R$ 50,00.
+            </span>
+          </button>
+        </div>
+      </div>
+
+      {/* BLOCO 3: INFORMAÇÕES DA PÁGINA DO CHÁ */}
+      <div className="bg-white p-6 rounded-2xl border border-warm-border shadow-subtle">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
-              Nome dos Pais / Organizadores *
+              Nome dos Pais *
             </label>
             <input
               type="text"
@@ -106,13 +313,13 @@ export default function ConfigClient({ event }: ConfigClientProps) {
 
           <div>
             <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
-              Nome do Bebê (ou opções de nomes)
+              Nome do Bebê (ou nomes em dúvida)
             </label>
             <input
               type="text"
               value={babyName}
               onChange={(e) => setBabyName(e.target.value)}
-              placeholder="Ex: Gabriel (ou Clara / Arthur)"
+              placeholder="Ex: Leonardo ou Arthur / Maya"
               className="w-full px-3.5 py-2.5 rounded-lg border border-warm-border text-xs text-charcoal-900 focus:outline-none focus:ring-1 focus:ring-charcoal-900"
             />
           </div>
@@ -141,24 +348,21 @@ export default function ConfigClient({ event }: ConfigClientProps) {
             />
           </div>
 
-          {/* CHAVE PIX DE REPASSE */}
-          <div className="pt-4 border-t border-warm-border">
-            <label className="block text-[11px] font-mono uppercase text-charcoal-700 font-medium mb-1">
-              Chave Pix dos Pais para Saque
+          {/* CHAVE PIX DE CONTATO / RESERVA */}
+          <div className="pt-2">
+            <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
+              Chave Pix de Contato / Reserva (Opcional)
             </label>
             <input
               type="text"
               value={pixKey}
               onChange={(e) => setPixKey(e.target.value)}
-              placeholder="CPF, E-mail, Celular ou Chave Aleatória"
+              placeholder="Chave Pix para referência"
               className="w-full px-3.5 py-2.5 rounded-lg border border-warm-border text-xs font-mono text-charcoal-900 focus:outline-none focus:ring-1 focus:ring-charcoal-900"
             />
-            <p className="text-[11px] text-charcoal-400 mt-1 font-sans">
-              O saldo líquido arrecadado na sua página será creditado nesta chave Pix.
-            </p>
           </div>
 
-          <div className="pt-2">
+          <div className="pt-4 border-t border-warm-border">
             <button
               type="submit"
               disabled={loading}

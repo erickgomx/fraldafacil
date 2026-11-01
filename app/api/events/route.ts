@@ -21,6 +21,7 @@ export async function PUT(req: NextRequest) {
       themeColor,
       pixKey,
       revealedGender,
+      feePayer,
     } = body;
 
     if (!id) {
@@ -46,6 +47,7 @@ export async function PUT(req: NextRequest) {
         ...(themeColor !== undefined && { themeColor }),
         ...(pixKey !== undefined && { pixKey: pixKey ? pixKey.trim() : null }),
         ...(revealedGender !== undefined && { revealedGender }),
+        ...(feePayer !== undefined && { feePayer: feePayer === 'PARENTS' ? 'PARENTS' : 'GUEST' }),
       },
     });
 

@@ -22,6 +22,8 @@ export default async function ConfiguracoesPage() {
         eventDate: event.eventDate.toISOString(),
         storyMessage: event.storyMessage,
         pixKey: event.pixKey,
+        mpConnected: event.mpConnected,
+        feePayer: (event.feePayer as 'GUEST' | 'PARENTS') || 'GUEST',
       }}
     />
   );
