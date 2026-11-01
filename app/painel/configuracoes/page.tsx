@@ -23,6 +23,7 @@ export default async function ConfiguracoesPage() {
         storyMessage: event.storyMessage,
         pixKey: event.pixKey,
         mpConnected: event.mpConnected,
+        mpUserId: event.mpUserId,
         feePayer: (event.feePayer as 'GUEST' | 'PARENTS') || 'GUEST',
       }}
     />

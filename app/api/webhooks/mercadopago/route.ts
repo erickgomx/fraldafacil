@@ -21,41 +21,73 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Evento ignorado (sem payment id)' }, { status: 200 });
     }
 
-    const token = process.env.MERCADO_PAGO_ACCESS_TOKEN;
-    let paymentStatus: string | null = null;
-    let externalReference: string | undefined;
-
-    // Apenas consulta o Mercado Pago se houver token configurado
-    if (token && token.trim() !== '' && !token.includes('SEU_TOKEN')) {
-      try {
-        const { MercadoPagoConfig, Payment } = await import('mercadopago');
-        const client = new MercadoPagoConfig({ accessToken: token });
-        const paymentApi = new Payment(client);
-        const paymentInfo = await paymentApi.get({ id: paymentId });
-
-        paymentStatus = paymentInfo.status || 'pending';
-        externalReference = paymentInfo.external_reference;
-      } catch (err) {
-        console.error('Erro ao verificar status na API oficial do Mercado Pago:', err);
-        // Em caso de falha na consulta oficial, NUNCA assume como aprovado
-        return NextResponse.json({ message: 'Falha ao consultar transação no Mercado Pago' }, { status: 200 });
-      }
-    } else {
-      // Sem token de produção configurado, o webhook ignora eventos externos
-      return NextResponse.json({ message: 'Webhook inativo (sem credenciais de produção)' }, { status: 200 });
-    }
-
-    // Localiza a ordem por mpPaymentId ou externalReference
-    const order = await prisma.order.findFirst({
+    // 1. Tenta localizar a ordem previamente registrada pelo ID de pagamento ou ID interno
+    let order = await prisma.order.findFirst({
       where: {
         OR: [
           { mpPaymentId: String(paymentId) },
-          ...(externalReference ? [{ id: externalReference }] : []),
+          { id: String(paymentId) },
         ],
       },
+      include: { event: true },
     });
 
+    // 2. Determina o melhor token para consulta (token do vendedor ou da plataforma)
+    const preferredToken = order?.event?.mpAccessToken || process.env.MERCADO_PAGO_ACCESS_TOKEN;
+    const fallbackToken = process.env.MERCADO_PAGO_ACCESS_TOKEN;
+
+    let paymentStatus: string | null = null;
+    let externalReference: string | undefined;
+
+    const queryMpStatus = async (token: string) => {
+      const { MercadoPagoConfig, Payment } = await import('mercadopago');
+      const client = new MercadoPagoConfig({ accessToken: token });
+      const paymentApi = new Payment(client);
+      return await paymentApi.get({ id: String(paymentId) });
+    };
+
+    if (preferredToken && preferredToken.trim() !== '' && !preferredToken.includes('SEU_TOKEN')) {
+      try {
+        const paymentInfo = await queryMpStatus(preferredToken);
+        paymentStatus = paymentInfo.status || 'pending';
+        externalReference = paymentInfo.external_reference;
+      } catch (err) {
+        // Se falhou com o token preferencial e há outro token de fallback, tenta o fallback
+        if (fallbackToken && fallbackToken !== preferredToken && !fallbackToken.includes('SEU_TOKEN')) {
+          try {
+            const paymentInfo = await queryMpStatus(fallbackToken);
+            paymentStatus = paymentInfo.status || 'pending';
+            externalReference = paymentInfo.external_reference;
+          } catch (fallbackErr) {
+            console.error('Falha na consulta oficial Mercado Pago:', fallbackErr);
+            return NextResponse.json({ message: 'Falha ao consultar transação' }, { status: 200 });
+          }
+        } else {
+          console.error('Falha na consulta oficial Mercado Pago:', err);
+          return NextResponse.json({ message: 'Falha ao consultar transação' }, { status: 200 });
+        }
+      }
+    } else {
+      return NextResponse.json({ message: 'Webhook inativo (sem credenciais)' }, { status: 200 });
+    }
+
+    // 3. Se a ordem não havia sido encontrada antes, busca pela external_reference retornada pelo MP
+    if (!order && externalReference) {
+      order = await prisma.order.findUnique({
+        where: { id: externalReference },
+        include: { event: true },
+      });
+    }
+
     if (order) {
+      // Garante que o mpPaymentId esteja salvo
+      if (!order.mpPaymentId) {
+        await prisma.order.update({
+          where: { id: order.id },
+          data: { mpPaymentId: String(paymentId) },
+        });
+      }
+
       if (paymentStatus === 'approved') {
         await approveOrder(order.id);
       } else if (paymentStatus === 'rejected' || paymentStatus === 'cancelled') {

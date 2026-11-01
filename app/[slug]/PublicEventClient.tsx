@@ -140,6 +140,7 @@ export default function PublicEventClient({
         selectedGift={selectedGift}
         initialGuess={modalGuess}
         feePayer={event.feePayer || 'GUEST'}
+        mpConnected={event.mpConnected}
         onPaymentSuccess={() => {
           router.refresh();
         }}

@@ -17,6 +17,13 @@ import { GiftItemData } from './DiaperCatalog';
 import { CardPayment, initMercadoPago } from '@mercadopago/sdk-react';
 import type { ICardPaymentFormData, ICardPaymentBrickPayer } from '@mercadopago/sdk-react/esm/bricks/cardPayment/type';
 import { calculatePaymentFees } from '@/lib/fees';
+import {
+  cleanDigits,
+  formatCpf,
+  formatPhone,
+  isValidCpf,
+  isValidEmail,
+} from '@/lib/validation';
 
 interface PixCheckoutModalProps {
   isOpen: boolean;
@@ -26,6 +33,7 @@ interface PixCheckoutModalProps {
   selectedGift: GiftItemData | null;
   initialGuess?: 'BOY' | 'GIRL' | null;
   feePayer?: 'GUEST' | 'PARENTS';
+  mpConnected?: boolean;
   onPaymentSuccess?: () => void;
 }
 
@@ -64,6 +72,7 @@ export default function PixCheckoutModal({
   const [payerName, setPayerName] = useState('');
   const [payerEmail, setPayerEmail] = useState('');
   const [payerPhone, setPayerPhone] = useState('');
+  const [payerCpf, setPayerCpf] = useState('');
   const [payerMessage, setPayerMessage] = useState('');
   const [pollGuess, setPollGuess] = useState<'BOY' | 'GIRL' | ''>(initialGuess || '');
   const [loading, setLoading] = useState(false);
@@ -76,6 +85,7 @@ export default function PixCheckoutModal({
   const [copied, setCopied] = useState(false);
   const [isSimulated, setIsSimulated] = useState(false);
   const [simulatingPayment, setSimulatingPayment] = useState(false);
+  const [checkingPayment, setCheckingPayment] = useState(false);
 
   // Estados específicos para Cartão de Crédito
   const [cardBrickReady, setCardBrickReady] = useState(false);
@@ -161,6 +171,22 @@ export default function PixCheckoutModal({
       return;
     }
 
+    if (!payerName.trim()) {
+      setError('Por favor, informe seu nome completo.');
+      return;
+    }
+
+    if (!isValidEmail(payerEmail)) {
+      setError('Por favor, informe um endereço de e-mail válido.');
+      return;
+    }
+
+    const digitsCpf = cleanDigits(payerCpf);
+    if (!digitsCpf || !isValidCpf(digitsCpf)) {
+      setError('Por favor, informe um CPF válido para a identificação da transação (exigência BACEN/Mercado Pago).');
+      return;
+    }
+
     if (paymentMethod === 'CARD') {
       // Se não houver chave pública configurada, permite fluxo demonstrativo simulado
       setStep('CARD_BRICK');
@@ -177,10 +203,11 @@ export default function PixCheckoutModal({
           eventId,
           giftItemId: selectedGift ? selectedGift.id : null,
           amount: finalNumericAmount,
-          payerName,
-          payerEmail,
-          payerPhone,
-          payerMessage,
+          payerName: payerName.trim(),
+          payerEmail: payerEmail.trim(),
+          payerPhone: payerPhone.trim() || null,
+          payerCpf: digitsCpf,
+          payerMessage: payerMessage.trim() || null,
           pollGuess: pollGuess || null,
         }),
       });
@@ -220,10 +247,11 @@ export default function PixCheckoutModal({
           eventId,
           giftItemId: selectedGift ? selectedGift.id : null,
           amount: finalNumericAmount,
-          payerName,
-          payerEmail,
-          payerPhone,
-          payerMessage,
+          payerName: payerName.trim(),
+          payerEmail: payerEmail.trim(),
+          payerPhone: payerPhone.trim() || null,
+          payerCpf: cleanDigits(payerCpf),
+          payerMessage: payerMessage.trim() || null,
           pollGuess: pollGuess || null,
           card: formData,
         }),
@@ -264,10 +292,11 @@ export default function PixCheckoutModal({
           eventId,
           giftItemId: selectedGift ? selectedGift.id : null,
           amount: finalNumericAmount,
-          payerName,
-          payerEmail,
-          payerPhone,
-          payerMessage,
+          payerName: payerName.trim(),
+          payerEmail: payerEmail.trim(),
+          payerPhone: payerPhone.trim() || null,
+          payerCpf: cleanDigits(payerCpf),
+          payerMessage: payerMessage.trim() || null,
           pollGuess: pollGuess || null,
           simulate: true,
         }),
@@ -284,6 +313,25 @@ export default function PixCheckoutModal({
       setError(msg);
     } finally {
       setCardProcessing(false);
+    }
+  };
+
+  const handleManualCheck = async () => {
+    if (!orderId) return;
+    setCheckingPayment(true);
+    try {
+      const res = await fetch(`/api/orders/${orderId}`);
+      const data = await res.json();
+      if (data.status === 'APPROVED') {
+        handleSuccess();
+      } else {
+        setError('O pagamento ainda não foi identificado pelo banco. Aguarde mais alguns segundos.');
+        setTimeout(() => setError(''), 4500);
+      }
+    } catch (err) {
+      console.error('Erro na checagem manual:', err);
+    } finally {
+      setCheckingPayment(false);
     }
   };
 
@@ -477,7 +525,7 @@ export default function PixCheckoutModal({
                 />
               </div>
 
-              {/* E-mail & Telefone */}
+              {/* E-mail & CPF */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
@@ -495,16 +543,33 @@ export default function PixCheckoutModal({
 
                 <div>
                   <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
-                    WhatsApp (Opcional)
+                    Seu CPF *
                   </label>
                   <input
-                    type="tel"
-                    value={payerPhone}
-                    onChange={(e) => setPayerPhone(e.target.value)}
-                    placeholder="(11) 99999-9999"
-                    className="w-full px-3.5 py-2.5 rounded-lg border border-warm-border bg-cream-50/50 text-charcoal-900 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-charcoal-900"
+                    type="text"
+                    required
+                    maxLength={14}
+                    value={payerCpf}
+                    onChange={(e) => setPayerCpf(formatCpf(e.target.value))}
+                    placeholder="000.000.000-00"
+                    className="w-full px-3.5 py-2.5 rounded-lg border border-warm-border bg-cream-50/50 text-charcoal-900 text-xs font-mono focus:bg-white focus:outline-none focus:ring-1 focus:ring-charcoal-900"
                   />
                 </div>
+              </div>
+
+              {/* Telefone / WhatsApp */}
+              <div>
+                <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
+                  WhatsApp / Telefone (Opcional)
+                </label>
+                <input
+                  type="tel"
+                  maxLength={15}
+                  value={payerPhone}
+                  onChange={(e) => setPayerPhone(formatPhone(e.target.value))}
+                  placeholder="(11) 99999-9999"
+                  className="w-full px-3.5 py-2.5 rounded-lg border border-warm-border bg-cream-50/50 text-charcoal-900 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-charcoal-900"
+                />
               </div>
 
               {/* Palpite no Bolão */}
@@ -629,10 +694,33 @@ export default function PixCheckoutModal({
               </button>
             </div>
 
-            <div className="flex items-center justify-center gap-2 text-xs font-mono text-charcoal-600 bg-cream-100/70 py-2.5 px-4 rounded-lg border border-warm-border mb-4">
+            <div className="flex items-center justify-center gap-2 text-xs font-mono text-charcoal-600 bg-cream-100/70 py-2.5 px-4 rounded-lg border border-warm-border mb-3">
               <span className="w-2 h-2 rounded-full bg-stone-500 animate-pulse" />
               <span>Aguardando confirmação do pagamento...</span>
             </div>
+
+            {error && (
+              <div className="mb-3 p-2.5 rounded-lg bg-cream-100 text-charcoal-700 text-xs font-sans border border-warm-border flex items-center justify-center gap-2">
+                <AlertCircle className="w-3.5 h-3.5 text-stone-500 shrink-0" />
+                <span>{error}</span>
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={handleManualCheck}
+              disabled={checkingPayment}
+              className="w-full py-2.5 px-3 rounded-lg text-xs font-medium text-charcoal-700 bg-cream-50 hover:bg-cream-100 border border-warm-border transition flex items-center justify-center gap-2 mb-4"
+            >
+              {checkingPayment ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>Consultando banco...</span>
+                </>
+              ) : (
+                <span>Já fiz o Pix (Verificar agora)</span>
+              )}
+            </button>
 
             <div className="flex items-center justify-between gap-2 pt-2 border-t border-warm-border">
               <button
@@ -694,6 +782,14 @@ export default function PixCheckoutModal({
                       amount: feeCalculation.chargeAmount,
                       payer: {
                         email: payerEmail,
+                        ...(cleanDigits(payerCpf)
+                          ? {
+                              identification: {
+                                type: 'CPF',
+                                number: cleanDigits(payerCpf),
+                              },
+                            }
+                          : {}),
                       },
                     }}
                     customization={{

@@ -26,6 +26,7 @@ export async function POST(req: NextRequest) {
       payerName,
       payerEmail,
       payerPhone,
+      payerCpf,
       payerMessage,
       pollGuess,
       card,
@@ -108,6 +109,11 @@ export async function POST(req: NextRequest) {
 
     const installments = Math.min(Math.max(Number(card?.installments) || 1, 1), MAX_INSTALLMENTS);
 
+    const cleanCpfDigits = (payerCpf || card?.payer?.identification?.number || '')
+      .toString()
+      .replace(/\D/g, '')
+      .slice(0, 11);
+
     const order = await prisma.order.create({
       data: {
         eventId,
@@ -121,6 +127,7 @@ export async function POST(req: NextRequest) {
         payerName: String(payerName).trim(),
         payerEmail: String(payerEmail).trim().toLowerCase(),
         payerPhone: payerPhone?.trim() || null,
+        payerCpf: cleanCpfDigits || null,
         payerMessage: payerMessage?.trim() || null,
         pollGuess: pollGuess === 'BOY' || pollGuess === 'GIRL' ? pollGuess : null,
         paymentMethod: 'CREDIT_CARD',
@@ -156,7 +163,9 @@ export async function POST(req: NextRequest) {
         installments,
         payerEmail: card.payer?.email || order.payerEmail,
         payerName: order.payerName,
-        identification: card.payer?.identification,
+        identification:
+          card.payer?.identification ||
+          (cleanCpfDigits ? { type: 'CPF', number: cleanCpfDigits } : undefined),
         sellerAccessToken: event.mpAccessToken || null,
         applicationFee: feeCalc.platformFee,
         idempotencyKey:

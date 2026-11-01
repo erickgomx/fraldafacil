@@ -1,15 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Save,
   CheckCircle2,
   AlertCircle,
-  ExternalLink,
   ShieldCheck,
   Unlink,
+  CreditCard,
+  QrCode,
+  ArrowRight,
 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 interface ConfigClientProps {
   event: {
@@ -20,12 +22,14 @@ interface ConfigClientProps {
     storyMessage: string | null;
     pixKey: string | null;
     mpConnected?: boolean;
+    mpUserId?: string | null;
     feePayer?: 'GUEST' | 'PARENTS';
   };
 }
 
 export default function ConfigClient({ event }: ConfigClientProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [parentsNames, setParentsNames] = useState(event.parentsNames);
   const [babyName, setBabyName] = useState(event.babyName || '');
   const [eventDate, setEventDate] = useState(event.eventDate.split('T')[0] || '');
@@ -39,6 +43,43 @@ export default function ConfigClient({ event }: ConfigClientProps) {
   const [simulatingConnect, setSimulatingConnect] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
+  const [oauthNotice, setOauthNotice] = useState<{
+    type: 'success' | 'error' | 'info';
+    message: string;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!searchParams) return;
+    if (searchParams.get('oauth_success') === 'true') {
+      setOauthNotice({
+        type: 'success',
+        message:
+          'Sua conta do Mercado Pago foi conectada com sucesso! Agora você já pode receber presentes via Pix e Cartão com split automático diretamente na sua conta.',
+      });
+      setMpConnected(true);
+    } else if (searchParams.get('error')) {
+      const err = searchParams.get('error');
+      const messages: Record<string, string> = {
+        oauth_rejected:
+          'A autorização foi cancelada ou recusada no Mercado Pago. Clique novamente para autorizar.',
+        token_exchange:
+          'Não foi possível validar as credenciais do Mercado Pago. Verifique as chaves MERCADO_PAGO_CLIENT_ID e MERCADO_PAGO_CLIENT_SECRET na Vercel.',
+        invalid_or_expired_state:
+          'A sessão de conexão expirou por segurança. Inicie a conexão novamente.',
+        unauthorized_session: 'Sessão inválida ao vincular a conta do Mercado Pago.',
+      };
+      setOauthNotice({
+        type: 'error',
+        message: messages[err!] || 'Ocorreu um erro ao conectar sua conta do Mercado Pago.',
+      });
+    } else if (searchParams.get('oauth_simulated') === 'ready') {
+      setOauthNotice({
+        type: 'info',
+        message:
+          'Credenciais de produção do Mercado Pago ainda não foram configuradas na Vercel. Você pode usar a Simulação de Conexão abaixo para testes.',
+      });
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -132,6 +173,30 @@ export default function ConfigClient({ event }: ConfigClientProps) {
         </p>
       </div>
 
+      {oauthNotice && (
+        <div
+          className={`p-4 rounded-xl text-xs font-sans border flex items-start gap-3 shadow-subtle ${
+            oauthNotice.type === 'success'
+              ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+              : oauthNotice.type === 'error'
+              ? 'bg-dusty-rose-light text-dusty-rose border-dusty-rose/30'
+              : 'bg-cream-100 text-charcoal-700 border-warm-border'
+          }`}
+        >
+          {oauthNotice.type === 'success' ? (
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+          ) : (
+            <AlertCircle className="w-4 h-4 text-stone-600 shrink-0 mt-0.5" />
+          )}
+          <div className="flex-1">
+            <span className="font-medium block mb-0.5">
+              {oauthNotice.type === 'success' ? 'Vinculação Concluída' : 'Aviso do Sistema'}
+            </span>
+            <span className="leading-relaxed">{oauthNotice.message}</span>
+          </div>
+        </div>
+      )}
+
       {success && (
         <div className="p-3 rounded-lg bg-emerald-50 text-emerald-800 text-xs font-sans border border-emerald-200 flex items-center gap-2">
           <CheckCircle2 className="w-4 h-4 text-emerald-600" />
@@ -169,58 +234,119 @@ export default function ConfigClient({ event }: ConfigClientProps) {
               Conta do Mercado Pago dos Pais
             </h2>
             <p className="text-xs text-charcoal-500 mt-1 font-sans leading-relaxed">
-              Obrigatório para que os valores dos presentes caiam diretamente na sua conta bancária sem intermediação de terceiros, com total segurança jurídica e fiscal.
+              Obrigatório para que o dinheiro dos presentes caia diretamente na sua conta bancária sem intermediação de terceiros, com total segurança jurídica e fiscal.
             </p>
           </div>
         </div>
 
         {mpConnected ? (
-          <div className="bg-cream-50 p-4 rounded-xl border border-warm-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5">
-              <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0" />
-              <div>
-                <span className="text-xs font-medium text-charcoal-900 block">
-                  Pronto para receber Pix e Cartão!
+          <div className="space-y-3">
+            <div className="bg-cream-50 p-4 rounded-xl border border-warm-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-start gap-2.5">
+                <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-charcoal-900">
+                      Pronto para receber presentes!
+                    </span>
+                    {event.mpUserId && (
+                      <span className="text-[10px] font-mono text-charcoal-400 bg-white px-2 py-0.5 rounded border border-warm-border">
+                        ID: {event.mpUserId}
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-[11px] text-charcoal-500 block mt-1 leading-relaxed">
+                    O dinheiro líquido dos presentes é creditado automaticamente na sua conta Mercado Pago. Você pode transferir para qualquer banco via Pix gratuitamente pelo app do Mercado Pago.
+                  </span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleDisconnectMP}
+                disabled={disconnecting}
+                className="py-1.5 px-3 rounded-lg text-xs font-medium text-dusty-rose bg-white hover:bg-dusty-rose-light border border-dusty-rose/30 transition flex items-center gap-1.5 shrink-0 self-start sm:self-center"
+              >
+                <Unlink className="w-3.5 h-3.5" />
+                <span>{disconnecting ? 'Desconectando...' : 'Desconectar conta'}</span>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              <div className="p-3 bg-white rounded-xl border border-warm-border flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-cream-100 flex items-center justify-center text-charcoal-700 shrink-0">
+                  <QrCode className="w-4 h-4" />
+                </div>
+                <div>
+                  <span className="text-xs font-medium text-charcoal-900 block">Pix Instantâneo</span>
+                  <span className="text-[10px] text-charcoal-500 block">Crédito imediato no seu saldo</span>
+                </div>
+              </div>
+
+              <div className="p-3 bg-white rounded-xl border border-warm-border flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-cream-100 flex items-center justify-center text-charcoal-700 shrink-0">
+                  <CreditCard className="w-4 h-4" />
+                </div>
+                <div>
+                  <span className="text-xs font-medium text-charcoal-900 block">Cartão de Crédito</span>
+                  <span className="text-[10px] text-charcoal-500 block">Em até 12x para os convidados</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-4 pt-1">
+            {/* Como funciona para os pais */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+              <div className="p-3 rounded-xl bg-cream-50/80 border border-warm-border">
+                <span className="w-5 h-5 rounded-full bg-charcoal-900 text-white text-[10px] font-mono flex items-center justify-center mb-1.5">
+                  1
                 </span>
-                <span className="text-[11px] text-charcoal-500 block">
-                  O dinheiro dos presentes é creditado automaticamente na sua conta Mercado Pago.
+                <strong className="block text-charcoal-900 mb-0.5">Clique em Conectar</strong>
+                <p className="text-[11px] text-charcoal-500 font-sans leading-relaxed">
+                  Você será levado para a tela oficial de login do Mercado Pago.
+                </p>
+              </div>
+
+              <div className="p-3 rounded-xl bg-cream-50/80 border border-warm-border">
+                <span className="w-5 h-5 rounded-full bg-charcoal-900 text-white text-[10px] font-mono flex items-center justify-center mb-1.5">
+                  2
                 </span>
+                <strong className="block text-charcoal-900 mb-0.5">Autorize o Split</strong>
+                <p className="text-[11px] text-charcoal-500 font-sans leading-relaxed">
+                  Faça login com sua conta (ou crie uma em instantes) e autorize a vinculação.
+                </p>
+              </div>
+
+              <div className="p-3 rounded-xl bg-cream-50/80 border border-warm-border">
+                <span className="w-5 h-5 rounded-full bg-charcoal-900 text-white text-[10px] font-mono flex items-center justify-center mb-1.5">
+                  3
+                </span>
+                <strong className="block text-charcoal-900 mb-0.5">Receba os Presentes</strong>
+                <p className="text-[11px] text-charcoal-500 font-sans leading-relaxed">
+                  O dinheiro cai na sua conta sem intermediários, pronto para resgate via Pix.
+                </p>
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={handleDisconnectMP}
-              disabled={disconnecting}
-              className="py-1.5 px-3 rounded-lg text-xs font-medium text-dusty-rose bg-white hover:bg-dusty-rose-light border border-dusty-rose/30 transition flex items-center gap-1.5 shrink-0 self-start sm:self-center"
-            >
-              <Unlink className="w-3.5 h-3.5" />
-              <span>{disconnecting ? 'Desconectando...' : 'Desconectar conta'}</span>
-            </button>
-          </div>
-        ) : (
-          <div className="space-y-3 pt-2">
-            <div className="flex flex-col sm:flex-row gap-2">
+            <div className="flex flex-col sm:flex-row gap-2 pt-1">
               <a
                 href={`/api/auth/mercadopago/connect?eventId=${event.id}`}
-                className="py-2.5 px-4 rounded-xl text-xs font-semibold bg-[#009EE3] hover:bg-[#0082ba] text-white shadow-subtle transition flex items-center justify-center gap-2"
+                className="py-3 px-5 rounded-xl text-xs font-semibold bg-[#009EE3] hover:bg-[#0082ba] text-white shadow-subtle transition flex items-center justify-center gap-2 group"
               >
                 <span>Conectar com Mercado Pago</span>
-                <ExternalLink className="w-3.5 h-3.5" />
+                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
               </a>
 
               <button
                 type="button"
                 onClick={handleSimulateMP}
                 disabled={simulatingConnect}
-                className="py-2.5 px-3.5 rounded-xl text-xs font-medium bg-cream-100 hover:bg-cream-200/70 border border-warm-border text-charcoal-700 transition"
+                className="py-3 px-4 rounded-xl text-xs font-medium bg-cream-100 hover:bg-cream-200/70 border border-warm-border text-charcoal-700 transition"
               >
                 {simulatingConnect ? 'Conectando...' : 'Simular Conexão (Ambiente Local/Teste)'}
               </button>
             </div>
-            <p className="text-[11px] text-charcoal-400 font-sans">
-              Você será redirecionado para a tela oficial de login do Mercado Pago para autorizar a divisão de valores.
-            </p>
           </div>
         )}
       </div>

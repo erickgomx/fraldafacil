@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { createPixPayment } from '@/lib/mercadopago';
 import { calculatePaymentFees } from '@/lib/fees';
+import { cleanDigits, isValidCpf, isValidEmail } from '@/lib/validation';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,13 +16,30 @@ export async function POST(req: NextRequest) {
       payerName,
       payerEmail,
       payerPhone,
+      payerCpf,
       payerMessage,
       pollGuess,
     } = body;
 
-    if (!eventId || !amount || !payerName || !payerEmail) {
+    if (!eventId || !amount || !payerName?.trim() || !payerEmail?.trim()) {
       return NextResponse.json(
         { error: 'Por favor, preencha nome, e-mail e o valor do presente.' },
+        { status: 400 }
+      );
+    }
+
+    if (!isValidEmail(payerEmail)) {
+      return NextResponse.json(
+        { error: 'Por favor, informe um endereço de e-mail válido.' },
+        { status: 400 }
+      );
+    }
+
+    // Validação de CPF (Obrigatório pelo Banco Central e Mercado Pago para emissão de Pix)
+    const digitsCpf = cleanDigits(payerCpf);
+    if (!digitsCpf || !isValidCpf(digitsCpf)) {
+      return NextResponse.json(
+        { error: 'Por favor, informe um CPF válido para a emissão segura do Pix.' },
         { status: 400 }
       );
     }
@@ -82,6 +100,7 @@ export async function POST(req: NextRequest) {
         payerName: payerName.trim(),
         payerEmail: payerEmail.trim().toLowerCase(),
         payerPhone: payerPhone?.trim() || null,
+        payerCpf: digitsCpf,
         payerMessage: payerMessage?.trim() || null,
         pollGuess: pollGuess === 'BOY' || pollGuess === 'GIRL' ? pollGuess : null,
         paymentMethod: 'PIX',
@@ -96,6 +115,7 @@ export async function POST(req: NextRequest) {
       description: `${giftTitle} - ${event.parentsNames}`,
       payerEmail: order.payerEmail,
       payerName: order.payerName,
+      payerCpf: digitsCpf,
       sellerAccessToken: event.mpAccessToken || null,
       applicationFee: feeCalc.platformFee,
     });

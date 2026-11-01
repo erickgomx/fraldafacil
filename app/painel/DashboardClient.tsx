@@ -130,16 +130,19 @@ export default function DashboardClient({
 
       {/* AVISO SE A CONTA MP NÃO ESTIVER CONECTADA */}
       {!event.mpConnected && (
-        <div className="bg-amber-50 border border-amber-250 p-4 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-2.5 text-amber-900">
-            <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse shrink-0" />
-            <span>
-              <strong>Atenção:</strong> Conecte sua conta do Mercado Pago para receber o dinheiro dos presentes diretamente e liberar a página para arrecadação.
-            </span>
+        <div className="bg-amber-50/90 border border-amber-300 p-5 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs shadow-subtle">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 text-amber-950 font-semibold">
+              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse shrink-0" />
+              <span>Conexão do Mercado Pago Pendente</span>
+            </div>
+            <p className="text-amber-900/80 text-[11px] leading-relaxed max-w-xl font-sans">
+              Para que os presentes em dinheiro caiam diretamente na sua conta bancária sem taxas escondidas, conecte sua conta do Mercado Pago em Configurações.
+            </p>
           </div>
           <Link
             href="/painel/configuracoes"
-            className="py-1.5 px-3 rounded-lg bg-amber-900 text-white font-medium hover:bg-amber-800 transition text-center shrink-0"
+            className="py-2.5 px-4 rounded-xl bg-[#009EE3] hover:bg-[#0082ba] text-white font-semibold text-xs transition shadow-subtle text-center shrink-0"
           >
             Conectar Mercado Pago
           </Link>

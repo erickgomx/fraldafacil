@@ -16,6 +16,7 @@ export interface CreatePixInput {
   description: string;
   payerEmail: string;
   payerName: string;
+  payerCpf?: string | null;
   sellerAccessToken?: string | null;
   applicationFee?: number;
 }
@@ -54,6 +55,7 @@ export interface CardPaymentResponse {
 }
 
 export async function createCardPayment(input: CreateCardInput): Promise<CardPaymentResponse> {
+  const isMarketplace = Boolean(input.sellerAccessToken && input.sellerAccessToken.trim() !== '');
   const token = input.sellerAccessToken || (process.env.MERCADO_PAGO_ACCESS_TOKEN as string);
   const { MercadoPagoConfig, Payment } = await import('mercadopago');
   const client = new MercadoPagoConfig({ accessToken: token });
@@ -61,6 +63,9 @@ export async function createCardPayment(input: CreateCardInput): Promise<CardPay
 
   const nameParts = input.payerName.trim().split(/\s+/);
   const issuer = input.issuerId ? Number(input.issuerId) : undefined;
+  const cleanCpf = input.identification?.number
+    ? String(input.identification.number).replace(/\D/g, '')
+    : '';
 
   const res = await payment.create({
     body: {
@@ -69,7 +74,7 @@ export async function createCardPayment(input: CreateCardInput): Promise<CardPay
       description: input.description,
       installments: Number(input.installments) || 1,
       payment_method_id: input.paymentMethodId,
-      ...(input.applicationFee && input.applicationFee > 0
+      ...(isMarketplace && input.applicationFee && input.applicationFee > 0
         ? { application_fee: Number(input.applicationFee.toFixed(2)) }
         : {}),
       ...(issuer && !isNaN(issuer) ? { issuer_id: issuer } : {}),
@@ -77,11 +82,11 @@ export async function createCardPayment(input: CreateCardInput): Promise<CardPay
         email: input.payerEmail,
         first_name: nameParts[0] || 'Convidado',
         last_name: nameParts.slice(1).join(' ') || 'Especial',
-        ...(input.identification?.type && input.identification?.number
+        ...(cleanCpf
           ? {
               identification: {
-                type: input.identification.type,
-                number: String(input.identification.number).replace(/\D/g, ''),
+                type: input.identification?.type || 'CPF',
+                number: cleanCpf,
               },
             }
           : {}),
@@ -126,6 +131,7 @@ export function cardStatusMessage(status: string, detail: string): string {
 }
 
 export async function createPixPayment(input: CreatePixInput): Promise<PixPaymentResponse> {
+  const isMarketplace = Boolean(input.sellerAccessToken && input.sellerAccessToken.trim() !== '');
   const token = input.sellerAccessToken || process.env.MERCADO_PAGO_ACCESS_TOKEN;
 
   // Se houver token do Mercado Pago configurado, tenta a chamada oficial
@@ -135,22 +141,31 @@ export async function createPixPayment(input: CreatePixInput): Promise<PixPaymen
       const client = new MercadoPagoConfig({ accessToken: token });
       const payment = new Payment(client);
 
-      const nameParts = input.payerName.trim().split(' ');
+      const nameParts = input.payerName.trim().split(/\s+/);
       const firstName = nameParts[0] || 'Convidado';
       const lastName = nameParts.slice(1).join(' ') || 'Especial';
+      const cleanCpf = input.payerCpf ? input.payerCpf.replace(/\D/g, '') : '';
 
       const res = await payment.create({
         body: {
           transaction_amount: Number(input.amount.toFixed(2)),
           description: input.description,
           payment_method_id: 'pix',
-          ...(input.applicationFee && input.applicationFee > 0
+          ...(isMarketplace && input.applicationFee && input.applicationFee > 0
             ? { application_fee: Number(input.applicationFee.toFixed(2)) }
             : {}),
           payer: {
             email: input.payerEmail || 'contato@fraldafacil.com.br',
             first_name: firstName,
             last_name: lastName,
+            ...(cleanCpf && cleanCpf.length === 11
+              ? {
+                  identification: {
+                    type: 'CPF',
+                    number: cleanCpf,
+                  },
+                }
+              : {}),
           },
           external_reference: input.orderId,
           notification_url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://fraldafacil.com.br'}/api/webhooks/mercadopago`,

@@ -81,6 +81,7 @@ model Order {
   payerName      String
   payerEmail     String
   payerPhone     String?
+  payerCpf       String?       // CPF do pagador (limpo, 11 dígitos)
   payerMessage   String?
   pollGuess      String?       // Se o presente veio com palpite no bolão ("BOY" | "GIRL")
   paymentMethod  String        @default("PIX")
