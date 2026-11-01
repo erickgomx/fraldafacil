@@ -137,10 +137,23 @@ export async function POST(req: NextRequest) {
     });
 
     return response;
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Erro no registro:', error);
+    const message = error instanceof Error ? error.message : String(error);
+    
+    let userHelp = '';
+    if (message.includes('DATABASE_URL') || message.includes('Environment variable not found')) {
+      userHelp = ' [Causa: A variável DATABASE_URL não está configurada no painel da Vercel (Project Settings > Environment Variables)].';
+    } else if (message.includes('readonly') || message.includes('unable to open database file') || message.includes('dev.db')) {
+      userHelp = ' [Causa: O banco de dados SQLite local não permite escrita na Vercel. Conecte um banco PostgreSQL (Neon/Supabase) na variável DATABASE_URL da Vercel].';
+    } else if (message.includes('P2002')) {
+      userHelp = ' [Causa: Este e-mail ou link de evento já está em uso].';
+    } else if (message.includes('P2021') || message.includes('does not exist in the current database')) {
+      userHelp = ' [Causa: As tabelas do banco ainda não foram criadas. Execute npx prisma db push no seu banco de dados].';
+    }
+
     return NextResponse.json(
-      { error: 'Ocorreu um erro interno ao criar sua conta. Tente novamente.' },
+      { error: `Falha ao criar conta: ${message}${userHelp}` },
       { status: 500 }
     );
   }

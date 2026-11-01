@@ -65,10 +65,11 @@ export async function POST(req: NextRequest) {
     });
 
     return response;
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Erro no login:', error);
+    const message = error instanceof Error ? error.message : String(error);
     return NextResponse.json(
-      { error: 'Ocorreu um erro interno ao efetuar o login.' },
+      { error: `Erro ao fazer login: ${message}` },
       { status: 500 }
     );
   }
