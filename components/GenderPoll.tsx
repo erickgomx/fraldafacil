@@ -9,6 +9,8 @@ const EASE = [0.22, 1, 0.36, 1] as const;
 
 interface GenderPollProps {
   eventId: string;
+  boyName?: string | null;
+  girlName?: string | null;
   initialBoyVotes?: number;
   initialGirlVotes?: number;
   onOpenPixModalWithGuess?: (guess: 'BOY' | 'GIRL') => void;
@@ -16,6 +18,8 @@ interface GenderPollProps {
 
 export default function GenderPoll({
   eventId,
+  boyName,
+  girlName,
   initialBoyVotes = 0,
   initialGirlVotes = 0,
   onOpenPixModalWithGuess,
@@ -137,16 +141,18 @@ export default function GenderPoll({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <button
             onClick={() => handleOpenVoteModal('BOY')}
-            className="py-3 px-4 rounded-lg font-medium text-xs bg-dusty-blue-light border border-dusty-blue/30 text-dusty-blue hover:bg-dusty-blue/15 hover:-translate-y-0.5 hover:shadow-card active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-2"
+            className="py-3 px-4 rounded-xl font-medium text-xs bg-dusty-blue-light border border-dusty-blue/30 text-dusty-blue hover:bg-dusty-blue/20 hover:-translate-y-0.5 hover:shadow-card active:scale-[0.98] transition-all duration-300 flex flex-col items-center justify-center gap-0.5"
           >
-            <span>Torço por Menino</span>
+            <span className="font-semibold">Torço por Menino 💙</span>
+            {boyName && <span className="text-[11px] font-serif italic text-dusty-blue/90">({boyName})</span>}
           </button>
 
           <button
             onClick={() => handleOpenVoteModal('GIRL')}
-            className="py-3 px-4 rounded-lg font-medium text-xs bg-dusty-rose-light border border-dusty-rose/30 text-dusty-rose hover:bg-dusty-rose/15 hover:-translate-y-0.5 hover:shadow-card active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-2"
+            className="py-3 px-4 rounded-xl font-medium text-xs bg-dusty-rose-light border border-dusty-rose/30 text-dusty-rose hover:bg-dusty-rose/20 hover:-translate-y-0.5 hover:shadow-card active:scale-[0.98] transition-all duration-300 flex flex-col items-center justify-center gap-0.5"
           >
-            <span>Torço por Menina</span>
+            <span className="font-semibold">Torço por Menina 🌸</span>
+            {girlName && <span className="text-[11px] font-serif italic text-dusty-rose/90">({girlName})</span>}
           </button>
         </div>
 
@@ -189,7 +195,14 @@ export default function GenderPoll({
                 Confirmar Voto
               </span>
               <h3 className="font-serif text-xl text-charcoal-900 font-normal">
-                Você aposta em {selectedGuess === 'BOY' ? 'Menino' : 'Menina'}
+                Você aposta em{' '}
+                {selectedGuess === 'BOY'
+                  ? boyName
+                    ? `Menino (${boyName})`
+                    : 'Menino'
+                  : girlName
+                  ? `Menina (${girlName})`
+                  : 'Menina'}
               </h3>
               <p className="text-xs text-charcoal-500 mt-1 font-sans">
                 Informe seu nome para que os pais vejam seu palpite

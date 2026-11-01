@@ -18,6 +18,8 @@ interface ConfigClientProps {
     id: string;
     parentsNames: string;
     babyName: string | null;
+    boyName?: string | null;
+    girlName?: string | null;
     eventDate: string;
     storyMessage: string | null;
     pixKey: string | null;
@@ -32,6 +34,8 @@ export default function ConfigClient({ event }: ConfigClientProps) {
   const searchParams = useSearchParams();
   const [parentsNames, setParentsNames] = useState(event.parentsNames);
   const [babyName, setBabyName] = useState(event.babyName || '');
+  const [boyName, setBoyName] = useState(event.boyName || '');
+  const [girlName, setGirlName] = useState(event.girlName || '');
   const [eventDate, setEventDate] = useState(event.eventDate.split('T')[0] || '');
   const [storyMessage, setStoryMessage] = useState(event.storyMessage || '');
   const [pixKey, setPixKey] = useState(event.pixKey || '');
@@ -95,6 +99,8 @@ export default function ConfigClient({ event }: ConfigClientProps) {
           id: event.id,
           parentsNames,
           babyName,
+          boyName,
+          girlName,
           eventDate: eventDate || undefined,
           storyMessage,
           pixKey,
@@ -437,17 +443,60 @@ export default function ConfigClient({ event }: ConfigClientProps) {
             />
           </div>
 
-          <div>
-            <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
-              Nome do Bebê (ou nomes em dúvida)
-            </label>
-            <input
-              type="text"
-              value={babyName}
-              onChange={(e) => setBabyName(e.target.value)}
-              placeholder="Ex: Leonardo ou Arthur / Maya"
-              className="w-full px-3.5 py-2.5 rounded-lg border border-warm-border text-xs text-charcoal-900 focus:outline-none focus:ring-1 focus:ring-charcoal-900"
-            />
+          {/* Nomes dos Bebês (Menino e Menina) */}
+          <div className="p-4 bg-cream-50/70 rounded-xl border border-warm-border space-y-3">
+            <div>
+              <span className="text-[10px] font-mono uppercase tracking-widest text-charcoal-400 block mb-1">
+                Chá Revelação
+              </span>
+              <span className="text-xs font-semibold text-charcoal-900 block">
+                Nomes do Menino e da Menina
+              </span>
+              <p className="text-[11px] text-charcoal-500 font-sans mt-0.5">
+                Ao registrar os dois nomes, eles aparecem no bolão. Assim que você revelar o sexo, o nome vencedor ganha destaque no topo da página!
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              <div>
+                <label className="block text-[11px] font-mono uppercase text-dusty-blue mb-1 font-semibold">
+                  Nome se for Menino 💙
+                </label>
+                <input
+                  type="text"
+                  value={boyName}
+                  onChange={(e) => setBoyName(e.target.value)}
+                  placeholder="Ex: Arthur"
+                  className="w-full px-3.5 py-2.5 rounded-lg border border-dusty-blue/30 bg-white text-xs text-charcoal-900 focus:outline-none focus:ring-1 focus:ring-dusty-blue"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-mono uppercase text-dusty-rose mb-1 font-semibold">
+                  Nome se for Menina 🌸
+                </label>
+                <input
+                  type="text"
+                  value={girlName}
+                  onChange={(e) => setGirlName(e.target.value)}
+                  placeholder="Ex: Helena"
+                  className="w-full px-3.5 py-2.5 rounded-lg border border-dusty-rose/30 bg-white text-xs text-charcoal-900 focus:outline-none focus:ring-1 focus:ring-dusty-rose"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
+                Título ou Nome Geral do Chá (Opcional)
+              </label>
+              <input
+                type="text"
+                value={babyName}
+                onChange={(e) => setBabyName(e.target.value)}
+                placeholder="Ex: Arthur ou Helena (deixe em branco para usar os nomes acima)"
+                className="w-full px-3.5 py-2 rounded-lg border border-warm-border bg-white text-xs text-charcoal-700 focus:outline-none focus:ring-1 focus:ring-charcoal-900"
+              />
+            </div>
           </div>
 
           <div>

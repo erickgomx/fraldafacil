@@ -19,6 +19,8 @@ export default async function ConfiguracoesPage() {
         id: event.id,
         parentsNames: event.parentsNames,
         babyName: event.babyName,
+        boyName: event.boyName,
+        girlName: event.girlName,
         eventDate: event.eventDate.toISOString(),
         storyMessage: event.storyMessage,
         pixKey: event.pixKey,

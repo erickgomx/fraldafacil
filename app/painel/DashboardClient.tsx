@@ -13,6 +13,8 @@ interface DashboardClientProps {
     id: string;
     slug: string;
     babyName: string | null;
+    boyName?: string | null;
+    girlName?: string | null;
     parentsNames: string;
     revealedGender: string | null;
     pixKey: string | null;
@@ -214,13 +216,22 @@ export default function DashboardClient({
 
           {revealed && (
             <span
-              className={`py-1 px-3 rounded-full text-xs font-mono border ${
+              className={`py-1.5 px-3.5 rounded-full text-xs font-mono font-medium border flex items-center gap-1.5 shadow-subtle ${
                 revealed === 'BOY'
                   ? 'bg-dusty-blue-light border-dusty-blue/30 text-dusty-blue'
                   : 'bg-dusty-rose-light border-dusty-rose/30 text-dusty-rose'
               }`}
             >
-              Atualmente revelado: {revealed === 'BOY' ? 'Menino' : 'Menina'}
+              <span>Revelado:</span>
+              <strong>
+                {revealed === 'BOY'
+                  ? event.boyName
+                    ? `Menino (${event.boyName}) 💙`
+                    : 'Menino 💙'
+                  : event.girlName
+                  ? `Menina (${event.girlName}) 🌸`
+                  : 'Menina 🌸'}
+              </strong>
             </span>
           )}
         </div>
@@ -229,25 +240,31 @@ export default function DashboardClient({
           <button
             onClick={() => handleRevealGender('BOY')}
             disabled={loadingGender}
-            className={`py-3 px-4 rounded-lg font-medium text-xs transition border flex items-center justify-center gap-2 ${
+            className={`py-3.5 px-4 rounded-xl font-medium text-xs transition border flex flex-col items-center justify-center gap-0.5 ${
               revealed === 'BOY'
-                ? 'bg-dusty-blue text-white border-dusty-blue'
-                : 'bg-dusty-blue-light text-dusty-blue border-dusty-blue/30 hover:bg-dusty-blue/20'
+                ? 'bg-dusty-blue text-white border-dusty-blue shadow-subtle font-semibold'
+                : 'bg-dusty-blue-light/70 text-dusty-blue border-dusty-blue/30 hover:bg-dusty-blue/20'
             }`}
           >
-            <span>É um Menino</span>
+            <span className="font-semibold text-xs">É um Menino 💙</span>
+            {event.boyName && (
+              <span className="text-[11px] opacity-90 font-serif italic">({event.boyName})</span>
+            )}
           </button>
 
           <button
             onClick={() => handleRevealGender('GIRL')}
             disabled={loadingGender}
-            className={`py-3 px-4 rounded-lg font-medium text-xs transition border flex items-center justify-center gap-2 ${
+            className={`py-3.5 px-4 rounded-xl font-medium text-xs transition border flex flex-col items-center justify-center gap-0.5 ${
               revealed === 'GIRL'
-                ? 'bg-dusty-rose text-white border-dusty-rose'
-                : 'bg-dusty-rose-light text-dusty-rose border-dusty-rose/30 hover:bg-dusty-rose/20'
+                ? 'bg-dusty-rose text-white border-dusty-rose shadow-subtle font-semibold'
+                : 'bg-dusty-rose-light/70 text-dusty-rose border-dusty-rose/30 hover:bg-dusty-rose/20'
             }`}
           >
-            <span>É uma Menina</span>
+            <span className="font-semibold text-xs">É uma Menina 🌸</span>
+            {event.girlName && (
+              <span className="text-[11px] opacity-90 font-serif italic">({event.girlName})</span>
+            )}
           </button>
 
           <button

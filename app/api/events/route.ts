@@ -16,6 +16,8 @@ export async function PUT(req: NextRequest) {
       id,
       parentsNames,
       babyName,
+      boyName,
+      girlName,
       eventDate,
       storyMessage,
       themeColor,
@@ -42,6 +44,8 @@ export async function PUT(req: NextRequest) {
       data: {
         ...(parentsNames !== undefined && { parentsNames: parentsNames.trim() }),
         ...(babyName !== undefined && { babyName: babyName ? babyName.trim() : null }),
+        ...(boyName !== undefined && { boyName: boyName ? boyName.trim() : null }),
+        ...(girlName !== undefined && { girlName: girlName ? girlName.trim() : null }),
         ...(eventDate !== undefined && { eventDate: new Date(eventDate) }),
         ...(storyMessage !== undefined && { storyMessage }),
         ...(themeColor !== undefined && { themeColor }),

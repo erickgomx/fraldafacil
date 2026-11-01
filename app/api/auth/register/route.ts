@@ -25,6 +25,8 @@ export async function POST(req: NextRequest) {
       slug: rawSlug,
       eventType = 'REVELACAO',
       babyName,
+      boyName,
+      girlName,
       eventDate,
     } = body;
 
@@ -89,7 +91,9 @@ export async function POST(req: NextRequest) {
           create: {
             slug,
             eventType,
-            babyName: babyName?.trim() || null,
+            babyName: babyName?.trim() || (boyName && girlName ? `${boyName.trim()} ou ${girlName.trim()}` : null),
+            boyName: boyName?.trim() || null,
+            girlName: girlName?.trim() || null,
             parentsNames: name.trim(),
             eventDate: parsedEventDate,
             themeColor: '#38BDF8',

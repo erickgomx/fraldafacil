@@ -49,6 +49,8 @@ export default async function PainelPage() {
         id: event.id,
         slug: event.slug,
         babyName: event.babyName,
+        boyName: event.boyName,
+        girlName: event.girlName,
         parentsNames: event.parentsNames,
         revealedGender: event.revealedGender,
         pixKey: event.pixKey,

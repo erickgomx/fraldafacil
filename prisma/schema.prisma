@@ -25,6 +25,8 @@ model Event {
   slug            String         @unique // Ex: "cha-do-leo", "revelacao-maya-ou-noah"
   eventType       String         @default("REVELACAO") // "REVELACAO" | "FRALDA" | "AMBOS"
   babyName        String?        // Nome do bebê ou nomes prováveis
+  boyName         String?        // Nome se for menino (ex: "Arthur")
+  girlName        String?        // Nome se for menina (ex: "Helena")
   parentsNames    String         // Ex: "Mariana e Rafael"
   eventDate       DateTime
   coverImageUrl   String?

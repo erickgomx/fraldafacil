@@ -11,6 +11,8 @@ export default function RegisterPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [babyName, setBabyName] = useState('');
+  const [boyName, setBoyName] = useState('');
+  const [girlName, setGirlName] = useState('');
   const [slug, setSlug] = useState('');
   const [eventType, setEventType] = useState<'REVELACAO' | 'FRALDA' | 'AMBOS'>('REVELACAO');
   const [eventDate, setEventDate] = useState('');
@@ -54,6 +56,8 @@ export default function RegisterPage() {
           password,
           slug,
           babyName,
+          boyName,
+          girlName,
           eventType,
           eventDate: eventDate || undefined,
         }),
@@ -159,18 +163,39 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            {/* Nome do Bebê */}
-            <div>
-              <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
-                Nome do Bebê (ou opções de nomes)
-              </label>
-              <input
-                type="text"
-                value={babyName}
-                onChange={(e) => handleBabyNameChange(e.target.value)}
-                placeholder="Ex: Leonardo (ou Clara / Arthur)"
-                className="w-full px-3.5 py-2.5 rounded-lg border border-warm-border bg-cream-50/50 text-charcoal-900 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-charcoal-900"
-              />
+            {/* Opções de Nomes Menino / Menina */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
+                  Nome se for Menino (Opcional)
+                </label>
+                <input
+                  type="text"
+                  value={boyName}
+                  onChange={(e) => {
+                    setBoyName(e.target.value);
+                    if (!babyName) handleBabyNameChange(e.target.value);
+                  }}
+                  placeholder="Ex: Arthur"
+                  className="w-full px-3.5 py-2.5 rounded-lg border border-warm-border bg-cream-50/50 text-charcoal-900 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-charcoal-900"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
+                  Nome se for Menina (Opcional)
+                </label>
+                <input
+                  type="text"
+                  value={girlName}
+                  onChange={(e) => {
+                    setGirlName(e.target.value);
+                    if (!babyName && !boyName) handleBabyNameChange(e.target.value);
+                  }}
+                  placeholder="Ex: Helena"
+                  className="w-full px-3.5 py-2.5 rounded-lg border border-warm-border bg-cream-50/50 text-charcoal-900 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-charcoal-900"
+                />
+              </div>
             </div>
 
             {/* Link Personalizado */}

@@ -20,9 +20,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
   }
 
-  const title = event.babyName
-    ? `Chá de ${event.babyName} (${event.parentsNames}) - Fralda Fácil`
-    : `Chá de Bebê de ${event.parentsNames} - Fralda Fácil`;
+  let title = `Chá de Bebê de ${event.parentsNames} - Fralda Fácil`;
+  if (event.revealedGender === 'BOY' && (event.boyName || event.babyName)) {
+    title = `É Menino! Chá de ${event.boyName || event.babyName} (${event.parentsNames}) - Fralda Fácil`;
+  } else if (event.revealedGender === 'GIRL' && (event.girlName || event.babyName)) {
+    title = `É Menina! Chá de ${event.girlName || event.babyName} (${event.parentsNames}) - Fralda Fácil`;
+  } else if (event.boyName && event.girlName) {
+    title = `Chá Revelação: ${event.boyName} ou ${event.girlName}? (${event.parentsNames}) - Fralda Fácil`;
+  } else if (event.babyName) {
+    title = `Chá de ${event.babyName} (${event.parentsNames}) - Fralda Fácil`;
+  }
 
   return {
     title,
@@ -72,6 +79,8 @@ export default async function PublicEventPage({ params }: Props) {
         slug: event.slug,
         eventType: event.eventType,
         babyName: event.babyName,
+        boyName: event.boyName,
+        girlName: event.girlName,
         parentsNames: event.parentsNames,
         eventDate: event.eventDate.toISOString(),
         coverImageUrl: event.coverImageUrl,

@@ -41,6 +41,8 @@ function RollingNumber({ value }: { value: number }) {
 interface BabyHeroProps {
   parentsNames: string;
   babyName?: string | null;
+  boyName?: string | null;
+  girlName?: string | null;
   eventDate: string | Date;
   storyMessage?: string | null;
   coverImageUrl?: string | null;
@@ -52,6 +54,8 @@ interface BabyHeroProps {
 export default function BabyHero({
   parentsNames,
   babyName,
+  boyName,
+  girlName,
   eventDate,
   storyMessage,
   coverImageUrl,
@@ -105,6 +109,15 @@ export default function BabyHero({
     }
   }, [revealedGender]);
 
+  const isBoy = revealedGender === 'BOY';
+  const isGirl = revealedGender === 'GIRL';
+  const isRevealed = Boolean(isBoy || isGirl);
+
+  // Nome do bebê revelado em destaque absoluto
+  const winnerName = isBoy
+    ? (boyName?.trim() || babyName?.trim() || 'Nosso Menino')
+    : (girlName?.trim() || babyName?.trim() || 'Nossa Menina');
+
   const eventLabel =
     eventType === 'REVELACAO'
       ? 'Chá Revelação'
@@ -116,8 +129,12 @@ export default function BabyHero({
     <section className="relative pt-10 pb-16 px-6 overflow-hidden">
       {/* Atmosfera suave ao fundo */}
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-0">
-        <div className="absolute -top-24 left-1/2 -translate-x-[70%] w-[420px] h-[420px] rounded-full bg-dusty-rose-light blur-3xl opacity-70 animate-drift" />
-        <div className="absolute top-10 left-1/2 translate-x-[5%] w-[380px] h-[380px] rounded-full bg-dusty-blue-light blur-3xl opacity-70 animate-drift [animation-delay:-7s]" />
+        <div className={`absolute -top-24 left-1/2 -translate-x-[70%] w-[420px] h-[420px] rounded-full blur-3xl transition-opacity duration-1000 ${
+          isRevealed ? (isGirl ? 'bg-dusty-rose-light opacity-90' : 'opacity-20') : 'bg-dusty-rose-light opacity-70 animate-drift'
+        }`} />
+        <div className={`absolute top-10 left-1/2 translate-x-[5%] w-[380px] h-[380px] rounded-full blur-3xl transition-opacity duration-1000 ${
+          isRevealed ? (isBoy ? 'bg-dusty-blue-light opacity-90' : 'opacity-20') : 'bg-dusty-blue-light opacity-70 animate-drift [animation-delay:-7s]'
+        }`} />
       </div>
 
       <motion.div
@@ -126,71 +143,96 @@ export default function BabyHero({
         animate="show"
         className="relative max-w-2xl mx-auto text-center"
       >
-        {/* Badge */}
-        <motion.div variants={rise} className="mb-6">
-          <AnimatePresence mode="wait" initial={false}>
-            {revealedGender ? (
-              <motion.div
-                key={revealedGender}
-                initial={{ opacity: 0, scale: 0.85, y: 6 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ type: 'spring', stiffness: 320, damping: 22 }}
-                className="inline-block"
+        {isRevealed ? (
+          /* QUANDO REVELADO: NOME DO BEBÊ EM DESTAQUE CINEMATOGRÁFICO ASSIM QUE ABRIR A PÁGINA */
+          <motion.div
+            variants={rise}
+            className={`p-6 sm:p-10 rounded-3xl border shadow-card mb-8 text-center relative overflow-hidden backdrop-blur-md transition-all duration-700 ${
+              isBoy
+                ? 'bg-gradient-to-b from-dusty-blue-light/90 via-cream-50/80 to-white border-dusty-blue/30 shadow-dusty-blue/10'
+                : 'bg-gradient-to-b from-dusty-rose-light/90 via-cream-50/80 to-white border-dusty-rose/30 shadow-dusty-rose/10'
+            }`}
+          >
+            {/* Tag Festiva */}
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[11px] font-mono uppercase tracking-widest font-semibold mb-3 border bg-white/90 shadow-subtle text-charcoal-700">
+              <span className={`w-2 h-2 rounded-full animate-ping ${isBoy ? 'bg-dusty-blue' : 'bg-dusty-rose'}`} />
+              <span>O Segredo Foi Revelado!</span>
+            </div>
+
+            {/* Subtítulo de Anúncio */}
+            <span
+              className={`block text-xs sm:text-sm font-mono uppercase tracking-widest font-bold mb-2 ${
+                isBoy ? 'text-dusty-blue' : 'text-dusty-rose'
+              }`}
+            >
+              {isBoy ? '💙 É UM MENINO! 💙' : '🌸 É UMA MENINA! 🌸'}
+            </span>
+
+            {/* O Nome do Bebê em Destaque Absoluto */}
+            <h1 className="font-serif text-4xl sm:text-6xl text-charcoal-900 font-normal tracking-tight leading-tight mb-3">
+              {isBoy ? 'O ' : 'A '}
+              <span
+                className={`italic font-medium underline decoration-2 underline-offset-8 ${
+                  isBoy
+                    ? 'text-dusty-blue decoration-dusty-blue/40'
+                    : 'text-dusty-rose decoration-dusty-rose/40'
+                }`}
               >
-                {revealedGender === 'BOY' ? (
-                  <div className="px-5 py-2 rounded-full bg-dusty-blue-light border border-dusty-blue/30 text-dusty-blue font-serif text-sm sm:text-base font-medium flex items-center gap-2 shadow-subtle">
-                    <span>É um menino</span>
-                    {babyName && <span className="font-semibold italic">— {babyName}</span>}
-                  </div>
-                ) : (
-                  <div className="px-5 py-2 rounded-full bg-dusty-rose-light border border-dusty-rose/30 text-dusty-rose font-serif text-sm sm:text-base font-medium flex items-center gap-2 shadow-subtle">
-                    <span>É uma menina</span>
-                    {babyName && <span className="font-semibold italic">— {babyName}</span>}
-                  </div>
-                )}
-              </motion.div>
-            ) : (
-              <motion.div
-                key="label"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/90 backdrop-blur-sm border border-warm-border text-charcoal-600 text-xs font-mono uppercase tracking-wider shadow-subtle"
-              >
+                {winnerName}
+              </span>{' '}
+              vem aí!
+            </h1>
+
+            <p className="text-xs sm:text-sm text-charcoal-600 font-sans max-w-md mx-auto leading-relaxed">
+              Com todo o carinho e amor de <strong className="font-medium text-charcoal-900">{parentsNames}</strong> para celebrar essa bênção com você.
+            </p>
+          </motion.div>
+        ) : (
+          /* ANTES DA REVELAÇÃO */
+          <>
+            {/* Badge */}
+            <motion.div variants={rise} className="mb-6">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/90 backdrop-blur-sm border border-warm-border text-charcoal-600 text-xs font-mono uppercase tracking-wider shadow-subtle">
                 <span className="relative flex w-1.5 h-1.5">
                   <span className="absolute inset-0 rounded-full bg-terracotta animate-pulse-ring" />
                   <span className="relative w-1.5 h-1.5 rounded-full bg-terracotta" />
                 </span>
                 <span>{eventLabel}</span>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.div>
+              </div>
+            </motion.div>
 
-        {/* Nomes dos Pais & Bebê */}
-        <motion.h1
-          variants={rise}
-          className="font-serif text-3xl sm:text-5xl text-charcoal-900 font-normal tracking-tight leading-tight mb-4"
-        >
-          {babyName ? (
-            <>
-              Chá de <span className="italic font-normal">{babyName}</span>
-            </>
-          ) : (
-            <>
-              Chá de Bebê de <span className="italic font-normal">{parentsNames}</span>
-            </>
-          )}
-        </motion.h1>
+            {/* Nomes dos Pais & Opções Menino / Menina */}
+            <motion.h1
+              variants={rise}
+              className="font-serif text-3xl sm:text-5xl text-charcoal-900 font-normal tracking-tight leading-tight mb-4"
+            >
+              {boyName && girlName ? (
+                <>
+                  <span className="text-dusty-blue italic font-medium">{boyName}</span>
+                  <span className="text-charcoal-400 font-sans text-xl sm:text-2xl font-light mx-2.5">ou</span>
+                  <span className="text-dusty-rose italic font-medium">{girlName}</span>
+                  <span className="text-charcoal-400">?</span>
+                </>
+              ) : babyName ? (
+                <>
+                  Chá de <span className="italic font-normal">{babyName}</span>
+                </>
+              ) : (
+                <>
+                  Chá de Bebê de <span className="italic font-normal">{parentsNames}</span>
+                </>
+              )}
+            </motion.h1>
 
-        <motion.p
-          variants={rise}
-          className="text-xs sm:text-sm text-charcoal-600 max-w-lg mx-auto leading-relaxed font-sans mb-8"
-        >
-          {storyMessage ||
-            'Criamos este espaço para compartilhar com você a alegria dessa espera e receber seu carinho em forma de fraldas e recados.'}
-        </motion.p>
+            <motion.p
+              variants={rise}
+              className="text-xs sm:text-sm text-charcoal-600 max-w-lg mx-auto leading-relaxed font-sans mb-8"
+            >
+              {storyMessage ||
+                'Criamos este espaço para compartilhar com você a alegria dessa espera e receber seu carinho em forma de fraldas e recados.'}
+            </motion.p>
+          </>
+        )}
 
         {/* Foto de Capa (se houver) */}
         {coverImageUrl && (

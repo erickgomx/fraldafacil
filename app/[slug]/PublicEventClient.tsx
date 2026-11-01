@@ -16,6 +16,8 @@ interface PublicEventClientProps {
     slug: string;
     eventType: string;
     babyName: string | null;
+    boyName?: string | null;
+    girlName?: string | null;
     parentsNames: string;
     eventDate: Date | string;
     coverImageUrl: string | null;
@@ -101,6 +103,8 @@ export default function PublicEventClient({
       <BabyHero
         parentsNames={event.parentsNames}
         babyName={event.babyName}
+        boyName={event.boyName}
+        girlName={event.girlName}
         eventDate={event.eventDate}
         storyMessage={event.storyMessage}
         coverImageUrl={event.coverImageUrl}
@@ -113,6 +117,8 @@ export default function PublicEventClient({
       {event.eventType !== 'FRALDA' && (
         <GenderPoll
           eventId={event.id}
+          boyName={event.boyName}
+          girlName={event.girlName}
           initialBoyVotes={initialBoyVotes}
           initialGirlVotes={initialGirlVotes}
           onOpenPixModalWithGuess={handleOpenWithGuessOnly}
