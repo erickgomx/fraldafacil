@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getSession, verifyOAuthState } from '@/lib/auth';
+import { encryptSecret } from '@/lib/crypto';
 
 export const dynamic = 'force-dynamic';
 
@@ -84,12 +85,12 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Salva o token do vendedor vinculado ao Chá com validação de propriedade
+    // Salva o token criptografado do vendedor vinculado ao Chá com validação de propriedade
     await prisma.event.update({
       where: { id: event.id },
       data: {
-        mpAccessToken: tokenData.access_token,
-        mpRefreshToken: tokenData.refresh_token || null,
+        mpAccessToken: encryptSecret(tokenData.access_token),
+        mpRefreshToken: encryptSecret(tokenData.refresh_token),
         mpPublicKey: tokenData.public_key || null,
         mpUserId: String(tokenData.user_id || ''),
         mpConnected: true,

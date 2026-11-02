@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSession } from '@/lib/auth';
+import { getSession, sanitizeEventPayload } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
@@ -55,7 +55,7 @@ export async function PUT(req: NextRequest) {
       },
     });
 
-    return NextResponse.json({ message: 'Evento atualizado com sucesso!', event: updated });
+    return NextResponse.json({ message: 'Evento atualizado com sucesso!', event: sanitizeEventPayload(updated) });
   } catch (error) {
     console.error('Erro ao atualizar evento:', error);
     return NextResponse.json({ error: 'Erro ao salvar alterações.' }, { status: 500 });

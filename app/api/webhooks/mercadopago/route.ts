@@ -1,14 +1,43 @@
 import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'crypto';
 import prisma from '@/lib/prisma';
 import { approveOrder, rejectOrder } from '@/lib/orders';
+import { decryptSecret } from '@/lib/crypto';
 
 export const dynamic = 'force-dynamic';
+
+function verifyWebhookSignature(
+  xSignature: string | null,
+  requestId: string | null,
+  dataId: string,
+  secret: string
+): boolean {
+  if (!xSignature || !requestId || !secret) return false;
+
+  const parts = xSignature.split(',');
+  let ts: string | undefined;
+  let v1: string | undefined;
+
+  for (const part of parts) {
+    const [key, val] = part.split('=');
+    if (key?.trim() === 'ts') ts = val?.trim();
+    if (key?.trim() === 'v1') v1 = val?.trim();
+  }
+
+  if (!ts || !v1) return false;
+
+  // Formato oficial do Mercado Pago: id:[data.id];request-id:[x-request-id];ts:[ts];
+  const manifest = `id:${dataId};request-id:${requestId};ts:${ts};`;
+  const computedHash = crypto.createHmac('sha256', secret).update(manifest).digest('hex');
+
+  return crypto.timingSafeEqual(Buffer.from(computedHash, 'utf8'), Buffer.from(v1, 'utf8'));
+}
 
 export async function POST(req: NextRequest) {
   try {
     const url = new URL(req.url);
     const searchParams = url.searchParams;
-    
+
     // O Mercado Pago pode enviar dados no query param (data.id / id) ou no corpo
     let paymentId = searchParams.get('data.id') || searchParams.get('id');
 
@@ -21,19 +50,34 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Evento ignorado (sem payment id)' }, { status: 200 });
     }
 
-    // 1. Tenta localizar a ordem previamente registrada pelo ID de pagamento ou ID interno
+    // Validação estrita: IDs de pagamento do Mercado Pago são estritamente numéricos
+    const cleanPaymentId = String(paymentId).trim();
+    if (!/^\d+$/.test(cleanPaymentId)) {
+      return NextResponse.json({ message: 'ID de pagamento inválido ignorado' }, { status: 200 });
+    }
+
+    // Verificação de autenticidade da assinatura criptográfica do Mercado Pago
+    const webhookSecret = process.env.MERCADO_PAGO_WEBHOOK_SECRET;
+    if (webhookSecret && webhookSecret.trim() !== '') {
+      const xSignature = req.headers.get('x-signature');
+      const xRequestId = req.headers.get('x-request-id');
+      const isValid = verifyWebhookSignature(xSignature, xRequestId, cleanPaymentId, webhookSecret);
+
+      if (!isValid) {
+        console.warn('Webhook do Mercado Pago rejeitado por assinatura inválida.');
+        return NextResponse.json({ error: 'Assinatura inválida' }, { status: 401 });
+      }
+    }
+
+    // 1. Tenta localizar a ordem previamente registrada pelo ID de pagamento do Mercado Pago
     let order = await prisma.order.findFirst({
-      where: {
-        OR: [
-          { mpPaymentId: String(paymentId) },
-          { id: String(paymentId) },
-        ],
-      },
+      where: { mpPaymentId: cleanPaymentId },
       include: { event: true },
     });
 
     // 2. Determina o melhor token para consulta (token do vendedor ou da plataforma)
-    const preferredToken = order?.event?.mpAccessToken || process.env.MERCADO_PAGO_ACCESS_TOKEN;
+    const rawSellerToken = decryptSecret(order?.event?.mpAccessToken);
+    const preferredToken = rawSellerToken || process.env.MERCADO_PAGO_ACCESS_TOKEN;
     const fallbackToken = process.env.MERCADO_PAGO_ACCESS_TOKEN;
 
     let paymentStatus: string | null = null;
@@ -43,7 +87,7 @@ export async function POST(req: NextRequest) {
       const { MercadoPagoConfig, Payment } = await import('mercadopago');
       const client = new MercadoPagoConfig({ accessToken: token });
       const paymentApi = new Payment(client);
-      return await paymentApi.get({ id: String(paymentId) });
+      return await paymentApi.get({ id: cleanPaymentId });
     };
 
     if (preferredToken && preferredToken.trim() !== '' && !preferredToken.includes('SEU_TOKEN')) {
@@ -52,7 +96,6 @@ export async function POST(req: NextRequest) {
         paymentStatus = paymentInfo.status || 'pending';
         externalReference = paymentInfo.external_reference;
       } catch (err) {
-        // Se falhou com o token preferencial e há outro token de fallback, tenta o fallback
         if (fallbackToken && fallbackToken !== preferredToken && !fallbackToken.includes('SEU_TOKEN')) {
           try {
             const paymentInfo = await queryMpStatus(fallbackToken);
@@ -71,7 +114,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Webhook inativo (sem credenciais)' }, { status: 200 });
     }
 
-    // 3. Se a ordem não havia sido encontrada antes, busca pela external_reference retornada pelo MP
+    // 3. Se a ordem não havia sido encontrada antes, busca pela external_reference (orderId interno)
     if (!order && externalReference) {
       order = await prisma.order.findUnique({
         where: { id: externalReference },
@@ -84,7 +127,7 @@ export async function POST(req: NextRequest) {
       if (!order.mpPaymentId) {
         await prisma.order.update({
           where: { id: order.id },
-          data: { mpPaymentId: String(paymentId) },
+          data: { mpPaymentId: cleanPaymentId },
         });
       }
 

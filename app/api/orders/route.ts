@@ -132,7 +132,6 @@ export async function POST(req: NextRequest) {
       status: pixData.status,
       qrCode: pixData.qrCode,
       qrCodeBase64: pixData.qrCodeBase64,
-      isSimulated: pixData.isSimulated || false,
       chargeAmount: feeCalc.chargeAmount,
       baseAmount: feeCalc.baseAmount,
       feePayer: feeCalc.feePayer,

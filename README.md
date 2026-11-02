@@ -1,4 +1,4 @@
-# 🍼 Fralda Fácil - SaaS de Chá Revelação & Chá de Fralda
+# 🍼 Fralda Online - SaaS de Chá Revelação & Chá de Fralda
 
 Plataforma SaaS multi-tenant onde futuros pais criam páginas personalizadas para arrecadação de presentes em dinheiro via Pix e engajam convidados com o bolão interativo "Menino ou Menina?".
 

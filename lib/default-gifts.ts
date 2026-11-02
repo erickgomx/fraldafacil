@@ -46,7 +46,7 @@ export const DEFAULT_GIFT_ITEMS: DefaultGiftItem[] = [
     title: 'Kit Pomadas e Cuidados com a Pele',
     description: 'Pomada preventiva contra assaduras, óleo vegetal e sabonete neutro.',
     price: 75.0,
-    imageUrl: 'https://images.unsplash.com/photo-1608248597359-5776d54d1a58?w=500&auto=format&fit=crop&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=500&auto=format&fit=crop&q=80',
     category: 'higiene',
   },
   {

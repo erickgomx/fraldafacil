@@ -1,30 +1,61 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%">
-  <!-- Superfície de Linho / Papel Nobre -->
-  <rect x="2" y="2" width="96" height="96" rx="24" fill="#F7F3EC" stroke="#E3D8C6" stroke-width="2" />
+  <!-- Fundo Linho Luxo Nobre com Cantos Arredondados -->
+  <rect x="2" y="2" width="96" height="96" rx="22" fill="#FAF7F2" stroke="#E6DDCF" stroke-width="2.5"/>
 
-  <!-- Monograma / Ícone Delicado: Laço & Alfinete de Bebê Nobre -->
-  <g transform="translate(50, 48)">
-    <!-- Coração / Laço em Ouro Nobre Mate -->
+  <defs>
+    <!-- Gradiente Ouro Nobre Mate para o Monograma -->
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#D4AF37"/>
+      <stop offset="50%" stop-color="#C5A059"/>
+      <stop offset="100%" stop-color="#9E7B35"/>
+    </linearGradient>
+
+    <!-- Sombra suave para profundidade do emblema -->
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-color="#1C1917" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+
+  <!-- Emblema Central: Coração + Alfinete Delicado de Bebê (Estilo Joalheria) -->
+  <g filter="url(#softShadow)" transform="translate(0, 1)">
+    <!-- Base / Laço do Coração em Ouro Nobre -->
     <path
-      d="M 0, -14 
-         C -12, -26 -28, -12 -18, 4 
-         C -10, 16 0, 24 0, 24 
-         C 0, 24 10, 16 18, 4 
-         C 28, -12 12, -26 0, -14 Z"
+      d="M 50, 31
+         C 43, 21, 29, 23, 24, 34
+         C 18, 47, 28, 62, 50, 75
+         C 72, 62, 82, 47, 76, 34
+         C 71, 23, 57, 21, 50, 31 Z"
       fill="none"
-      stroke="#B38E5D"
-      stroke-width="3.5"
+      stroke="url(#goldGrad)"
+      stroke-width="4.5"
       stroke-linecap="round"
       stroke-linejoin="round"
     />
 
-    <!-- Alfinete de Fralda Clássico em Carvão -->
-    <circle cx="0" cy="-6" r="3.5" fill="#1C1917" />
+    <!-- Fecho do Alfinete de Bebê Superior em Carvão Profundo -->
     <path
-      d="M 0, -3 L 0, 14"
+      d="M 42, 25 
+         C 42, 21, 58, 21, 58, 25
+         L 57, 34
+         C 57, 36, 43, 36, 43, 34 Z"
+      fill="#1C1917"
       stroke="#1C1917"
-      stroke-width="2.5"
+      stroke-width="1.5"
+      stroke-linejoin="round"
+    />
+
+    <!-- Pequeno detalhe de Pérola / Ponto de Luz no fecho -->
+    <circle cx="50" cy="28.5" r="2.2" fill="#FAF7F2" />
+
+    <!-- Haste vertical do alfinete suave descendo ao centro -->
+    <path
+      d="M 50, 36 L 50, 60"
+      stroke="#1C1917"
+      stroke-width="3"
       stroke-linecap="round"
     />
+
+    <!-- Toque sutil de brilho/estrela de afeto -->
+    <circle cx="34" cy="38" r="1.5" fill="#C5A059" opacity="0.8"/>
   </g>
 </svg>

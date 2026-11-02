@@ -1,6 +1,8 @@
 import { getSession } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { redirect } from 'next/navigation';
+
+export const dynamic = 'force-dynamic';
 import PresentesClient from './PresentesClient';
 
 export default async function PresentesPage() {

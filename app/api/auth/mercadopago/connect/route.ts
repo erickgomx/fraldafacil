@@ -34,10 +34,10 @@ export async function GET(req: NextRequest) {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
     const redirectUri = `${appUrl}/api/auth/mercadopago/callback`;
 
-    // Se as credenciais ainda não estiverem configuradas no ambiente, permite simulação assistida
+    // Se as credenciais ainda não estiverem configuradas no ambiente, reporta erro operacional claro
     if (!clientId || clientId.trim() === '') {
       return NextResponse.redirect(
-        new URL(`/painel/configuracoes?oauth_simulated=ready&eventId=${event.id}`, req.url)
+        new URL(`/painel/configuracoes?error=oauth_not_configured`, req.url)
       );
     }
 

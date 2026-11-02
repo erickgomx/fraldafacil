@@ -1,8 +1,8 @@
 /**
- * Taxas oficiais e regras de split da plataforma Fralda Fácil
+ * Taxas oficiais e regras de split da plataforma Fralda Online
  */
 
-// Comissão fixa e garantida da plataforma Fralda Fácil
+// Comissão fixa e garantida da plataforma Fralda Online
 export const PLATFORM_FEE_RATE = 0.0499; // 4,99%
 
 // Taxas oficiais estimadas de processamento do Mercado Pago no Brasil

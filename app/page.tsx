@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { ArrowRight, Check } from 'lucide-react';
+import BrandLogo from '@/components/BrandLogo';
 
 export default function HomePage() {
   return (
@@ -7,18 +8,8 @@ export default function HomePage() {
       {/* Topo / Navegação */}
       <header className="sticky top-0 z-40 bg-cream-50/90 backdrop-blur-md border-b border-warm-border/70">
         <div className="max-w-5xl mx-auto px-6 h-20 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <span className="w-8 h-8 rounded-lg bg-charcoal-900 text-cream-50 flex items-center justify-center font-serif text-lg font-medium shadow-sm">
-              F
-            </span>
-            <div className="flex flex-col">
-              <span className="font-serif text-xl tracking-tight font-medium text-charcoal-900">
-                Fralda Fácil
-              </span>
-              <span className="text-[10px] tracking-wider uppercase font-sans text-charcoal-500 -mt-1">
-                Chá & Revelação
-              </span>
-            </div>
+          <Link href="/" className="group">
+            <BrandLogo size="md" />
           </Link>
 
           <nav className="flex items-center gap-3">
@@ -219,7 +210,7 @@ export default function HomePage() {
       <footer className="py-12 px-6 border-t border-warm-border bg-[#F7F3EC] text-charcoal-600 text-xs font-sans">
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <span className="font-serif font-medium text-sm text-charcoal-900">Fralda Fácil</span>
+            <span className="font-serif font-medium text-sm text-charcoal-900">Fralda Online</span>
             <span className="text-charcoal-400">·</span>
             <span>A plataforma independente para Chás de Bebê & Revelação</span>
           </div>

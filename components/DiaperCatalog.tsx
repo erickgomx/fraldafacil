@@ -212,6 +212,10 @@ const GiftCard = forwardRef<
           src={item.imageUrl}
           alt={item.title}
           loading="lazy"
+          onError={(e) => {
+            (e.currentTarget as HTMLImageElement).src =
+              'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=500&auto=format&fit=crop&q=80';
+          }}
           className="w-full h-full object-cover transition-transform duration-[1200ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.07]"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-charcoal-900/25 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />

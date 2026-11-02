@@ -17,14 +17,35 @@ const sans = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: 'Fralda Fácil - Chá de Bebê, Fralda & Revelação com Pix',
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
+  title: {
+    default: 'Fralda Online — Chá de Bebê, Fralda & Revelação com Pix',
+    template: '%s | Fralda Online',
+  },
   description:
-    'A plataforma elegante para futuros pais receberem fraldas em dinheiro e engajarem a família com o bolão do bebê.',
+    'A plataforma elegante para futuros pais receberem fraldas em dinheiro via Pix e engajarem a família com o bolão do bebê.',
   icons: {
     icon: [
       { url: '/icon.svg', type: 'image/svg+xml' },
       { url: '/favicon.ico' },
     ],
+    shortcut: '/favicon.ico',
+    apple: '/icon.svg',
+  },
+  openGraph: {
+    title: 'Fralda Online — Chá de Bebê, Fralda & Revelação com Pix',
+    description:
+      'A plataforma elegante para futuros pais receberem fraldas em dinheiro via Pix e engajarem a família com o bolão do bebê.',
+    url: '/',
+    siteName: 'Fralda Online',
+    locale: 'pt_BR',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Fralda Online — Chá de Bebê, Fralda & Revelação com Pix',
+    description:
+      'A plataforma elegante para futuros pais receberem fraldas em dinheiro via Pix e engajarem a família com o bolão do bebê.',
   },
 };
 

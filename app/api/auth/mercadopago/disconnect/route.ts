@@ -5,7 +5,7 @@ import prisma from '@/lib/prisma';
 export const dynamic = 'force-dynamic';
 
 /**
- * Permite simular a conexão de conta Mercado Pago ou desconectar uma conta vinculada.
+ * Desconecta com segurança a conta do Mercado Pago vinculada ao evento.
  */
 export async function POST(req: NextRequest) {
   try {
@@ -39,22 +39,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, connected: false });
     }
 
-    if (action === 'SIMULATE_CONNECT') {
-      await prisma.event.update({
-        where: { id: event.id },
-        data: {
-          mpConnected: true,
-          mpUserId: `sim_user_${Math.random().toString(36).substring(2, 8)}`,
-          mpAccessToken: `sim_token_${Date.now()}`,
-          mpPublicKey: `sim_pub_${Date.now()}`,
-        },
-      });
-      return NextResponse.json({ success: true, connected: true });
-    }
-
-    return NextResponse.json({ error: 'Ação inválida.' }, { status: 400 });
+    return NextResponse.json({ error: 'Ação não permitida.' }, { status: 400 });
   } catch (error) {
-    console.error('Erro na gestão da conta MP:', error);
-    return NextResponse.json({ error: 'Erro interno.' }, { status: 500 });
+    console.error('Erro na desconexão da conta MP:', error);
+    return NextResponse.json({ error: 'Erro interno ao desconectar.' }, { status: 500 });
   }
 }

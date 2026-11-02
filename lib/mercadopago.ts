@@ -1,4 +1,5 @@
 import QRCode from 'qrcode';
+import { decryptSecret } from '@/lib/crypto';
 
 // Tipo de retorno do Pix gerado
 export interface PixPaymentResponse {
@@ -7,7 +8,6 @@ export interface PixPaymentResponse {
   qrCode: string; // Copia e Cola
   qrCodeBase64: string; // Imagem em Base64 para exibir no modal
   ticketUrl?: string;
-  isSimulated?: boolean;
 }
 
 export interface CreatePixInput {
@@ -55,8 +55,14 @@ export interface CardPaymentResponse {
 }
 
 export async function createCardPayment(input: CreateCardInput): Promise<CardPaymentResponse> {
-  const isMarketplace = Boolean(input.sellerAccessToken && input.sellerAccessToken.trim() !== '');
-  const token = input.sellerAccessToken || (process.env.MERCADO_PAGO_ACCESS_TOKEN as string);
+  const decryptedSellerToken = decryptSecret(input.sellerAccessToken);
+  const isMarketplace = Boolean(decryptedSellerToken && decryptedSellerToken.trim() !== '');
+  const token = decryptedSellerToken || (process.env.MERCADO_PAGO_ACCESS_TOKEN as string);
+
+  if (!token || token.trim() === '' || token.includes('SEU_TOKEN')) {
+    throw new Error('Credenciais do Mercado Pago não configuradas para processamento de cartão.');
+  }
+
   const { MercadoPagoConfig, Payment } = await import('mercadopago');
 
   const nameParts = input.payerName.trim().split(/\s+/);
@@ -94,7 +100,7 @@ export async function createCardPayment(input: CreateCardInput): Promise<CardPay
         : {}),
     },
     external_reference: input.orderId,
-    statement_descriptor: 'FRALDAFACIL',
+    statement_descriptor: 'FRALDAONLINE',
     binary_mode: false,
     ...(notificationUrl ? { notification_url: notificationUrl } : {}),
   });
@@ -175,8 +181,9 @@ export function extractMpErrorMessage(err: unknown): string {
 }
 
 export async function createPixPayment(input: CreatePixInput): Promise<PixPaymentResponse> {
-  const isMarketplace = Boolean(input.sellerAccessToken && input.sellerAccessToken.trim() !== '');
-  const primaryToken = input.sellerAccessToken || process.env.MERCADO_PAGO_ACCESS_TOKEN;
+  const decryptedSellerToken = decryptSecret(input.sellerAccessToken);
+  const isMarketplace = Boolean(decryptedSellerToken && decryptedSellerToken.trim() !== '');
+  const primaryToken = decryptedSellerToken || process.env.MERCADO_PAGO_ACCESS_TOKEN;
   const platformToken = process.env.MERCADO_PAGO_ACCESS_TOKEN;
 
   // Sanitiza URL de notificação webhook (somente envia se for uma URL HTTPS pública válida)
@@ -204,7 +211,7 @@ export async function createPixPayment(input: CreatePixInput): Promise<PixPaymen
         description: input.description.slice(0, 120),
         payment_method_id: 'pix',
         payer: {
-          email: input.payerEmail || 'contato@fraldafacil.com.br',
+          email: input.payerEmail || 'contato@fraldaonline.com.br',
           first_name: firstName,
           last_name: lastName,
           ...(cleanCpf && cleanCpf.length === 11
@@ -247,7 +254,6 @@ export async function createPixPayment(input: CreatePixInput): Promise<PixPaymen
             qrCode: transactionData.qr_code,
             qrCodeBase64: base64.startsWith('data:image') ? base64 : `data:image/png;base64,${base64}`,
             ticketUrl: transactionData.ticket_url,
-            isSimulated: false,
           };
         }
       } catch (err: unknown) {
@@ -273,7 +279,6 @@ export async function createPixPayment(input: CreatePixInput): Promise<PixPaymen
           qrCode: transactionData.qr_code,
           qrCodeBase64: base64.startsWith('data:image') ? base64 : `data:image/png;base64,${base64}`,
           ticketUrl: transactionData.ticket_url,
-          isSimulated: false,
         };
       }
     } catch (err: unknown) {
@@ -300,7 +305,6 @@ export async function createPixPayment(input: CreatePixInput): Promise<PixPaymen
             qrCode: transactionData.qr_code,
             qrCodeBase64: base64.startsWith('data:image') ? base64 : `data:image/png;base64,${base64}`,
             ticketUrl: transactionData.ticket_url,
-            isSimulated: false,
           };
         }
       } catch (err: unknown) {
@@ -309,20 +313,9 @@ export async function createPixPayment(input: CreatePixInput): Promise<PixPaymen
       }
     }
 
-    // Se falhou em todas as tentativas oficiais com credenciais reais, lança o erro real em vez de gerar Pix falso!
     const detailedMsg = extractMpErrorMessage(lastError);
     throw new Error(`Mercado Pago: ${detailedMsg}`);
   }
 
-  // MODO TESTE / SIMULADO (Apenas se nenhuma credencial real existir no ambiente)
-  const mockPixPayload = `00020126580014br.gov.bcb.pix0136fraldafacil-${input.orderId.slice(0, 8)}520400005303986540${input.amount.toFixed(2).replace('.', '')}5802BR5916FRALDA FACIL SAAS6009SAO PAULO62070503***6304ABCD`;
-  const qrBase64 = await QRCode.toDataURL(mockPixPayload, { width: 300, margin: 2 });
-
-  return {
-    id: `sim_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
-    status: 'pending',
-    qrCode: mockPixPayload,
-    qrCodeBase64: qrBase64,
-    isSimulated: true,
-  };
+  throw new Error('Nenhuma credencial válida do Mercado Pago está configurada no servidor para geração do Pix.');
 }

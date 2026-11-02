@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { approveOrder, rejectOrder } from '@/lib/orders';
+import { decryptSecret } from '@/lib/crypto';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,13 +27,10 @@ export async function GET(
 
     let currentStatus = order.status;
 
-    // Se ainda estiver PENDING e houver ID real do Mercado Pago, consulta status ativo no MP
-    if (
-      currentStatus === 'PENDING' &&
-      order.mpPaymentId &&
-      !order.mpPaymentId.startsWith('sim_')
-    ) {
-      const token = order.event?.mpAccessToken || process.env.MERCADO_PAGO_ACCESS_TOKEN;
+    // Se ainda estiver PENDING e houver ID do Mercado Pago, consulta status ativo no MP
+    if (currentStatus === 'PENDING' && order.mpPaymentId) {
+      const decryptedToken = decryptSecret(order.event?.mpAccessToken);
+      const token = decryptedToken || process.env.MERCADO_PAGO_ACCESS_TOKEN;
       if (token && token.trim() !== '' && !token.includes('SEU_TOKEN')) {
         try {
           const { MercadoPagoConfig, Payment } = await import('mercadopago');

@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
 const MAX_INSTALLMENTS = 12;
 
 /**
- * Processa um presente pago com cartão de crédito.
+ * Processa um presente pago com cartão de crédito via Mercado Pago.
  *
  * O cartão é tokenizado no navegador pelo Card Payment Brick do Mercado Pago:
  * nenhum dado sensível (número, CVV, validade) passa por este servidor —
@@ -30,7 +30,6 @@ export async function POST(req: NextRequest) {
       payerMessage,
       pollGuess,
       card,
-      simulate,
       idempotencyKey,
     } = body ?? {};
 
@@ -42,21 +41,15 @@ export async function POST(req: NextRequest) {
     }
 
     const tokenConfigured = hasMercadoPagoToken();
-
-    // Modo simulado só é permitido quando não há credencial real no servidor
-    if (simulate && tokenConfigured) {
-      return NextResponse.json({ error: 'Simulação indisponível em produção.' }, { status: 400 });
+    if (!tokenConfigured) {
+      return NextResponse.json(
+        { error: 'Pagamento com cartão indisponível no momento. Utilize o Pix.' },
+        { status: 503 }
+      );
     }
-    if (!simulate) {
-      if (!tokenConfigured) {
-        return NextResponse.json(
-          { error: 'Pagamento com cartão indisponível no momento. Utilize o Pix.' },
-          { status: 503 }
-        );
-      }
-      if (!card?.token || !card?.payment_method_id) {
-        return NextResponse.json({ error: 'Dados do cartão incompletos.' }, { status: 400 });
-      }
+
+    if (!card?.token || !card?.payment_method_id) {
+      return NextResponse.json({ error: 'Dados do cartão incompletos.' }, { status: 400 });
     }
 
     const event = await prisma.event.findUnique({ where: { id: eventId } });
@@ -64,7 +57,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Evento não encontrado.' }, { status: 404 });
     }
 
-    // O valor é sempre definido pelo servidor quando há um presente do catálogo
+    // O valor é sempre validado pelo servidor quando há um presente do catálogo
     let baseAmount = Number(amount);
     let giftTitle = 'Presente em Dinheiro';
     let validGiftId: string | null = null;
@@ -96,8 +89,8 @@ export async function POST(req: NextRequest) {
 
     const finalChargeAmount = feeCalc.chargeAmount;
 
-    // O Brick calcula as parcelas a partir do valor exibido; se divergir, recusamos
-    if (!simulate && card?.transaction_amount != null) {
+    // O Brick calcula as parcelas a partir do valor exibido; se divergir além do limite, recusa
+    if (card?.transaction_amount != null) {
       const brickAmount = Math.round(Number(card.transaction_amount) * 100) / 100;
       if (Math.abs(brickAmount - finalChargeAmount) > 0.05) {
         return NextResponse.json(
@@ -135,22 +128,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // ----- Modo demonstração (sem credenciais) -----
-    if (simulate) {
-      await prisma.order.update({
-        where: { id: order.id },
-        data: { mpPaymentId: `sim_card_${Date.now()}_${Math.random().toString(36).slice(2, 7)}` },
-      });
-      await approveOrder(order.id);
-      return NextResponse.json({
-        orderId: order.id,
-        status: 'approved',
-        message: cardStatusMessage('approved', ''),
-        isSimulated: true,
-      });
-    }
-
-    // ----- Pagamento real -----
+    // ----- Processamento Real Mercado Pago -----
     let result;
     try {
       result = await createCardPayment({

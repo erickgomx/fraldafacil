@@ -10,6 +10,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import LogoutButton from './LogoutButton';
+import BrandLogo from '@/components/BrandLogo';
 
 export default async function PainelLayout({
   children,
@@ -45,13 +46,8 @@ export default async function PainelLayout({
         <div>
           {/* Logo */}
           <div className="p-6 border-b border-warm-border flex items-center justify-between">
-            <Link href="/painel" className="flex items-center gap-2">
-              <span className="w-7 h-7 rounded-md bg-charcoal-900 text-cream-50 flex items-center justify-center font-serif text-sm font-medium">
-                F
-              </span>
-              <span className="font-serif text-lg tracking-tight font-medium text-charcoal-900">
-                Fralda Fácil
-              </span>
+            <Link href="/painel" className="group">
+              <BrandLogo size="sm" />
             </Link>
           </div>
 

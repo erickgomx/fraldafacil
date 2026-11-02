@@ -9,6 +9,7 @@ import PixCheckoutModal from '@/components/PixCheckoutModal';
 import { useRouter } from 'next/navigation';
 import { Share2, Check } from 'lucide-react';
 import Link from 'next/link';
+import BrandLogo from '@/components/BrandLogo';
 
 interface PublicEventClientProps {
   event: {
@@ -71,13 +72,8 @@ export default function PublicEventClient({
       {/* Top Bar Sóbria */}
       <header className="sticky top-0 z-40 bg-cream-50/90 backdrop-blur-md border-b border-warm-border/70">
         <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="w-7 h-7 rounded-md bg-charcoal-900 text-cream-50 flex items-center justify-center font-serif text-sm font-medium">
-              F
-            </span>
-            <span className="font-serif text-lg tracking-tight font-medium text-charcoal-900">
-              Fralda Fácil
-            </span>
+          <Link href="/" className="group">
+            <BrandLogo size="sm" />
           </Link>
 
           <button
@@ -157,7 +153,7 @@ export default function PublicEventClient({
         <p>
           Página do Chá de {event.parentsNames} — Organizado com carinho via{' '}
           <Link href="/" className="font-serif text-charcoal-800 underline underline-offset-2">
-            Fralda Fácil
+            Fralda Online
           </Link>
         </p>
       </footer>

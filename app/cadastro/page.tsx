@@ -1,44 +1,107 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Lock, Mail, ArrowRight, User, Link2, Calendar } from 'lucide-react';
+import { Lock, Mail, ArrowRight, User, Link2, Calendar, Sparkles } from 'lucide-react';
+import BrandLogo from '@/components/BrandLogo';
+
+function sanitizeSlug(text: string): string {
+  return text
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9-]/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+function generateSuggestedSlug({
+  parentsName,
+  boyName,
+  girlName,
+  babyName,
+  noNameYet,
+  eventType,
+}: {
+  parentsName: string;
+  boyName: string;
+  girlName: string;
+  babyName: string;
+  noNameYet: boolean;
+  eventType: 'REVELACAO' | 'FRALDA' | 'AMBOS';
+}): string {
+  if (noNameYet) {
+    const parents = sanitizeSlug(parentsName);
+    return parents ? `cha-de-${parents}` : '';
+  }
+
+  const boy = sanitizeSlug(boyName);
+  const girl = sanitizeSlug(girlName);
+  const single = sanitizeSlug(babyName);
+
+  if (eventType === 'REVELACAO' || eventType === 'AMBOS') {
+    if (boy && girl) return `revelacao-${boy}-ou-${girl}`;
+    if (boy) return `cha-do-${boy}`;
+    if (girl) return `cha-da-${girl}`;
+    if (single) return `cha-${single}`;
+  } else {
+    if (single) return `cha-do-${single}`;
+    if (boy) return `cha-do-${boy}`;
+    if (girl) return `cha-da-${girl}`;
+  }
+
+  const parents = sanitizeSlug(parentsName);
+  return parents ? `cha-de-${parents}` : '';
+}
 
 export default function RegisterPage() {
   const router = useRouter();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [noNameYet, setNoNameYet] = useState(false);
   const [babyName, setBabyName] = useState('');
   const [boyName, setBoyName] = useState('');
   const [girlName, setGirlName] = useState('');
   const [slug, setSlug] = useState('');
+  const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
   const [eventType, setEventType] = useState<'REVELACAO' | 'FRALDA' | 'AMBOS'>('REVELACAO');
   const [eventDate, setEventDate] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleBabyNameChange = (val: string) => {
-    setBabyName(val);
-    if (!slug || slug.startsWith('cha-do-') || slug.startsWith('cha-da-')) {
-      const clean = val
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .replace(/[^a-z0-9]/g, '-');
-      if (clean) setSlug(`cha-do-${clean}`);
+  // Sugere o slug automaticamente conforme os nomes são preenchidos
+  useEffect(() => {
+    if (!slugManuallyEdited) {
+      const suggested = generateSuggestedSlug({
+        parentsName: name,
+        boyName,
+        girlName,
+        babyName,
+        noNameYet,
+        eventType,
+      });
+      setSlug(suggested);
     }
+  }, [name, boyName, girlName, babyName, noNameYet, eventType, slugManuallyEdited]);
+
+  const handleSlugInputChange = (val: string) => {
+    setSlugManuallyEdited(true);
+    setSlug(sanitizeSlug(val));
   };
 
-  const handleSlugChange = (val: string) => {
-    const clean = val
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/[^a-z0-9-]/g, '-')
-      .replace(/-+/g, '-');
-    setSlug(clean);
+  const handleResetSlugToAuto = () => {
+    setSlugManuallyEdited(false);
+    const suggested = generateSuggestedSlug({
+      parentsName: name,
+      boyName,
+      girlName,
+      babyName,
+      noNameYet,
+      eventType,
+    });
+    setSlug(suggested);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -55,9 +118,10 @@ export default function RegisterPage() {
           email,
           password,
           slug,
-          babyName,
-          boyName,
-          girlName,
+          noNameYet,
+          babyName: noNameYet ? null : babyName,
+          boyName: noNameYet ? null : boyName,
+          girlName: noNameYet ? null : girlName,
           eventType,
           eventDate: eventDate || undefined,
         }),
@@ -85,23 +149,18 @@ export default function RegisterPage() {
   return (
     <main className="min-h-screen bg-cream-50 text-charcoal-900 flex flex-col justify-center items-center p-6 py-12">
       <div className="w-full max-w-lg">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2 mb-2 group">
-            <span className="w-8 h-8 rounded-lg bg-charcoal-900 text-cream-50 flex items-center justify-center font-serif text-base font-medium shadow-sm">
-              F
-            </span>
-            <span className="font-serif text-xl tracking-tight font-medium text-charcoal-900">
-              Fralda Fácil
-            </span>
+        {/* Header com a nova marca oficial */}
+        <div className="text-center mb-8 flex flex-col items-center">
+          <Link href="/" className="inline-flex mb-3 group hover:opacity-95 transition">
+            <BrandLogo size="md" />
           </Link>
-          <p className="text-xs text-charcoal-500 font-sans">
+          <p className="text-xs text-charcoal-500 font-sans mt-1">
             Configure sua página com lista de presentes e bolão em 2 minutos
           </p>
         </div>
 
-        {/* Card */}
-        <div className="bg-white rounded-xl p-8 shadow-subtle border border-warm-border">
+        {/* Card Principal */}
+        <div className="bg-white rounded-2xl p-8 shadow-subtle border border-warm-border">
           <div className="flex items-center justify-between mb-6 pb-4 border-b border-warm-border/60">
             <h1 className="font-serif text-xl font-normal text-charcoal-900">
               Criar meu Chá
@@ -135,7 +194,7 @@ export default function RegisterPage() {
                     onClick={() => setEventType(type.id as 'REVELACAO' | 'FRALDA' | 'AMBOS')}
                     className={`py-2 px-2 text-xs font-medium rounded-lg border text-center transition ${
                       eventType === type.id
-                        ? 'border-charcoal-900 bg-charcoal-900 text-white'
+                        ? 'border-charcoal-900 bg-charcoal-900 text-white shadow-subtle'
                         : 'border-warm-border bg-white text-charcoal-600 hover:bg-stone-50'
                     }`}
                   >
@@ -163,66 +222,119 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            {/* Opções de Nomes Menino / Menina */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
-                  Nome se for Menino (Opcional)
-                </label>
+            {/* Checkbox "Ainda não escolhemos o nome" */}
+            <div className="bg-cream-50 p-3.5 rounded-xl border border-warm-border">
+              <label className="flex items-start gap-3 cursor-pointer select-none">
                 <input
-                  type="text"
-                  value={boyName}
+                  type="checkbox"
+                  checked={noNameYet}
                   onChange={(e) => {
-                    setBoyName(e.target.value);
-                    if (!babyName) handleBabyNameChange(e.target.value);
+                    const checked = e.target.checked;
+                    setNoNameYet(checked);
+                    if (checked) {
+                      setBabyName('');
+                      setBoyName('');
+                      setGirlName('');
+                    }
                   }}
-                  placeholder="Ex: Arthur"
-                  className="w-full px-3.5 py-2.5 rounded-lg border border-warm-border bg-cream-50/50 text-charcoal-900 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-charcoal-900"
+                  className="mt-0.5 h-4 w-4 rounded border-warm-border text-charcoal-900 focus:ring-charcoal-900 cursor-pointer accent-charcoal-900"
                 />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
-                  Nome se for Menina (Opcional)
-                </label>
-                <input
-                  type="text"
-                  value={girlName}
-                  onChange={(e) => {
-                    setGirlName(e.target.value);
-                    if (!babyName && !boyName) handleBabyNameChange(e.target.value);
-                  }}
-                  placeholder="Ex: Helena"
-                  className="w-full px-3.5 py-2.5 rounded-lg border border-warm-border bg-cream-50/50 text-charcoal-900 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-charcoal-900"
-                />
-              </div>
+                <div className="flex-1">
+                  <span className="text-xs font-semibold text-charcoal-900 block">
+                    Ainda não escolhemos o nome do bebê
+                  </span>
+                  <span className="text-[11px] text-charcoal-500 block mt-0.5 font-sans leading-relaxed">
+                    Tudo bem! O link e a página usarão o nome dos pais (ex: <em>Chá de {name || 'Mariana e Rafael'}</em>) e você poderá cadastrar os nomes nas configurações quando decidir.
+                  </span>
+                </div>
+              </label>
             </div>
 
-            {/* Link Personalizado */}
+            {/* Opções de Nomes dos Bebês (Apenas quando desmarcado) */}
+            {!noNameYet && (
+              <div className="space-y-3 pt-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-mono uppercase text-dusty-blue font-semibold mb-1">
+                      Nome se for Menino 💙
+                    </label>
+                    <input
+                      type="text"
+                      value={boyName}
+                      onChange={(e) => setBoyName(e.target.value)}
+                      placeholder="Ex: Arthur"
+                      className="w-full px-3.5 py-2.5 rounded-lg border border-dusty-blue/30 bg-white text-charcoal-900 text-xs focus:outline-none focus:ring-1 focus:ring-dusty-blue"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-mono uppercase text-dusty-rose font-semibold mb-1">
+                      Nome se for Menina 🌸
+                    </label>
+                    <input
+                      type="text"
+                      value={girlName}
+                      onChange={(e) => setGirlName(e.target.value)}
+                      placeholder="Ex: Helena"
+                      className="w-full px-3.5 py-2.5 rounded-lg border border-dusty-rose/30 bg-white text-charcoal-900 text-xs focus:outline-none focus:ring-1 focus:ring-dusty-rose"
+                    />
+                  </div>
+                </div>
+
+                {eventType === 'FRALDA' && (
+                  <div>
+                    <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
+                      Ou Nome Único já Escolhido (Opcional)
+                    </label>
+                    <input
+                      type="text"
+                      value={babyName}
+                      onChange={(e) => setBabyName(e.target.value)}
+                      placeholder="Ex: Theo"
+                      className="w-full px-3.5 py-2 rounded-lg border border-warm-border bg-cream-50/50 text-charcoal-900 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-charcoal-900"
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Link Personalizado do Evento */}
             <div>
-              <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
-                Endereço da Página Pública *
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-[11px] font-mono uppercase text-charcoal-500">
+                  Endereço da Página Pública *
+                </label>
+                {slugManuallyEdited && (
+                  <button
+                    type="button"
+                    onClick={handleResetSlugToAuto}
+                    className="inline-flex items-center gap-1 text-[11px] text-amber-700 hover:text-amber-900 font-sans underline"
+                  >
+                    <Sparkles className="w-3 h-3" />
+                    <span>Sugerir pelos nomes</span>
+                  </button>
+                )}
+              </div>
               <div className="relative">
                 <Link2 className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-charcoal-400" />
                 <input
                   type="text"
                   required
                   value={slug}
-                  onChange={(e) => handleSlugChange(e.target.value)}
-                  placeholder="ex: cha-do-leo"
+                  onChange={(e) => handleSlugInputChange(e.target.value)}
+                  placeholder="ex: revelacao-arthur-ou-helena"
                   className="w-full pl-9 pr-3.5 py-2.5 rounded-lg border border-warm-border bg-cream-50/50 text-charcoal-900 font-mono text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-charcoal-900"
                 />
               </div>
-              <p className="text-[11px] text-charcoal-400 mt-1 font-mono">
-                Link: <span className="text-charcoal-800 font-medium">fraldafacil.com.br/{slug || 'seu-link'}</span>
+              <p className="text-[11px] text-charcoal-500 mt-1.5 font-mono">
+                Link: <span className="text-charcoal-900 font-medium">fraldaonline.com.br/{slug || 'seu-link'}</span>
               </p>
             </div>
 
             {/* Data Prevista */}
             <div>
               <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
-                Data do Evento
+                Data do Evento (Opcional)
               </label>
               <div className="relative">
                 <Calendar className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-charcoal-400" />
@@ -235,7 +347,7 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            {/* Credenciais */}
+            {/* Credenciais de Acesso */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
               <div>
                 <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">

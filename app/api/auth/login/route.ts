@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { comparePassword, signJwt, AUTH_COOKIE_NAME } from '@/lib/auth';
+import { comparePassword, signJwt, AUTH_COOKIE_NAME, sanitizeEventPayload } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
         name: user.name,
         email: user.email,
       },
-      event: user.events[0] || null,
+      event: sanitizeEventPayload(user.events[0]),
     });
 
     response.cookies.set(AUTH_COOKIE_NAME, token, {
@@ -67,9 +67,8 @@ export async function POST(req: NextRequest) {
     return response;
   } catch (error: unknown) {
     console.error('Erro no login:', error);
-    const message = error instanceof Error ? error.message : String(error);
     return NextResponse.json(
-      { error: `Erro ao fazer login: ${message}` },
+      { error: 'Ocorreu um erro ao processar o login. Tente novamente mais tarde.' },
       { status: 500 }
     );
   }

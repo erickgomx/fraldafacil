@@ -16,20 +16,22 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   if (!event) {
     return {
-      title: 'Chá de Bebê - Fralda Fácil',
+      title: 'Chá de Bebê - Fralda Online',
     };
   }
 
-  let title = `Chá de Bebê de ${event.parentsNames} - Fralda Fácil`;
+  let title = `Chá de Bebê de ${event.parentsNames} - Fralda Online`;
   if (event.revealedGender === 'BOY' && (event.boyName || event.babyName)) {
-    title = `É Menino! Chá de ${event.boyName || event.babyName} (${event.parentsNames}) - Fralda Fácil`;
+    title = `É Menino! Chá de ${event.boyName || event.babyName} (${event.parentsNames}) - Fralda Online`;
   } else if (event.revealedGender === 'GIRL' && (event.girlName || event.babyName)) {
-    title = `É Menina! Chá de ${event.girlName || event.babyName} (${event.parentsNames}) - Fralda Fácil`;
+    title = `É Menina! Chá de ${event.girlName || event.babyName} (${event.parentsNames}) - Fralda Online`;
   } else if (event.boyName && event.girlName) {
-    title = `Chá Revelação: ${event.boyName} ou ${event.girlName}? (${event.parentsNames}) - Fralda Fácil`;
+    title = `Chá Revelação: ${event.boyName} ou ${event.girlName}? (${event.parentsNames}) - Fralda Online`;
   } else if (event.babyName) {
-    title = `Chá de ${event.babyName} (${event.parentsNames}) - Fralda Fácil`;
+    title = `Chá de ${event.babyName} (${event.parentsNames}) - Fralda Online`;
   }
+
+  const ogImages = event.coverImageUrl ? [event.coverImageUrl] : ['/opengraph-image'];
 
   return {
     title,
@@ -37,7 +39,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     openGraph: {
       title,
       description: event.storyMessage || 'Contribua com fraldas e participe do bolão!',
-      images: event.coverImageUrl ? [event.coverImageUrl] : [],
+      images: ogImages,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description: event.storyMessage || 'Contribua com fraldas e participe do bolão!',
+      images: ogImages,
     },
   };
 }

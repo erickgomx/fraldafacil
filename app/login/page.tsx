@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Lock, Mail, ArrowRight } from 'lucide-react';
+import BrandLogo from '@/components/BrandLogo';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -49,14 +50,9 @@ export default function LoginPage() {
         {/* Header */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2 mb-2 group">
-            <span className="w-8 h-8 rounded-lg bg-charcoal-900 text-cream-50 flex items-center justify-center font-serif text-base font-medium shadow-sm">
-              F
-            </span>
-            <span className="font-serif text-xl tracking-tight font-medium text-charcoal-900">
-              Fralda Fácil
-            </span>
+            <BrandLogo size="md" />
           </Link>
-          <p className="text-xs text-charcoal-500 font-sans">
+          <p className="text-xs text-charcoal-500 font-sans mt-2">
             Acesse o painel para gerenciar seu Chá e acompanhar os presentes
           </p>
         </div>

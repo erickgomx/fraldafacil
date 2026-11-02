@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { hashPassword, signJwt, AUTH_COOKIE_NAME } from '@/lib/auth';
+import { hashPassword, signJwt, AUTH_COOKIE_NAME, sanitizeEventPayload } from '@/lib/auth';
 import { DEFAULT_GIFT_ITEMS } from '@/lib/default-gifts';
 
 export const dynamic = 'force-dynamic';
@@ -24,6 +24,7 @@ export async function POST(req: NextRequest) {
       password,
       slug: rawSlug,
       eventType = 'REVELACAO',
+      noNameYet = false,
       babyName,
       boyName,
       girlName,
@@ -81,6 +82,25 @@ export async function POST(req: NextRequest) {
     const hashedPassword = await hashPassword(password);
     const parsedEventDate = eventDate ? new Date(eventDate) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
+    let resolvedBabyName: string | null = null;
+    let resolvedBoyName: string | null = null;
+    let resolvedGirlName: string | null = null;
+
+    if (!noNameYet) {
+      resolvedBoyName = boyName?.trim() || null;
+      resolvedGirlName = girlName?.trim() || null;
+
+      if (babyName?.trim()) {
+        resolvedBabyName = babyName.trim();
+      } else if (resolvedBoyName && resolvedGirlName) {
+        resolvedBabyName = `${resolvedBoyName} ou ${resolvedGirlName}`;
+      } else if (resolvedBoyName) {
+        resolvedBabyName = resolvedBoyName;
+      } else if (resolvedGirlName) {
+        resolvedBabyName = resolvedGirlName;
+      }
+    }
+
     // Criação atômica do usuário, evento e presentes padrão
     const newUser = await prisma.user.create({
       data: {
@@ -91,9 +111,9 @@ export async function POST(req: NextRequest) {
           create: {
             slug,
             eventType,
-            babyName: babyName?.trim() || (boyName && girlName ? `${boyName.trim()} ou ${girlName.trim()}` : null),
-            boyName: boyName?.trim() || null,
-            girlName: girlName?.trim() || null,
+            babyName: resolvedBabyName,
+            boyName: resolvedBoyName,
+            girlName: resolvedGirlName,
             parentsNames: name.trim(),
             eventDate: parsedEventDate,
             themeColor: '#38BDF8',
@@ -126,7 +146,7 @@ export async function POST(req: NextRequest) {
           name: newUser.name,
           email: newUser.email,
         },
-        event: newUser.events[0],
+        event: sanitizeEventPayload(newUser.events[0]),
       },
       { status: 201 }
     );
@@ -143,21 +163,8 @@ export async function POST(req: NextRequest) {
     return response;
   } catch (error: unknown) {
     console.error('Erro no registro:', error);
-    const message = error instanceof Error ? error.message : String(error);
-    
-    let userHelp = '';
-    if (message.includes('DATABASE_URL') || message.includes('Environment variable not found')) {
-      userHelp = ' [Causa: A variável DATABASE_URL não está configurada no painel da Vercel (Project Settings > Environment Variables)].';
-    } else if (message.includes('readonly') || message.includes('unable to open database file') || message.includes('dev.db')) {
-      userHelp = ' [Causa: O banco de dados SQLite local não permite escrita na Vercel. Conecte um banco PostgreSQL (Neon/Supabase) na variável DATABASE_URL da Vercel].';
-    } else if (message.includes('P2002')) {
-      userHelp = ' [Causa: Este e-mail ou link de evento já está em uso].';
-    } else if (message.includes('P2021') || message.includes('does not exist in the current database')) {
-      userHelp = ' [Causa: As tabelas do banco ainda não foram criadas. Execute npx prisma db push no seu banco de dados].';
-    }
-
     return NextResponse.json(
-      { error: `Falha ao criar conta: ${message}${userHelp}` },
+      { error: 'Não foi possível completar o cadastro. Por favor, tente novamente.' },
       { status: 500 }
     );
   }

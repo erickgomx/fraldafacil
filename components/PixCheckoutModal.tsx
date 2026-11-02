@@ -7,7 +7,6 @@ import {
   Copy,
   Check,
   ShieldCheck,
-  Zap,
   CreditCard,
   QrCode,
   Loader2,
@@ -83,8 +82,6 @@ export default function PixCheckoutModal({
   const [qrCode, setQrCode] = useState<string>('');
   const [qrCodeBase64, setQrCodeBase64] = useState<string>('');
   const [copied, setCopied] = useState(false);
-  const [isSimulated, setIsSimulated] = useState(false);
-  const [simulatingPayment, setSimulatingPayment] = useState(false);
   const [checkingPayment, setCheckingPayment] = useState(false);
 
   // Estados específicos para Cartão de Crédito
@@ -221,7 +218,6 @@ export default function PixCheckoutModal({
       setOrderId(data.orderId);
       setQrCode(data.qrCode);
       setQrCodeBase64(data.qrCodeBase64);
-      setIsSimulated(data.isSimulated || false);
       setStep('PIX');
     } catch (err: unknown) {
       if (err instanceof Error) {
@@ -280,42 +276,6 @@ export default function PixCheckoutModal({
     }
   };
 
-  // Simulação de Cartão (caso esteja rodando em modo teste sem chave pública ou em demo)
-  const handleSimulateCardPayment = async () => {
-    setError('');
-    setCardProcessing(true);
-    try {
-      const res = await fetch('/api/orders/card', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          eventId,
-          giftItemId: selectedGift ? selectedGift.id : null,
-          amount: finalNumericAmount,
-          payerName: payerName.trim(),
-          payerEmail: payerEmail.trim(),
-          payerPhone: payerPhone.trim() || null,
-          payerCpf: cleanDigits(payerCpf),
-          payerMessage: payerMessage.trim() || null,
-          pollGuess: pollGuess || null,
-          simulate: true,
-        }),
-      });
-
-      const data = await res.json();
-      if (res.ok && data.status === 'approved') {
-        handleSuccess();
-      } else {
-        throw new Error(data.error || 'Erro na simulação do cartão.');
-      }
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Falha na simulação.';
-      setError(msg);
-    } finally {
-      setCardProcessing(false);
-    }
-  };
-
   const handleManualCheck = async () => {
     if (!orderId) return;
     setCheckingPayment(true);
@@ -340,23 +300,6 @@ export default function PixCheckoutModal({
     navigator.clipboard.writeText(qrCode);
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
-  };
-
-  const handleSimulatePayment = async () => {
-    if (!orderId) return;
-    setSimulatingPayment(true);
-    try {
-      const res = await fetch(`/api/orders/${orderId}/simulate`, {
-        method: 'POST',
-      });
-      if (res.ok) {
-        handleSuccess();
-      }
-    } catch (err) {
-      console.error('Erro ao simular pagamento:', err);
-    } finally {
-      setSimulatingPayment(false);
-    }
   };
 
   if (!isOpen) return null;
@@ -730,17 +673,6 @@ export default function PixCheckoutModal({
               >
                 Alterar dados
               </button>
-
-              {isSimulated && (
-                <button
-                  onClick={handleSimulatePayment}
-                  disabled={simulatingPayment}
-                  className="py-1.5 px-3 rounded-lg text-xs font-medium text-charcoal-700 bg-stone-100 hover:bg-stone-200 transition flex items-center gap-1.5 border border-stone-250"
-                >
-                  <Zap className="w-3.5 h-3.5 text-amber-600" />
-                  <span>{simulatingPayment ? 'Confirmando...' : 'Simular Aprovação (Demo)'}</span>
-                </button>
-              )}
             </div>
           </div>
         )}
@@ -769,6 +701,13 @@ export default function PixCheckoutModal({
 
             {hasPublicKey ? (
               <div className="relative min-h-[300px]">
+                {cardProcessing && (
+                  <div className="absolute inset-0 bg-white/80 backdrop-blur-[1px] flex flex-col items-center justify-center z-10 text-xs text-charcoal-700">
+                    <Loader2 className="w-6 h-6 animate-spin text-charcoal-800 mb-2" />
+                    <span className="font-medium">Processando pagamento com a operadora...</span>
+                  </div>
+                )}
+
                 {!cardBrickReady && (
                   <div className="flex flex-col items-center justify-center py-12 text-xs text-charcoal-500">
                     <Loader2 className="w-6 h-6 animate-spin text-charcoal-400 mb-2" />
@@ -811,37 +750,26 @@ export default function PixCheckoutModal({
                 </div>
               </div>
             ) : (
-              /* MODO DEMO / SEM CHAVE PÚBLICA CONFIGURADA */
+              /* AVISO DE CARTÃO INDISPONÍVEL SE A CHAVE PÚBLICA NÃO ESTIVER CONFIGURADA */
               <div className="bg-cream-100/60 p-5 rounded-xl border border-warm-border text-center space-y-4">
                 <div className="w-10 h-10 rounded-full bg-cream-200 text-charcoal-700 mx-auto flex items-center justify-center">
                   <CreditCard className="w-5 h-5" />
                 </div>
                 <div>
                   <h4 className="font-serif text-base text-charcoal-900 font-medium">
-                    Modo Demonstração do Cartão
+                    Pagamento com Cartão Indisponível
                   </h4>
-                  <p className="text-xs text-charcoal-500 mt-1 max-w-sm mx-auto">
-                    Nenhuma credencial do Mercado Pago foi informada no ambiente ainda. Você pode simular a aprovação instantânea com cartão abaixo.
+                  <p className="text-xs text-charcoal-500 mt-1 max-w-sm mx-auto font-sans leading-relaxed">
+                    O pagamento com cartão de crédito não está ativo no momento. Por favor, utilize o Pix para presentear de forma instantânea e sem complicações.
                   </p>
                 </div>
 
                 <button
                   type="button"
-                  onClick={handleSimulateCardPayment}
-                  disabled={cardProcessing}
-                  className="w-full py-3 px-4 rounded-lg font-medium text-xs text-white bg-charcoal-900 hover:bg-charcoal-800 transition shadow-subtle flex items-center justify-center gap-2 disabled:opacity-60"
+                  onClick={() => setStep('FORM')}
+                  className="w-full py-3 px-4 rounded-lg font-medium text-xs text-white bg-charcoal-900 hover:bg-charcoal-800 transition shadow-subtle flex items-center justify-center gap-2"
                 >
-                  {cardProcessing ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      <span>Processando autorização...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Zap className="w-3.5 h-3.5 text-amber-400" />
-                      <span>Simular Aprovação de Cartão (R$ {feeCalculation.chargeAmount.toFixed(2).replace('.', ',')})</span>
-                    </>
-                  )}
+                  Voltar e Pagar com Pix
                 </button>
               </div>
             )}
