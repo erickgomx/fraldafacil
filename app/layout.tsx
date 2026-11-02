@@ -26,11 +26,15 @@ export const metadata: Metadata = {
     'A plataforma elegante para futuros pais receberem fraldas em dinheiro via Pix e engajarem a família com o bolão do bebê.',
   icons: {
     icon: [
+      { url: '/favicon.ico', sizes: '32x32' },
+      { url: '/favicon.png', type: 'image/png', sizes: '32x32' },
       { url: '/icon.svg', type: 'image/svg+xml' },
-      { url: '/favicon.ico' },
     ],
     shortcut: '/favicon.ico',
-    apple: '/icon.svg',
+    apple: [
+      { url: '/apple-icon', sizes: '180x180', type: 'image/png' },
+      { url: '/icon.svg', type: 'image/svg+xml' },
+    ],
   },
   openGraph: {
     title: 'Fralda Online — Chá de Bebê, Fralda & Revelação com Pix',
