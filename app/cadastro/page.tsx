@@ -327,7 +327,7 @@ export default function RegisterPage() {
                 />
               </div>
               <p className="text-[11px] text-charcoal-500 mt-1.5 font-mono">
-                Link: <span className="text-charcoal-900 font-medium">fraldaonline.com.br/{slug || 'seu-link'}</span>
+                Link: <span className="text-charcoal-900 font-medium">fralda.online/{slug || 'seu-link'}</span>
               </p>
             </div>
 

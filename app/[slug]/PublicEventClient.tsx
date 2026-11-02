@@ -71,24 +71,26 @@ export default function PublicEventClient({
     <div className="min-h-screen bg-cream-50 text-charcoal-900">
       {/* Top Bar Sóbria */}
       <header className="sticky top-0 z-40 bg-cream-50/90 backdrop-blur-md border-b border-warm-border/70">
-        <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="group">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-2">
+          <Link href="/" className="group shrink-0">
             <BrandLogo size="sm" />
           </Link>
 
           <button
             onClick={handleShare}
-            className="inline-flex items-center gap-1.5 py-1.5 px-3.5 rounded-lg text-xs font-medium bg-white hover:bg-stone-50 border border-warm-border text-charcoal-700 shadow-subtle transition active:scale-[0.98]"
+            className="inline-flex items-center gap-1.5 py-1.5 px-3 sm:px-3.5 rounded-lg text-xs font-medium bg-white hover:bg-stone-50 border border-warm-border text-charcoal-700 shadow-subtle transition active:scale-[0.98] whitespace-nowrap shrink-0"
           >
             {copiedLink ? (
               <>
                 <Check className="w-3.5 h-3.5 text-stone-900" />
-                <span>Link Copiado</span>
+                <span className="hidden sm:inline">Link Copiado</span>
+                <span className="sm:hidden">Copiado</span>
               </>
             ) : (
               <>
                 <Share2 className="w-3.5 h-3.5 text-charcoal-400" />
-                <span>Compartilhar Chá</span>
+                <span className="hidden sm:inline">Compartilhar Chá</span>
+                <span className="sm:hidden">Compartilhar</span>
               </>
             )}
           </button>

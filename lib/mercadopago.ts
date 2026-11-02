@@ -211,7 +211,7 @@ export async function createPixPayment(input: CreatePixInput): Promise<PixPaymen
         description: input.description.slice(0, 120),
         payment_method_id: 'pix',
         payer: {
-          email: input.payerEmail || 'contato@fraldaonline.com.br',
+          email: input.payerEmail || 'contato@fralda.online',
           first_name: firstName,
           last_name: lastName,
           ...(cleanCpf && cleanCpf.length === 11

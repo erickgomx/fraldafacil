@@ -7,29 +7,31 @@ export default function HomePage() {
     <div className="min-h-screen bg-cream-50 text-charcoal-900">
       {/* Topo / Navegação */}
       <header className="sticky top-0 z-40 bg-cream-50/90 backdrop-blur-md border-b border-warm-border/70">
-        <div className="max-w-5xl mx-auto px-6 h-20 flex items-center justify-between">
-          <Link href="/" className="group">
-            <BrandLogo size="md" />
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center justify-between gap-2">
+          <Link href="/" className="group shrink-0">
+            <BrandLogo size="sm" className="sm:hidden" />
+            <BrandLogo size="md" className="hidden sm:inline-flex" />
           </Link>
 
-          <nav className="flex items-center gap-3">
+          <nav className="flex items-center gap-2 sm:gap-3 shrink-0">
             <Link
               href="/demo"
-              className="text-xs sm:text-sm font-medium text-charcoal-600 hover:text-charcoal-900 px-3 py-2 transition"
+              className="hidden md:inline-flex text-xs sm:text-sm font-medium text-charcoal-600 hover:text-charcoal-900 px-3 py-2 transition whitespace-nowrap"
             >
               Ver Exemplo Real
             </Link>
             <Link
               href="/login"
-              className="text-xs sm:text-sm font-medium text-charcoal-600 hover:text-charcoal-900 px-3 py-2 transition"
+              className="text-xs sm:text-sm font-medium text-charcoal-700 hover:text-charcoal-900 px-2 sm:px-3 py-1.5 transition whitespace-nowrap"
             >
               Entrar
             </Link>
             <Link
               href="/cadastro"
-              className="text-xs sm:text-sm font-medium px-4 py-2.5 rounded-lg bg-charcoal-900 text-white hover:bg-charcoal-800 transition shadow-subtle"
+              className="text-xs sm:text-sm font-semibold px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-lg bg-charcoal-900 text-white hover:bg-charcoal-800 transition shadow-subtle whitespace-nowrap shrink-0 flex items-center gap-1"
             >
-              Criar meu Chá
+              <span className="sm:hidden">Criar Chá</span>
+              <span className="hidden sm:inline">Criar meu Chá</span>
             </Link>
           </nav>
         </div>

@@ -17,7 +17,7 @@ const sans = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://fralda.online'),
   title: {
     default: 'Fralda Online — Chá de Bebê, Fralda & Revelação com Pix',
     template: '%s | Fralda Online',

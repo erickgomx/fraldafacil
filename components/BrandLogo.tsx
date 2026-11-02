@@ -88,15 +88,15 @@ export default function BrandLogo({
       </div>
 
       {!iconOnly && (
-        <div className="flex flex-col text-left">
+        <div className="flex flex-col text-left whitespace-nowrap">
           <span
-            className={`font-serif tracking-tight font-medium text-charcoal-900 leading-none ${sizeMap.title}`}
+            className={`font-serif tracking-tight font-medium text-charcoal-900 leading-none whitespace-nowrap ${sizeMap.title}`}
           >
             Fralda Online
           </span>
           {showTagline && (
             <span
-              className={`tracking-widest uppercase font-sans text-charcoal-500 font-medium ${sizeMap.tagline}`}
+              className={`tracking-widest uppercase font-sans text-charcoal-500 font-medium whitespace-nowrap ${sizeMap.tagline}`}
             >
               Chá &amp; Revelação
             </span>
