@@ -71,7 +71,7 @@ export default function ForgotPasswordPage() {
               </h1>
 
               <p className="text-xs text-charcoal-600 font-sans leading-relaxed">
-                Se o e-mail <strong className="text-charcoal-900">{email}</strong> estiver cadastrado, enviamos as instruções com um link seguro para redefinir sua senha.
+                Enviamos as instruções com um link seguro de recuperação para <strong className="text-charcoal-900">{email}</strong>.
               </p>
 
               <div className="p-3 bg-cream-50 rounded-xl border border-warm-border/80 text-[11px] text-charcoal-500 text-left space-y-1">
@@ -111,8 +111,18 @@ export default function ForgotPasswordPage() {
               </p>
 
               {error && (
-                <div className="mb-5 p-3 rounded-lg bg-dusty-rose-light border border-dusty-rose/30 text-dusty-rose text-xs font-sans">
-                  {error}
+                <div className="mb-5 p-3 rounded-lg bg-dusty-rose-light border border-dusty-rose/30 text-dusty-rose text-xs font-sans leading-relaxed">
+                  <p>{error}</p>
+                  {error.includes('Não encontramos') && (
+                    <div className="mt-2 pt-2 border-t border-dusty-rose/20">
+                      <Link
+                        href="/cadastro"
+                        className="font-medium underline hover:text-charcoal-900 transition-colors"
+                      >
+                        Clique aqui para criar seu Chá agora &rarr;
+                      </Link>
+                    </div>
+                  )}
                 </div>
               )}
 

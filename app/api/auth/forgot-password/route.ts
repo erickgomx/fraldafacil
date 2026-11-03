@@ -23,46 +23,62 @@ export async function POST(req: NextRequest) {
       where: { email: normalizedEmail },
     });
 
-    let devResetUrl: string | undefined;
-
-    if (user) {
-      const token = signPasswordResetToken({
-        userId: user.id,
-        email: user.email,
-        currentPasswordHash: user.password,
-      });
-
-      const defaultBase = 'https://fralda.online';
-      const envBase = process.env.NEXT_PUBLIC_APP_URL;
-      const baseUrl =
-        envBase && !envBase.includes('localhost') && !envBase.includes('vercel.app')
-          ? envBase
-          : defaultBase;
-
-      // Se for local dev ou teste, preserva a origem local para conseguir clicar
-      const hostHeader = req.headers.get('host');
-      const proto = req.headers.get('x-forwarded-proto') || 'http';
-      const requestOrigin = hostHeader ? `${proto}://${hostHeader}` : baseUrl;
-
-      const finalBase = process.env.NODE_ENV === 'production' ? baseUrl : requestOrigin;
-      const resetLink = `${finalBase.replace(/\/$/, '')}/redefinir-senha?token=${encodeURIComponent(token)}`;
-
-      await sendPasswordResetEmail({
-        to: user.email,
-        name: user.name,
-        resetLink,
-      });
-
-      if (process.env.NODE_ENV !== 'production') {
-        devResetUrl = resetLink;
-      }
+    if (!user) {
+      return NextResponse.json(
+        {
+          error:
+            'Não encontramos nenhuma conta cadastrada com este e-mail. Verifique o endereço digitado ou crie seu Chá.',
+        },
+        { status: 404 }
+      );
     }
 
-    // Resposta padrão segura (mitigação de enumeração de contas)
+    const token = signPasswordResetToken({
+      userId: user.id,
+      email: user.email,
+      currentPasswordHash: user.password,
+    });
+
+    const defaultBase = 'https://fralda.online';
+    const envBase = process.env.NEXT_PUBLIC_APP_URL;
+    const baseUrl =
+      envBase && !envBase.includes('localhost') && !envBase.includes('vercel.app')
+        ? envBase
+        : defaultBase;
+
+    // Se for local dev ou teste, preserva a origem local para conseguir clicar
+    const hostHeader = req.headers.get('host');
+    const proto = req.headers.get('x-forwarded-proto') || 'http';
+    const requestOrigin = hostHeader ? `${proto}://${hostHeader}` : baseUrl;
+
+    const finalBase = process.env.NODE_ENV === 'production' ? baseUrl : requestOrigin;
+    const resetLink = `${finalBase.replace(/\/$/, '')}/redefinir-senha?token=${encodeURIComponent(token)}`;
+
+    const emailResult = await sendPasswordResetEmail({
+      to: user.email,
+      name: user.name,
+      resetLink,
+    });
+
+    if (!emailResult.success) {
+      return NextResponse.json(
+        {
+          error:
+            emailResult.error ||
+            'Não foi possível enviar o e-mail no momento. Tente novamente em instantes.',
+        },
+        { status: 502 }
+      );
+    }
+
+    let devResetUrl: string | undefined;
+    if (process.env.NODE_ENV !== 'production') {
+      devResetUrl = resetLink;
+    }
+
     return NextResponse.json({
       success: true,
-      message:
-        'Se o e-mail informado estiver cadastrado, enviamos as instruções e o link seguro para redefinição da sua senha.',
+      message: 'Enviamos as instruções e o link seguro de recuperação para o seu e-mail.',
       ...(devResetUrl ? { devResetUrl } : {}),
     });
   } catch (err) {
