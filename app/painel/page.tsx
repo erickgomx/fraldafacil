@@ -50,6 +50,7 @@ export default async function PainelPage() {
       event={{
         id: event.id,
         slug: event.slug,
+        eventType: event.eventType,
         babyName: event.babyName,
         boyName: event.boyName,
         girlName: event.girlName,

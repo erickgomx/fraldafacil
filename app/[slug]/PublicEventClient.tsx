@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import { Share2, Check } from 'lucide-react';
 import Link from 'next/link';
 import BrandLogo from '@/components/BrandLogo';
+import { shareEvent } from '@/lib/share';
 
 interface PublicEventClientProps {
   event: {
@@ -59,9 +60,16 @@ export default function PublicEventClient({
     setIsModalOpen(true);
   };
 
-  const handleShare = () => {
-    if (typeof window !== 'undefined') {
-      navigator.clipboard.writeText(window.location.href);
+  const handleShare = async () => {
+    const res = await shareEvent({
+      slug: event.slug,
+      parentsNames: event.parentsNames,
+      babyName: event.babyName,
+      boyName: event.boyName,
+      girlName: event.girlName,
+      eventType: event.eventType,
+    });
+    if (res !== 'CANCELLED') {
       setCopiedLink(true);
       setTimeout(() => setCopiedLink(false), 2500);
     }

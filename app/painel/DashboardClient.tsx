@@ -7,11 +7,13 @@ import {
   Share2,
 } from 'lucide-react';
 import Link from 'next/link';
+import { shareEvent } from '@/lib/share';
 
 interface DashboardClientProps {
   event: {
     id: string;
     slug: string;
+    eventType?: string;
     babyName: string | null;
     boyName?: string | null;
     girlName?: string | null;
@@ -87,10 +89,16 @@ export default function DashboardClient({
     }
   };
 
-  const copyPublicLink = () => {
-    if (typeof window !== 'undefined') {
-      const url = `${window.location.origin}/${event.slug}`;
-      navigator.clipboard.writeText(url);
+  const copyPublicLink = async () => {
+    const res = await shareEvent({
+      slug: event.slug,
+      parentsNames: event.parentsNames,
+      babyName: event.babyName,
+      boyName: event.boyName,
+      girlName: event.girlName,
+      eventType: event.eventType,
+    });
+    if (res !== 'CANCELLED') {
       setCopiedLink(true);
       setTimeout(() => setCopiedLink(false), 2500);
     }
@@ -114,17 +122,17 @@ export default function DashboardClient({
 
         <button
           onClick={copyPublicLink}
-          className="shrink-0 py-2.5 px-4 rounded-lg bg-cream-100 hover:bg-cream-200/80 border border-warm-border text-charcoal-800 font-medium text-xs transition shadow-subtle flex items-center gap-2"
+          className="shrink-0 py-2.5 px-4 rounded-lg bg-charcoal-900 hover:bg-charcoal-800 text-white font-medium text-xs transition shadow-subtle flex items-center gap-2"
         >
           {copiedLink ? (
             <>
-              <Check className="w-3.5 h-3.5 text-stone-900" />
-              <span>Link Copiado</span>
+              <Check className="w-3.5 h-3.5 text-stone-200" />
+              <span>Convite Copiado!</span>
             </>
           ) : (
             <>
-              <Share2 className="w-3.5 h-3.5 text-charcoal-500" />
-              <span>Copiar Link da Página</span>
+              <Share2 className="w-3.5 h-3.5 text-stone-300" />
+              <span>Compartilhar Convite</span>
             </>
           )}
         </button>
