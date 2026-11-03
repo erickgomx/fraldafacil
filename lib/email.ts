@@ -133,14 +133,25 @@ export async function sendPasswordResetEmail({
         }),
       });
 
-      // Se falhar porque o domínio personalizado ainda não propagou no DNS, tenta fallback temporário
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.warn('Tentativa com remetente primário falhou:', errorData);
+      let resendErrorMsg = '';
 
-        if (errorData?.message?.toLowerCase().includes('not verified')) {
-          console.log('[Fralda Online] Domínio ainda pendente de verificação DNS. Tentando envio de fallback...');
-          response = await fetch('https://api.resend.com/emails', {
+      if (!response.ok) {
+        try {
+          const errorData = await response.json();
+          console.warn('[Fralda Online] Tentativa com remetente primário falhou:', errorData);
+          resendErrorMsg = errorData?.message || errorData?.error || '';
+        } catch {
+          resendErrorMsg = `HTTP ${response.status}: ${response.statusText}`;
+        }
+
+        // Se falhar porque o domínio ainda não foi verificado no DNS do Resend, tenta fallback de onboarding
+        const isDomainNotVerified =
+          resendErrorMsg.toLowerCase().includes('not verified') ||
+          resendErrorMsg.toLowerCase().includes('domain');
+
+        if (isDomainNotVerified) {
+          console.log('[Fralda Online] Domínio não verificado no Resend. Tentando fallback com onboarding@resend.dev...');
+          const fallbackResponse = await fetch('https://api.resend.com/emails', {
             method: 'POST',
             headers: {
               Authorization: `Bearer ${resendApiKey}`,
@@ -153,20 +164,56 @@ export async function sendPasswordResetEmail({
               html: htmlContent,
             }),
           });
-        }
-      }
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Erro ao enviar e-mail via Resend:', errorData);
-        return { success: false, error: 'Falha ao despachar e-mail via serviço Resend.' };
+          if (fallbackResponse.ok) {
+            console.log(`[Fralda Online] E-mail enviado com sucesso via onboarding@resend.dev para: ${to}`);
+            return { success: true };
+          }
+
+          try {
+            const fallbackErrorData = await fallbackResponse.json();
+            console.error('[Fralda Online] Fallback onboarding@resend.dev falhou:', fallbackErrorData);
+            if (fallbackErrorData?.message) {
+              resendErrorMsg = fallbackErrorData.message;
+            }
+          } catch {
+            // mantém resendErrorMsg anterior
+          }
+        }
+
+        // Mensagens explicativas e acionáveis para o usuário
+        let userFriendlyMsg = resendErrorMsg;
+        if (
+          resendErrorMsg.toLowerCase().includes('not verified') ||
+          resendErrorMsg.toLowerCase().includes('domain')
+        ) {
+          userFriendlyMsg =
+            'O domínio fralda.online ainda não foi verificado no Resend. Adicione os registros DNS no seu registrador de domínio ou clique em "Verify" no painel do Resend.';
+        } else if (
+          resendErrorMsg.toLowerCase().includes('testing emails to your own email address') ||
+          resendErrorMsg.toLowerCase().includes('only send testing')
+        ) {
+          userFriendlyMsg =
+            'O domínio fralda.online precisa ser verificado no Resend. Em modo de teste, o Resend só entrega para o e-mail do titular da conta no Resend.';
+        } else if (resendErrorMsg.toLowerCase().includes('api key')) {
+          userFriendlyMsg =
+            'A chave RESEND_API_KEY informada na Vercel é inválida ou não possui permissão de envio.';
+        }
+
+        return {
+          success: false,
+          error: userFriendlyMsg || 'Falha ao despachar e-mail via serviço Resend.',
+        };
       }
 
       console.log(`[Fralda Online] E-mail de redefinição enviado com sucesso para: ${to}`);
       return { success: true };
     } catch (err) {
       console.error('Erro de conexão ao enviar e-mail via Resend:', err);
-      return { success: false, error: 'Erro de conexão com o provedor de e-mail.' };
+      return {
+        success: false,
+        error: 'Erro de conexão com o servidor de e-mails. Verifique sua conexão e tente novamente.',
+      };
     }
   }
 
