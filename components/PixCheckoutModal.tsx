@@ -497,6 +497,9 @@ export default function PixCheckoutModal({
                     placeholder="000.000.000-00"
                     className="w-full px-3.5 py-2.5 rounded-lg border border-warm-border bg-cream-50/50 text-charcoal-900 text-xs font-mono focus:bg-white focus:outline-none focus:ring-1 focus:ring-charcoal-900"
                   />
+                  <span className="text-[10px] text-charcoal-400 font-sans block mt-1">
+                    Exigido pelo Banco Central para liquidação do Pix
+                  </span>
                 </div>
               </div>
 

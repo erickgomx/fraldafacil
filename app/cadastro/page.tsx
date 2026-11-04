@@ -402,6 +402,17 @@ export default function RegisterPage() {
                   </>
                 )}
               </button>
+
+              <p className="text-[11px] text-charcoal-500 font-sans text-center mt-3 leading-relaxed">
+                Ao continuar, você concorda com nossos{' '}
+                <Link href="/termos" target="_blank" className="underline hover:text-charcoal-900 transition-colors">
+                  Termos de Uso
+                </Link>{' '}
+                e{' '}
+                <Link href="/privacidade" target="_blank" className="underline hover:text-charcoal-900 transition-colors">
+                  Política de Privacidade
+                </Link>.
+              </p>
             </div>
           </form>
 

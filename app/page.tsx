@@ -211,14 +211,22 @@ export default function HomePage() {
       {/* Rodapé Editorial */}
       <footer className="py-12 px-6 border-t border-warm-border bg-[#F7F3EC] text-charcoal-600 text-xs font-sans">
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="font-serif font-medium text-sm text-charcoal-900">Fralda Online</span>
             <span className="text-charcoal-400">·</span>
-            <span>A plataforma independente para Chás de Bebê & Revelação</span>
+            <span>A plataforma independente para Chás de Bebê &amp; Revelação</span>
           </div>
 
-          <div className="text-charcoal-500">
-            © {new Date().getFullYear()} — Feito para famílias brasileiras.
+          <div className="flex items-center gap-3 text-charcoal-500 text-xs">
+            <Link href="/termos" className="hover:text-charcoal-900 transition-colors">
+              Termos de Uso
+            </Link>
+            <span className="text-charcoal-300">·</span>
+            <Link href="/privacidade" className="hover:text-charcoal-900 transition-colors">
+              Privacidade (LGPD)
+            </Link>
+            <span className="text-charcoal-300">·</span>
+            <span>© {new Date().getFullYear()}</span>
           </div>
         </div>
       </footer>

@@ -163,6 +163,12 @@ export default function LoginPage() {
         <Suspense fallback={<div className="bg-white rounded-2xl p-12 border border-warm-border flex items-center justify-center"><BrandLoader fullScreen={false} /></div>}>
           <LoginForm />
         </Suspense>
+
+        <div className="mt-8 text-center text-[11px] text-charcoal-400 space-x-3">
+          <Link href="/termos" className="hover:text-charcoal-700 transition-colors">Termos de Uso</Link>
+          <span>·</span>
+          <Link href="/privacidade" className="hover:text-charcoal-700 transition-colors">Privacidade (LGPD)</Link>
+        </div>
       </div>
     </main>
   );
