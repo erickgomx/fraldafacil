@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'crypto';
 import prisma from '@/lib/prisma';
 import { hashPassword } from '@/lib/auth';
 
@@ -8,16 +9,26 @@ export const dynamic = 'force-dynamic';
  * Endpoint de Inicialização/Promoção de Superusuário.
  * 
  * Permite promover um usuário a ADMIN remotamente ou via script
- * mediante fornecimento da chave secreta configurada no ambiente (ADMIN_SETUP_SECRET ou JWT_SECRET).
+ * mediante fornecimento da chave secreta configurada no ambiente (ADMIN_SETUP_SECRET).
  */
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { email, password, name, secretKey } = body;
 
-    const expectedSecret = process.env.ADMIN_SETUP_SECRET || process.env.JWT_SECRET;
+    const expectedSecret = process.env.ADMIN_SETUP_SECRET;
 
-    if (!expectedSecret || !secretKey || secretKey !== expectedSecret) {
+    if (!expectedSecret || expectedSecret.trim() === '' || !secretKey || typeof secretKey !== 'string') {
+      return NextResponse.json(
+        { error: 'Chave secreta inválida ou endpoint de setup não configurado.' },
+        { status: 401 }
+      );
+    }
+
+    const bufExpected = Buffer.from(expectedSecret, 'utf8');
+    const bufSecret = Buffer.from(secretKey, 'utf8');
+
+    if (bufExpected.length !== bufSecret.length || !crypto.timingSafeEqual(bufExpected, bufSecret)) {
       return NextResponse.json(
         { error: 'Chave secreta inválida ou não autorizada.' },
         { status: 401 }

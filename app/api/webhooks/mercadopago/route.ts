@@ -26,11 +26,28 @@ function verifyWebhookSignature(
 
   if (!ts || !v1) return false;
 
+  // 1. Defesa Anti-Replay: Tolera no máximo 5 minutos (300.000 ms)
+  const tsNum = parseInt(ts, 10);
+  if (isNaN(tsNum)) return false;
+  const tsMs = tsNum < 1e11 ? tsNum * 1000 : tsNum;
+  if (Math.abs(Date.now() - tsMs) > 5 * 60 * 1000) {
+    console.warn('[Webhook MP] Notificação expirada ou relógio dessincronizado.');
+    return false;
+  }
+
   // Formato oficial do Mercado Pago: id:[data.id];request-id:[x-request-id];ts:[ts];
   const manifest = `id:${dataId};request-id:${requestId};ts:${ts};`;
   const computedHash = crypto.createHmac('sha256', secret).update(manifest).digest('hex');
 
-  return crypto.timingSafeEqual(Buffer.from(computedHash, 'utf8'), Buffer.from(v1, 'utf8'));
+  const bufComputed = Buffer.from(computedHash, 'utf8');
+  const bufReceived = Buffer.from(v1, 'utf8');
+
+  // Proteção contra erro de comprimentos distintos em crypto.timingSafeEqual
+  if (bufComputed.length !== bufReceived.length) {
+    return false;
+  }
+
+  return crypto.timingSafeEqual(bufComputed, bufReceived);
 }
 
 export async function POST(req: NextRequest) {

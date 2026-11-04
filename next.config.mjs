@@ -5,7 +5,7 @@ const isProd = process.env.NODE_ENV === 'production';
 // e liberamos conexões WebSocket (ws: wss:) para o Hot Reload do Next.js funcionar suavemente.
 const cspDirectives = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://sdk.mercadopago.com https://http2.mlstatic.com",
+  `script-src 'self' 'unsafe-inline' https://sdk.mercadopago.com https://http2.mlstatic.com ${isProd ? '' : "'unsafe-eval'"}`,
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "img-src 'self' data: blob: https://images.unsplash.com https://http2.mlstatic.com",
   "font-src 'self' data: https://fonts.gstatic.com",

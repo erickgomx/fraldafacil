@@ -139,9 +139,9 @@ export async function POST(req: NextRequest) {
   } catch (error: unknown) {
     console.error('Erro ao criar pedido Pix:', error);
     const msg =
-      error instanceof Error
-        ? error.message
-        : 'Ocorreu um erro ao gerar o pagamento Pix. Tente novamente.';
+      process.env.NODE_ENV === 'production'
+        ? 'Não foi possível gerar o pagamento Pix no momento. Por favor, tente novamente em instantes.'
+        : (error instanceof Error ? error.message : 'Erro ao processar Pix.');
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

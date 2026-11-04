@@ -6,9 +6,15 @@ import crypto from 'crypto';
  */
 
 function getEncryptionKey(): Buffer {
-  const secret = process.env.DATA_ENCRYPTION_KEY || process.env.JWT_SECRET || 'fralda-facil-fallback-encryption-key-dev-only';
+  const secret = process.env.DATA_ENCRYPTION_KEY || process.env.JWT_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === 'production' && process.env.NEXT_PHASE !== 'phase-production-build') {
+      throw new Error('FATAL: DATA_ENCRYPTION_KEY ou JWT_SECRET obrigatório para cifragem de credenciais.');
+    }
+  }
+  const keySource = secret || 'fralda-facil-fallback-encryption-key-dev-only';
   // Deriva exatamente 32 bytes para AES-256 usando SHA-256
-  return crypto.createHash('sha256').update(secret).digest();
+  return crypto.createHash('sha256').update(keySource).digest();
 }
 
 const IV_LENGTH = 12; // 96 bits recomendado para GCM

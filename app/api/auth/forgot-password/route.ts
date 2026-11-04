@@ -24,13 +24,11 @@ export async function POST(req: NextRequest) {
     });
 
     if (!user) {
-      return NextResponse.json(
-        {
-          error:
-            'Não encontramos nenhuma conta cadastrada com este e-mail. Verifique o endereço digitado ou crie seu Chá.',
-        },
-        { status: 404 }
-      );
+      // Resposta uniforme contra enumeração de contas de usuários (OWASP Top 10)
+      return NextResponse.json({
+        success: true,
+        message: 'Se este endereço estiver cadastrado, você receberá um link seguro de recuperação em instantes.',
+      });
     }
 
     const token = signPasswordResetToken({

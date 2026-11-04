@@ -8,16 +8,21 @@ const FORBIDDEN_SECRETS = [
   'fralda-facil-secret-key-123456',
   'change-me',
   'secret',
+  'fralda-facil-prod-fallback-secret-key-32chars!',
+  'fralda-facil-dev-secret-key-must-be-changed-in-prod-32chars!',
+  'gere_um_segredo_criptografico_forte_com_openssl_rand_hex_32',
 ];
 
 const JWT_SECRET = (() => {
   const secret = process.env.JWT_SECRET;
   if (process.env.NODE_ENV === 'production') {
-    if (!secret || FORBIDDEN_SECRETS.includes(secret) || secret.length < 16) {
-      console.warn(
-        '⚠️ AVISO DE SEGURANÇA: JWT_SECRET padrão detectado. Recomendamos configurar uma chave forte nas variáveis da Vercel.'
+    if (!secret || FORBIDDEN_SECRETS.includes(secret) || secret.length < 32) {
+      if (process.env.NEXT_PHASE === 'phase-production-build') {
+        return 'temp-build-only-secret-key-must-be-provided-at-runtime-32chars!';
+      }
+      throw new Error(
+        'FATAL: A variável JWT_SECRET deve estar configurada nas variáveis de ambiente com no mínimo 32 caracteres seguros.'
       );
-      return secret || 'fralda-facil-prod-fallback-secret-key-32chars!';
     }
     return secret;
   }

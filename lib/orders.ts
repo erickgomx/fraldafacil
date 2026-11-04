@@ -9,40 +9,42 @@ import prisma from '@/lib/prisma';
  * consegue fazer a transição e os efeitos não são duplicados.
  */
 export async function approveOrder(orderId: string): Promise<boolean> {
-  const { count } = await prisma.order.updateMany({
-    where: { id: orderId, status: { not: 'APPROVED' } },
-    data: { status: 'APPROVED' },
+  return await prisma.$transaction(async (tx) => {
+    const { count } = await tx.order.updateMany({
+      where: { id: orderId, status: { not: 'APPROVED' } },
+      data: { status: 'APPROVED' },
+    });
+
+    if (count === 0) return false;
+
+    const order = await tx.order.findUnique({ where: { id: orderId } });
+    if (!order) return false;
+
+    if (order.payerMessage && order.payerMessage.trim() !== '') {
+      await tx.guestMessage.upsert({
+        where: { orderId: order.id },
+        update: { name: order.payerName, message: order.payerMessage },
+        create: {
+          eventId: order.eventId,
+          orderId: order.id,
+          name: order.payerName,
+          message: order.payerMessage,
+        },
+      });
+    }
+
+    if (order.pollGuess === 'BOY' || order.pollGuess === 'GIRL') {
+      await tx.pollVote.create({
+        data: {
+          eventId: order.eventId,
+          voterName: order.payerName,
+          guess: order.pollGuess,
+        },
+      });
+    }
+
+    return true;
   });
-
-  if (count === 0) return false;
-
-  const order = await prisma.order.findUnique({ where: { id: orderId } });
-  if (!order) return false;
-
-  if (order.payerMessage && order.payerMessage.trim() !== '') {
-    await prisma.guestMessage.upsert({
-      where: { orderId: order.id },
-      update: { name: order.payerName, message: order.payerMessage },
-      create: {
-        eventId: order.eventId,
-        orderId: order.id,
-        name: order.payerName,
-        message: order.payerMessage,
-      },
-    });
-  }
-
-  if (order.pollGuess === 'BOY' || order.pollGuess === 'GIRL') {
-    await prisma.pollVote.create({
-      data: {
-        eventId: order.eventId,
-        voterName: order.payerName,
-        guess: order.pollGuess,
-      },
-    });
-  }
-
-  return true;
 }
 
 /** Marca o pedido como recusado, sem sobrescrever um pedido já aprovado. */
