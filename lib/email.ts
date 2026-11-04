@@ -125,7 +125,7 @@ export async function sendPasswordResetEmail({
       const domain = process.env.RESEND_EMAIL_DOMAIN || 'fralda.online';
       const fromEmail = process.env.EMAIL_FROM || `Fralda Online <suporte@${domain}>`;
 
-      let response = await fetch('https://api.resend.com/emails', {
+      const response = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${resendApiKey}`,
