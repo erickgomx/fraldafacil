@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Lock, Mail, ArrowRight, User, Link2, Calendar, Sparkles } from 'lucide-react';
 import BrandLogo from '@/components/BrandLogo';
+import BrandLoader from '@/components/BrandLoader';
 
 function sanitizeSlug(text: string): string {
   return text
@@ -147,7 +148,9 @@ export default function RegisterPage() {
   };
 
   return (
-    <main className="min-h-screen bg-cream-50 text-charcoal-900 flex flex-col justify-center items-center p-6 py-12">
+    <>
+      <BrandLoader visible={loading} fullScreen minDurationMs={500} />
+      <main className="min-h-screen bg-cream-50 text-charcoal-900 flex flex-col justify-center items-center p-6 py-12">
       <div className="w-full max-w-lg">
         {/* Header com a nova marca oficial */}
         <div className="text-center mb-8 flex flex-col items-center">
@@ -413,5 +416,6 @@ export default function RegisterPage() {
         </div>
       </div>
     </main>
+    </>
   );
 }

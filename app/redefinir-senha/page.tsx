@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Lock, ArrowRight, CheckCircle2, AlertCircle } from 'lucide-react';
 import BrandLogo from '@/components/BrandLogo';
+import BrandLoader from '@/components/BrandLoader';
 
 function ResetPasswordForm() {
   const router = useRouter();
@@ -112,6 +113,7 @@ function ResetPasswordForm() {
 
   return (
     <>
+      <BrandLoader visible={loading} fullScreen minDurationMs={500} />
       <h1 className="font-serif text-xl font-normal text-charcoal-900 mb-2">
         Criar Nova Senha
       </h1>
@@ -197,7 +199,7 @@ export default function ResetPasswordPage() {
 
         {/* Card */}
         <div className="bg-white rounded-2xl p-8 shadow-subtle border border-warm-border">
-          <Suspense fallback={<div className="text-center text-xs py-8 text-charcoal-400">Carregando formulário...</div>}>
+          <Suspense fallback={<div className="py-8 flex items-center justify-center"><BrandLoader fullScreen={false} /></div>}>
             <ResetPasswordForm />
           </Suspense>
         </div>

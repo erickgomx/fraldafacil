@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Lock, Mail, ArrowRight, CheckCircle2 } from 'lucide-react';
 import BrandLogo from '@/components/BrandLogo';
+import BrandLoader from '@/components/BrandLoader';
 
 function LoginForm() {
   const router = useRouter();
@@ -53,7 +54,9 @@ function LoginForm() {
   };
 
   return (
-    <div className="bg-white rounded-2xl p-8 shadow-subtle border border-warm-border">
+    <>
+      <BrandLoader visible={loading} fullScreen minDurationMs={500} />
+      <div className="bg-white rounded-2xl p-8 shadow-subtle border border-warm-border">
       <h1 className="font-serif text-xl font-normal text-charcoal-900 mb-6">
         Entrar na sua conta
       </h1>
@@ -139,6 +142,7 @@ function LoginForm() {
         </p>
       </div>
     </div>
+    </>
   );
 }
 
@@ -156,7 +160,7 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <Suspense fallback={<div className="bg-white rounded-2xl p-8 border border-warm-border text-center text-xs text-charcoal-400">Carregando formulário...</div>}>
+        <Suspense fallback={<div className="bg-white rounded-2xl p-12 border border-warm-border flex items-center justify-center"><BrandLoader fullScreen={false} /></div>}>
           <LoginForm />
         </Suspense>
       </div>

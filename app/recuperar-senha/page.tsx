@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Mail, ArrowRight, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import BrandLogo from '@/components/BrandLogo';
+import BrandLoader from '@/components/BrandLoader';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -46,7 +47,9 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <main className="min-h-screen bg-cream-50 text-charcoal-900 flex flex-col justify-center items-center p-6">
+    <>
+      <BrandLoader visible={loading} fullScreen minDurationMs={500} />
+      <main className="min-h-screen bg-cream-50 text-charcoal-900 flex flex-col justify-center items-center p-6">
       <div className="w-full max-w-sm">
         {/* Header com a Marca */}
         <div className="text-center mb-8">
@@ -174,5 +177,6 @@ export default function ForgotPasswordPage() {
         </div>
       </div>
     </main>
+    </>
   );
 }

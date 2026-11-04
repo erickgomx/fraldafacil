@@ -1,5 +1,5 @@
 import BrandLoader from '@/components/BrandLoader';
 
 export default function Loading() {
-  return <BrandLoader fullScreen message="Carregando com carinho..." />;
+  return <BrandLoader fullScreen />;
 }

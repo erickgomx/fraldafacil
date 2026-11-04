@@ -1,27 +1,88 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
-interface BrandLoaderProps {
-  message?: string;
+export interface BrandLoaderProps {
   fullScreen?: boolean;
   className?: string;
+  minDurationMs?: number; // Padrão 500ms para evitar estranhamento/flicker
+  visible?: boolean;
 }
 
 export default function BrandLoader({
-  message = 'Carregando com carinho...',
-  fullScreen = false,
+  fullScreen = true,
   className = '',
+  minDurationMs = 500,
+  visible,
 }: BrandLoaderProps) {
-  const content = (
-    <div className={`flex flex-col items-center justify-center p-6 text-center select-none ${className}`}>
-      {/* Container da Logo com Efeito de Levitação e Pulso Suave */}
-      <div className="relative mb-5 flex items-center justify-center">
-        {/* Halo de luz sutil no fundo */}
-        <div className="absolute w-20 h-20 rounded-full bg-cream-200/60 blur-xl animate-pulse" />
+  // Se 'visible' não for fornecido, opera como uncontrolled (ex: em loading.tsx)
+  const isControlled = typeof visible === 'boolean';
+  const [shouldRender, setShouldRender] = useState(isControlled ? visible : true);
+  const mountTimeRef = useRef<number>(Date.now());
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-        {/* Emblema com a Chupeta-Globo Oficial */}
-        <div className="relative w-16 h-16 rounded-2xl bg-white border border-warm-border shadow-card flex items-center justify-center p-2 animate-float">
+  useEffect(() => {
+    if (!isControlled) return;
+
+    if (visible) {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      mountTimeRef.current = Date.now();
+      setShouldRender(true);
+    } else {
+      const elapsed = Date.now() - mountTimeRef.current;
+      const remaining = Math.max(0, minDurationMs - elapsed);
+
+      if (remaining > 0) {
+        timerRef.current = setTimeout(() => {
+          setShouldRender(false);
+        }, remaining);
+      } else {
+        setShouldRender(false);
+      }
+    }
+
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [visible, minDurationMs, isControlled]);
+
+  const loaderBody = (
+    <motion.div
+      key="brand-loader-content"
+      initial={{ opacity: 0, scale: 0.86 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.88, transition: { duration: 0.24, ease: 'easeInOut' } }}
+      transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+      className={`relative flex items-center justify-center select-none ${className}`}
+    >
+      <motion.div
+        animate={{
+          scale: [1, 1.05, 1],
+        }}
+        transition={{
+          duration: 1.4,
+          repeat: Infinity,
+          ease: 'easeInOut',
+        }}
+        className="relative flex items-center justify-center"
+      >
+        {/* Halo de luz quente suave de fundo */}
+        <motion.div
+          animate={{
+            scale: [1, 1.25, 1],
+            opacity: [0.25, 0.55, 0.25],
+          }}
+          transition={{
+            duration: 1.4,
+            repeat: Infinity,
+            ease: 'easeInOut',
+          }}
+          className="absolute w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-cream-300/40 blur-xl pointer-events-none"
+        />
+
+        {/* Emblema Oficial Fralda Online: Chupeta com Globo da Internet */}
+        <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl sm:rounded-3xl bg-white border border-[#E7E2DA] shadow-card flex items-center justify-center p-3 sm:p-3.5">
           <svg
             viewBox="0 0 500 500"
             className="w-full h-full"
@@ -29,13 +90,13 @@ export default function BrandLoader({
             xmlns="http://www.w3.org/2000/svg"
           >
             <defs>
-              <clipPath id="loader-globe-clip">
+              <clipPath id="brand-loader-globe-clip">
                 <circle cx="0" cy="95" r="75" />
               </clipPath>
             </defs>
 
             <g transform="translate(250, 250) rotate(45)">
-              {/* Bico da Chupeta */}
+              {/* 1. Bico da Chupeta */}
               <path
                 d="M -30,-45 C -45,-80 -55,-130 0,-155 C 55,-130 45,-80 30,-45 Z"
                 fill="#FFFFFF"
@@ -44,6 +105,7 @@ export default function BrandLoader({
                 strokeLinejoin="round"
                 strokeLinecap="round"
               />
+              {/* Brilho no bico */}
               <path
                 d="M -12,-140 C -26,-125 -28,-105 -24,-90"
                 fill="none"
@@ -52,7 +114,7 @@ export default function BrandLoader({
                 strokeLinecap="round"
               />
 
-              {/* Base Protetora Labial */}
+              {/* 2. Base Protetora Labial */}
               <rect
                 x="-95"
                 y="-45"
@@ -65,7 +127,7 @@ export default function BrandLoader({
                 strokeLinejoin="round"
               />
 
-              {/* Conector */}
+              {/* 3. Conector */}
               <rect
                 x="-24"
                 y="0"
@@ -78,11 +140,11 @@ export default function BrandLoader({
                 strokeLinejoin="round"
               />
 
-              {/* Globo da Internet */}
+              {/* 4. Argola / Globo da Internet */}
               <circle cx="0" cy="95" r="85" fill="none" stroke="#111111" strokeWidth="14" />
               <circle cx="0" cy="95" r="75" fill="#FFFFFF" stroke="#111111" strokeWidth="14" />
 
-              <g clipPath="url(#loader-globe-clip)" stroke="#111111" strokeWidth="10" fill="none">
+              <g clipPath="url(#brand-loader-globe-clip)" stroke="#111111" strokeWidth="10" fill="none">
                 <line x1="0" y1="20" x2="0" y2="170" />
                 <line x1="-75" y1="95" x2="75" y2="95" />
                 <line x1="-65" y1="65" x2="65" y2="65" />
@@ -100,37 +162,38 @@ export default function BrandLoader({
             </g>
           </svg>
         </div>
-      </div>
-
-      {/* Nome da Marca */}
-      <h3 className="font-serif text-lg font-medium text-charcoal-900 tracking-tight">
-        Fralda Online
-      </h3>
-      <span className="text-[10px] uppercase font-mono tracking-widest text-charcoal-500 mb-4 block">
-        Chá &amp; Revelação
-      </span>
-
-      {/* Linha Minimalista de Progresso */}
-      <div className="w-36 h-1 bg-cream-200/80 rounded-full overflow-hidden relative border border-warm-border/50">
-        <div className="absolute top-0 bottom-0 left-0 w-16 bg-gradient-to-r from-transparent via-charcoal-900 to-transparent rounded-full animate-shimmer" />
-      </div>
-
-      {/* Mensagem Opcional */}
-      {message && (
-        <p className="text-xs text-charcoal-500 font-sans mt-3 animate-pulse">
-          {message}
-        </p>
-      )}
-    </div>
+      </motion.div>
+    </motion.div>
   );
 
-  if (fullScreen) {
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-cream-50/95 backdrop-blur-md">
-        {content}
-      </div>
-    );
+  if (!isControlled) {
+    if (fullScreen) {
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-cream-50/95 backdrop-blur-sm">
+          {loaderBody}
+        </div>
+      );
+    }
+    return loaderBody;
   }
 
-  return content;
+  return (
+    <AnimatePresence>
+      {shouldRender && (
+        fullScreen ? (
+          <motion.div
+            key="brand-loader-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, transition: { duration: 0.24 } }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-cream-50/95 backdrop-blur-sm"
+          >
+            {loaderBody}
+          </motion.div>
+        ) : (
+          loaderBody
+        )
+      )}
+    </AnimatePresence>
+  );
 }
