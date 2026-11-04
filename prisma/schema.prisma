@@ -14,6 +14,7 @@ model User {
   name      String
   email     String   @unique
   password  String   // Hash bcrypt
+  role      String   @default("USER") // "USER" | "ADMIN"
   events    Event[]
   createdAt DateTime @default(now())
 }

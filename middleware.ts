@@ -127,6 +127,42 @@ export function middleware(req: NextRequest) {
     }
   }
 
+  // 5. Proteção de Rota Administrativa (Borda / Edge Level - Acesso Discreto)
+  if (path.startsWith('/admin')) {
+    const token = req.cookies.get('auth_token')?.value;
+    if (!token) {
+      // Redireciona silenciosamente para o login sem expor o parâmetro redirect=/admin na URL
+      return NextResponse.redirect(new URL('/login', req.url));
+    }
+
+    // Rate limiting para evitar ataques na área administrativa (60 requisições/min)
+    const allowed = checkRateLimit(`admin_${ip}`, 60, 60);
+    if (!allowed) {
+      return new NextResponse('Muitas requisições na área administrativa. Aguarde um momento.', {
+        status: 429,
+      });
+    }
+  }
+
+  // 6. Proteção de Endpoints de API Administrativos
+  if (path.startsWith('/api/admin')) {
+    const token = req.cookies.get('auth_token')?.value;
+    if (!token) {
+      return new NextResponse(
+        JSON.stringify({ error: 'Acesso não encontrado.' }),
+        { status: 404, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const allowed = checkRateLimit(`api_admin_${ip}`, 60, 60);
+    if (!allowed) {
+      return new NextResponse(
+        JSON.stringify({ error: 'Limite de requisições excedido.' }),
+        { status: 429, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+  }
+
   return NextResponse.next();
 }
 
@@ -136,5 +172,7 @@ export const config = {
     '/api/orders',
     '/api/auth/login',
     '/api/poll',
+    '/admin/:path*',
+    '/api/admin/:path*',
   ],
 };

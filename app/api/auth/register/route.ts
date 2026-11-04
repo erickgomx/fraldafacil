@@ -136,7 +136,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    const token = signJwt({ userId: newUser.id, email: newUser.email });
+    const token = signJwt({ userId: newUser.id, email: newUser.email, role: newUser.role });
 
     const response = NextResponse.json(
       {
@@ -145,6 +145,7 @@ export async function POST(req: NextRequest) {
           id: newUser.id,
           name: newUser.name,
           email: newUser.email,
+          role: newUser.role,
         },
         event: sanitizeEventPayload(newUser.events[0]),
       },

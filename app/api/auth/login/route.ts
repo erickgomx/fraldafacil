@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const token = signJwt({ userId: user.id, email: user.email });
+    const token = signJwt({ userId: user.id, email: user.email, role: user.role });
 
     const response = NextResponse.json({
       message: 'Login realizado com sucesso!',
@@ -52,6 +52,7 @@ export async function POST(req: NextRequest) {
         id: user.id,
         name: user.name,
         email: user.email,
+        role: user.role,
       },
       event: sanitizeEventPayload(user.events[0]),
     });

@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { cookies } from 'next/headers';
+import prisma from '@/lib/prisma';
 
 const FORBIDDEN_SECRETS = [
   'super-secret-fralda-facil-jwt-token-change-in-production',
@@ -28,6 +29,7 @@ const COOKIE_NAME = 'auth_token';
 export interface TokenPayload {
   userId: string;
   email: string;
+  role?: string;
 }
 
 export interface OAuthStatePayload {
@@ -74,6 +76,45 @@ export async function getSession(): Promise<TokenPayload | null> {
     if (!token) return null;
     return verifyJwt(token);
   } catch {
+    return null;
+  }
+}
+
+/**
+ * Validação rigorosa de sessão de Administrador (Superusuário).
+ * Verifica o cookie de autenticação JWT E confirma diretamente no banco de dados
+ * se o usuário existe, está ativo e possui o papel 'ADMIN'.
+ * Essa verificação dupla no banco impede adulteração de token ou acessos após revogação de privilégios.
+ */
+export async function getAdminSession(): Promise<{
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  createdAt: Date;
+} | null> {
+  try {
+    const session = await getSession();
+    if (!session || !session.userId) return null;
+
+    const user = await prisma.user.findUnique({
+      where: { id: session.userId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        createdAt: true,
+      },
+    });
+
+    if (!user || user.role !== 'ADMIN') {
+      return null;
+    }
+
+    return user;
+  } catch (error) {
+    console.error('Erro na validação de sessão administrativa:', error);
     return null;
   }
 }
