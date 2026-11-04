@@ -36,10 +36,16 @@ export async function sendPasswordResetEmail({
               <table role="presentation" cellspacing="0" cellpadding="0">
                 <tr>
                   <td align="center">
-                    <!-- Logo Fralda Online -->
-                    <div style="display: inline-block; width: 52px; height: 52px; border-radius: 14px; background-color: #FFFFFF; border: 1px solid #E5E7EB; text-align: center; line-height: 52px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
-                      <span style="font-size: 26px;">🍼</span>
-                    </div>
+                    <!-- Logo Oficial Fralda Online -->
+                    <a href="https://fralda.online" target="_blank" style="text-decoration: none; display: inline-block;">
+                      <img
+                        src="https://fralda.online/logo-card.png"
+                        width="56"
+                        height="56"
+                        alt="Fralda Online"
+                        style="display: block; width: 56px; height: 56px; border: 0; outline: none; margin: 0 auto;"
+                      />
+                    </a>
                     <h1 style="margin: 14px 0 2px 0; font-size: 22px; font-weight: 600; color: #1C1917; letter-spacing: -0.02em;">
                       Fralda Online
                     </h1>
