@@ -134,13 +134,7 @@ export default function HomePage() {
             variants={staggerContainer}
             className="lg:col-span-7 text-center lg:text-left"
           >
-            <motion.div
-              variants={fadeUp}
-              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-warm-border shadow-subtle text-xs font-sans text-charcoal-700 mb-6"
-            >
-              <span className="w-2 h-2 rounded-full bg-terracotta animate-pulse" />
-              <span>Chá de Bebê &amp; Revelação Online · Receba tudo no Pix</span>
-            </motion.div>
+
 
             <motion.h1
               variants={fadeUp}
