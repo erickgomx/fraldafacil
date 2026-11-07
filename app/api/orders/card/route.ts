@@ -166,7 +166,15 @@ export async function POST(req: NextRequest) {
 
     await prisma.order.update({
       where: { id: order.id },
-      data: { mpPaymentId: result.id },
+      data: {
+        mpPaymentId: result.id,
+        ...(!result.splitApplied
+          ? {
+              platformFee: 0,
+              netAmount: finalChargeAmount,
+            }
+          : {}),
+      },
     });
 
     if (result.status === 'approved') {

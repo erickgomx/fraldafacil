@@ -8,6 +8,7 @@ export interface PixPaymentResponse {
   qrCode: string; // Copia e Cola
   qrCodeBase64: string; // Imagem em Base64 para exibir no modal
   ticketUrl?: string;
+  splitApplied: boolean;
 }
 
 export interface CreatePixInput {
@@ -52,6 +53,7 @@ export interface CardPaymentResponse {
   /** approved | in_process | pending | rejected | ... */
   status: string;
   statusDetail: string;
+  splitApplied: boolean;
 }
 
 export async function createCardPayment(input: CreateCardInput): Promise<CardPaymentResponse> {
@@ -109,18 +111,21 @@ export async function createCardPayment(input: CreateCardInput): Promise<CardPay
   const payment = new Payment(client);
 
   let res;
+  let splitApplied = isMarketplace && Boolean(input.applicationFee && input.applicationFee > 0);
+
   try {
     res = await payment.create({
-      body: buildBody(isMarketplace && Boolean(input.applicationFee && input.applicationFee > 0)),
+      body: buildBody(splitApplied),
       requestOptions: { idempotencyKey: input.idempotencyKey },
     });
   } catch (err: unknown) {
-    if (isMarketplace && input.applicationFee && input.applicationFee > 0) {
-      console.warn('Tentativa com application_fee no cartão falhou, tentando direto sem fee...');
+    if (splitApplied) {
+      console.warn('Tentativa com application_fee no cartão falhou, registrando recusa do split e tentando contingência sem fee...');
       res = await payment.create({
         body: buildBody(false),
         requestOptions: { idempotencyKey: input.idempotencyKey },
       });
+      splitApplied = false;
     } else {
       throw err;
     }
@@ -130,6 +135,7 @@ export async function createCardPayment(input: CreateCardInput): Promise<CardPay
     id: String(res.id),
     status: res.status || 'pending',
     statusDetail: res.status_detail || '',
+    splitApplied,
   };
 }
 
@@ -254,11 +260,12 @@ export async function createPixPayment(input: CreatePixInput): Promise<PixPaymen
             qrCode: transactionData.qr_code,
             qrCodeBase64: base64.startsWith('data:image') ? base64 : `data:image/png;base64,${base64}`,
             ticketUrl: transactionData.ticket_url,
+            splitApplied: true,
           };
         }
       } catch (err: unknown) {
         lastError = err;
-        console.warn('Tentativa de Pix com application_fee falhou, tentando direto sem fee:', extractMpErrorMessage(err));
+        console.warn('Tentativa de Pix com application_fee falhou, tentando contingência sem fee:', extractMpErrorMessage(err));
       }
     }
 
@@ -279,6 +286,7 @@ export async function createPixPayment(input: CreatePixInput): Promise<PixPaymen
           qrCode: transactionData.qr_code,
           qrCodeBase64: base64.startsWith('data:image') ? base64 : `data:image/png;base64,${base64}`,
           ticketUrl: transactionData.ticket_url,
+          splitApplied: false,
         };
       }
     } catch (err: unknown) {
@@ -305,6 +313,7 @@ export async function createPixPayment(input: CreatePixInput): Promise<PixPaymen
             qrCode: transactionData.qr_code,
             qrCodeBase64: base64.startsWith('data:image') ? base64 : `data:image/png;base64,${base64}`,
             ticketUrl: transactionData.ticket_url,
+            splitApplied: false,
           };
         }
       } catch (err: unknown) {

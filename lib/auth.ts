@@ -35,6 +35,7 @@ export interface TokenPayload {
   userId: string;
   email: string;
   role?: string;
+  tokenVersion?: number;
 }
 
 export interface OAuthStatePayload {
@@ -79,10 +80,37 @@ export async function getSession(): Promise<TokenPayload | null> {
     const cookieStore = cookies();
     const token = cookieStore.get(COOKIE_NAME)?.value;
     if (!token) return null;
-    return verifyJwt(token);
+    const payload = verifyJwt(token);
+    if (!payload || !payload.userId) return null;
+
+    // Se o token contém tokenVersion, valida contra o banco para garantir que a sessão não foi revogada
+    if (typeof payload.tokenVersion === 'number') {
+      const user = await prisma.user.findUnique({
+        where: { id: payload.userId },
+        select: { tokenVersion: true },
+      });
+      if (!user || user.tokenVersion !== payload.tokenVersion) {
+        return null;
+      }
+    }
+
+    return payload;
   } catch {
     return null;
   }
+}
+
+/**
+ * Incrementa o tokenVersion do usuário no banco de dados.
+ * Invalida instantaneamente todos os JWTs ativos anteriormente em qualquer dispositivo/navegador.
+ */
+export async function revokeUserSessions(userId: string): Promise<number> {
+  const updated = await prisma.user.update({
+    where: { id: userId },
+    data: { tokenVersion: { increment: 1 } },
+    select: { tokenVersion: true },
+  });
+  return updated.tokenVersion;
 }
 
 /**

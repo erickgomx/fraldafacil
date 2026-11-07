@@ -45,7 +45,7 @@ function getClientIp(req: NextRequest): string {
   return '127.0.0.1';
 }
 
-function checkRateLimit(key: string, limit: number, windowSeconds: number): boolean {
+function checkInMemoryRateLimit(key: string, limit: number, windowSeconds: number): boolean {
   const now = Date.now();
   const windowMs = windowSeconds * 1000;
   const record = rateLimits.get(key) || { count: 0, resetTime: now + windowMs };
@@ -59,6 +59,45 @@ function checkRateLimit(key: string, limit: number, windowSeconds: number): bool
   rateLimits.set(key, record);
 
   return record.count <= limit;
+}
+
+/**
+ * Rate Limiting Híbrido e Resiliente (Distribuído via Upstash Redis REST ou Memória Local).
+ * Se as variáveis UPSTASH_REDIS_REST_URL e UPSTASH_REDIS_REST_TOKEN estiverem presentes,
+ * realiza controle atômico e sincronizado entre todas as regiões de Edge/Serverless.
+ * Caso contrário, executa fallback imediato para memória de borda com zero latência.
+ */
+async function checkRateLimit(key: string, limit: number, windowSeconds: number): Promise<boolean> {
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+
+  if (url && token) {
+    try {
+      const res = await fetch(`${url}/pipeline`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify([
+          ['INCR', `rl:${key}`],
+          ['EXPIRE', `rl:${key}`, windowSeconds, 'NX'],
+        ]),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const currentCount = data?.[0]?.result;
+        if (typeof currentCount === 'number') {
+          return currentCount <= limit;
+        }
+      }
+    } catch {
+      // Falha silenciosa com fallback imediato para in-memory
+    }
+  }
+
+  return checkInMemoryRateLimit(key, limit, windowSeconds);
 }
 
 function base64UrlToUint8Array(str: string): Uint8Array {
@@ -124,7 +163,7 @@ export async function middleware(req: NextRequest) {
 
   // 1. Anti-Carding: Limita tentativas no endpoint de cartão de crédito (máximo 5 por minuto por IP)
   if (path === '/api/orders/card' && req.method === 'POST') {
-    const allowed = checkRateLimit(`card_${ip}`, 5, 60);
+    const allowed = await checkRateLimit(`card_${ip}`, 5, 60);
     if (!allowed) {
       return new NextResponse(
         JSON.stringify({
@@ -143,7 +182,7 @@ export async function middleware(req: NextRequest) {
 
   // 2. Proteção contra força bruta em Login (máximo 10 tentativas por minuto por IP)
   if (path === '/api/auth/login' && req.method === 'POST') {
-    const allowed = checkRateLimit(`login_${ip}`, 10, 60);
+    const allowed = await checkRateLimit(`login_${ip}`, 10, 60);
     if (!allowed) {
       return new NextResponse(
         JSON.stringify({
@@ -162,7 +201,7 @@ export async function middleware(req: NextRequest) {
 
   // 3. Proteção contra criação massiva de contas (máximo 10 a cada 2 minutos por IP)
   if (path === '/api/auth/register' && req.method === 'POST') {
-    const allowed = checkRateLimit(`reg_${ip}`, 10, 120);
+    const allowed = await checkRateLimit(`reg_${ip}`, 10, 120);
     if (!allowed) {
       return new NextResponse(
         JSON.stringify({
@@ -181,7 +220,7 @@ export async function middleware(req: NextRequest) {
 
   // 4. Proteção contra spam de e-mails em Recuperação de Senha (máximo 5 a cada 3 minutos por IP)
   if (path === '/api/auth/forgot-password' && req.method === 'POST') {
-    const allowed = checkRateLimit(`forgot_${ip}`, 5, 180);
+    const allowed = await checkRateLimit(`forgot_${ip}`, 5, 180);
     if (!allowed) {
       return new NextResponse(
         JSON.stringify({
@@ -200,7 +239,7 @@ export async function middleware(req: NextRequest) {
 
   // 5. Proteção contra spam de pedidos Pix (máximo 15 por minuto por IP)
   if (path === '/api/orders' && req.method === 'POST') {
-    const allowed = checkRateLimit(`orders_${ip}`, 15, 60);
+    const allowed = await checkRateLimit(`orders_${ip}`, 15, 60);
     if (!allowed) {
       return new NextResponse(
         JSON.stringify({
@@ -220,7 +259,7 @@ export async function middleware(req: NextRequest) {
   // 6. Proteção contra polling excessivo de status de pedidos (máximo 30 por minuto por IP)
   // Evita estresse e esgotamento da cota da API de consulta do Mercado Pago
   if (path.startsWith('/api/orders/') && req.method === 'GET') {
-    const allowed = checkRateLimit(`order_status_${ip}`, 30, 60);
+    const allowed = await checkRateLimit(`order_status_${ip}`, 30, 60);
     if (!allowed) {
       return new NextResponse(
         JSON.stringify({
@@ -239,7 +278,7 @@ export async function middleware(req: NextRequest) {
 
   // 7. Proteção contra força bruta em Redefinição de Senha (máximo 5 por minuto por IP)
   if (path === '/api/auth/reset-password' && req.method === 'POST') {
-    const allowed = checkRateLimit(`reset_pwd_${ip}`, 5, 60);
+    const allowed = await checkRateLimit(`reset_pwd_${ip}`, 5, 60);
     if (!allowed) {
       return new NextResponse(
         JSON.stringify({
@@ -258,7 +297,7 @@ export async function middleware(req: NextRequest) {
 
   // 8. Proteção contra injeção massiva de votos no bolão (máximo 10 por minuto por IP)
   if (path === '/api/poll' && req.method === 'POST') {
-    const allowed = checkRateLimit(`poll_${ip}`, 10, 60);
+    const allowed = await checkRateLimit(`poll_${ip}`, 10, 60);
     if (!allowed) {
       return new NextResponse(
         JSON.stringify({
@@ -289,7 +328,7 @@ export async function middleware(req: NextRequest) {
     }
 
     // Rate limiting para evitar ataques na área administrativa (60 requisições/min)
-    const allowed = checkRateLimit(`admin_${ip}`, 60, 60);
+    const allowed = await checkRateLimit(`admin_${ip}`, 60, 60);
     if (!allowed) {
       return new NextResponse('Muitas requisições na área administrativa. Aguarde um momento.', {
         status: 429,
@@ -301,7 +340,7 @@ export async function middleware(req: NextRequest) {
   if (path.startsWith('/api/admin')) {
     // O endpoint de setup é protegido por chave secreta dedicada (ADMIN_SETUP_SECRET) e rate limiting rigoroso
     if (path === '/api/admin/setup') {
-      const allowed = checkRateLimit(`api_setup_${ip}`, 5, 60);
+      const allowed = await checkRateLimit(`api_setup_${ip}`, 5, 60);
       if (!allowed) {
         return new NextResponse(
           JSON.stringify({ error: 'Muitas tentativas de configuração. Aguarde 60 segundos.' }),
@@ -321,7 +360,7 @@ export async function middleware(req: NextRequest) {
       );
     }
 
-    const allowed = checkRateLimit(`api_admin_${ip}`, 60, 60);
+    const allowed = await checkRateLimit(`api_admin_${ip}`, 60, 60);
     if (!allowed) {
       return new NextResponse(
         JSON.stringify({ error: 'Limite de requisições excedido.' }),

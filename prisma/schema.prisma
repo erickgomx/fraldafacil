@@ -10,13 +10,14 @@ generator client {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  name      String
-  email     String   @unique
-  password  String   // Hash bcrypt
-  role      String   @default("USER") // "USER" | "ADMIN"
-  events    Event[]
-  createdAt DateTime @default(now())
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  password     String   // Hash bcrypt
+  role         String   @default("USER") // "USER" | "ADMIN"
+  tokenVersion Int      @default(1) // Controle de revogação de sessão / invalidação de JWT em todos os dispositivos
+  events       Event[]
+  createdAt    DateTime @default(now())
 }
 
 model Event {

@@ -27,17 +27,34 @@ GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO postgres;
 -- Remove permissões perigosas diretas da role 'anon'
 REVOKE ALL ON TABLE "User" FROM anon;
 REVOKE ALL ON TABLE "Order" FROM anon;
-REVOKE INSERT, UPDATE, DELETE ON TABLE "Event" FROM anon;
+REVOKE ALL ON TABLE "Event" FROM anon; -- Bloqueio estrito: impede exposição de mpAccessToken, mpRefreshToken e pixKey
 REVOKE INSERT, UPDATE, DELETE ON TABLE "GiftItem" FROM anon;
 REVOKE INSERT, UPDATE, DELETE ON TABLE "GuestMessage" FROM anon;
 REVOKE INSERT, UPDATE, DELETE ON TABLE "PollVote" FROM anon;
 
--- Políticas de Consulta Restritas (Read-Only) para a camada pública (se utilizada via Supabase Client)
-DROP POLICY IF EXISTS "Anon view active events" ON "Event";
-CREATE POLICY "Anon view active events" ON "Event"
-  FOR SELECT
-  TO anon
-  USING (true);
+-- Políticas de Consulta Restritas (Read-Only) para a camada pública
+-- Para o Evento, expõe exclusivamente uma View higienizada sem credenciais de pagamento ou chaves OAuth
+DROP VIEW IF EXISTS "public_events";
+CREATE OR REPLACE VIEW "public_events" AS
+SELECT 
+  id,
+  slug,
+  "eventType",
+  "babyName",
+  "boyName",
+  "girlName",
+  "parentsNames",
+  "eventDate",
+  "coverImageUrl",
+  "storyMessage",
+  "themeColor",
+  "revealedGender",
+  "feePayer",
+  "mpConnected",
+  "createdAt"
+FROM "Event";
+
+GRANT SELECT ON "public_events" TO anon;
 
 DROP POLICY IF EXISTS "Anon view active gift items" ON "GiftItem";
 CREATE POLICY "Anon view active gift items" ON "GiftItem"

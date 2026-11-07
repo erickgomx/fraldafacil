@@ -27,13 +27,28 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Evento não encontrado' }, { status: 404 });
     }
 
+    // Validação estrita de URL de imagem contra injeção de esquemas (javascript:, data:) e SSRF
+    const defaultImage = 'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=500&auto=format&fit=crop&q=80';
+    let validImageUrl = defaultImage;
+    if (imageUrl && typeof imageUrl === 'string') {
+      const trimmed = imageUrl.trim();
+      try {
+        const parsedUrl = new URL(trimmed);
+        if (parsedUrl.protocol === 'https:' || parsedUrl.protocol === 'http:') {
+          validImageUrl = trimmed.slice(0, 500);
+        }
+      } catch {
+        // URL malformada rejeitada, aplica fallback seguro
+      }
+    }
+
     const gift = await prisma.giftItem.create({
       data: {
         eventId,
         title: title.trim().slice(0, 150),
         description: description?.trim().slice(0, 500) || null,
         price: Math.round(numPrice * 100) / 100,
-        imageUrl: imageUrl?.trim() || 'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=500&auto=format&fit=crop&q=80',
+        imageUrl: validImageUrl,
         category: category || 'fraldas',
         active: true,
       },

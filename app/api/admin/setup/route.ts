@@ -13,6 +13,18 @@ export const dynamic = 'force-dynamic';
  */
 export async function POST(req: NextRequest) {
   try {
+    // Bloqueia endpoint remoto em produção por padrão (Princípio do Menor Privilégio e CIS Benchmark)
+    // Provisionamento seguro de administradores em produção deve ser feito via CLI no servidor (scripts/create-admin.js)
+    if (process.env.NODE_ENV === 'production' && process.env.ALLOW_REMOTE_ADMIN_SETUP !== 'true') {
+      return NextResponse.json(
+        {
+          error:
+            'Endpoint de setup remoto desativado em produção por política de segurança. Utilize o script CLI oficial no terminal do servidor: node scripts/create-admin.js',
+        },
+        { status: 403 }
+      );
+    }
+
     const body = await req.json();
     const { email, password, name, secretKey } = body;
 

@@ -16,9 +16,17 @@ export async function GET() {
 
   try {
     const [orders, events, totalUsers, totalPollVotes, totalGuestMessages] = await Promise.all([
+      // Minimização de dados LGPD: não carrega CPF, telefone ou e-mail de pagadores em queries estatísticas
       prisma.order.findMany({
         orderBy: { createdAt: 'desc' },
-        include: {
+        select: {
+          id: true,
+          amount: true,
+          status: true,
+          netAmount: true,
+          platformFee: true,
+          gatewayFee: true,
+          createdAt: true,
           event: {
             select: {
               slug: true,

@@ -120,10 +120,18 @@ export async function POST(req: NextRequest) {
       applicationFee: feeCalc.platformFee,
     });
 
-    // 3. Atualiza o pedido com o ID da transação
+    // 3. Atualiza o pedido com o ID da transação e integridade contábil do split efetivo
     await prisma.order.update({
       where: { id: order.id },
-      data: { mpPaymentId: pixData.id },
+      data: {
+        mpPaymentId: pixData.id,
+        ...(!pixData.splitApplied
+          ? {
+              platformFee: 0,
+              netAmount: feeCalc.chargeAmount,
+            }
+          : {}),
+      },
     });
 
     return NextResponse.json({

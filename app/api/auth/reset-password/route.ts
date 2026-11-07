@@ -59,10 +59,13 @@ export async function POST(req: NextRequest) {
     // 4. Criptografa a nova senha com bcrypt (10 rounds)
     const newHashedPassword = await hashPassword(password);
 
-    // 5. Atualiza no banco de dados
+    // 5. Atualiza no banco de dados e incrementa tokenVersion para revogar instantaneamente todos os JWTs ativos
     await prisma.user.update({
       where: { id: user.id },
-      data: { password: newHashedPassword },
+      data: {
+        password: newHashedPassword,
+        tokenVersion: { increment: 1 },
+      },
     });
 
     console.log(`[Fralda Online] Senha redefinida com sucesso para o usuário: ${user.email}`);

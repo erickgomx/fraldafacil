@@ -73,17 +73,29 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'ID de pagamento inválido ignorado' }, { status: 200 });
     }
 
-    // Verificação de autenticidade da assinatura criptográfica do Mercado Pago
+    // Verificação de autenticidade da assinatura criptográfica do Mercado Pago (Fail-Closed)
     const webhookSecret = process.env.MERCADO_PAGO_WEBHOOK_SECRET;
+    const isProduction = process.env.NODE_ENV === 'production';
+
+    if (isProduction && (!webhookSecret || webhookSecret.trim() === '')) {
+      console.error('[FATAL SECURITY] MERCADO_PAGO_WEBHOOK_SECRET obrigatório não configurado em ambiente de produção.');
+      return NextResponse.json(
+        { error: 'Configuração de segurança de webhook pendente no servidor.' },
+        { status: 500 }
+      );
+    }
+
     if (webhookSecret && webhookSecret.trim() !== '') {
       const xSignature = req.headers.get('x-signature');
       const xRequestId = req.headers.get('x-request-id');
       const isValid = verifyWebhookSignature(xSignature, xRequestId, cleanPaymentId, webhookSecret);
 
       if (!isValid) {
-        console.warn('Webhook do Mercado Pago rejeitado por assinatura inválida.');
-        return NextResponse.json({ error: 'Assinatura inválida' }, { status: 401 });
+        console.warn('[Webhook MP] Notificação rejeitada por assinatura HMAC inválida ou expirada.');
+        return NextResponse.json({ error: 'Assinatura inválida ou não autorizada.' }, { status: 401 });
       }
+    } else {
+      console.warn('[Webhook MP][DEV WARNING] MERCADO_PAGO_WEBHOOK_SECRET não configurado. Verificação ignorada apenas em desenvolvimento.');
     }
 
     // 1. Tenta localizar a ordem previamente registrada pelo ID de pagamento do Mercado Pago

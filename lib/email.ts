@@ -9,12 +9,25 @@ interface SendResetEmailInput {
   resetLink: string;
 }
 
+/**
+ * Sanitiza strings para interpolação segura em HTML, prevenindo ataques de HTML Injection / Email XSS.
+ */
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 export async function sendPasswordResetEmail({
   to,
   name,
   resetLink,
 }: SendResetEmailInput): Promise<{ success: boolean; error?: string }> {
-  const firstName = name.split(' ')[0] || 'Futuro(a) Papai/Mamãe';
+  const safeFirstName = escapeHtml(name.split(' ')[0] || 'Futuro(a) Papai/Mamãe');
+  const safeResetLink = escapeHtml(resetLink);
 
   const htmlContent = `
 <!DOCTYPE html>
@@ -65,7 +78,7 @@ export async function sendPasswordResetEmail({
                 Recuperação de Senha
               </h2>
               <p style="margin: 0 0 16px 0; font-size: 14px; line-height: 1.6; color: #44403C;">
-                Olá, <strong>${firstName}</strong>!
+                Olá, <strong>${safeFirstName}</strong>!
               </p>
               <p style="margin: 0 0 24px 0; font-size: 14px; line-height: 1.6; color: #57534E;">
                 Recebemos uma solicitação para redefinir a senha da sua conta no <strong>Fralda Online</strong>. Para criar sua nova senha com segurança, clique no botão abaixo:
@@ -75,7 +88,7 @@ export async function sendPasswordResetEmail({
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin: 28px 0;">
                 <tr>
                   <td align="center">
-                    <a href="${resetLink}" target="_blank" style="display: inline-block; padding: 14px 32px; background-color: #1C1917; color: #FFFFFF; text-decoration: none; font-size: 13px; font-weight: 600; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.15);">
+                    <a href="${safeResetLink}" target="_blank" style="display: inline-block; padding: 14px 32px; background-color: #1C1917; color: #FFFFFF; text-decoration: none; font-size: 13px; font-weight: 600; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.15);">
                       Redefinir Minha Senha &rarr;
                     </a>
                   </td>
@@ -87,7 +100,7 @@ export async function sendPasswordResetEmail({
                 Se o botão não funcionar, você também pode copiar e colar o link abaixo no seu navegador:
               </p>
               <p style="margin: 6px 0 20px 0; font-size: 11px; word-break: break-all; color: #A8A29E; background: #FAF7F2; padding: 10px; border-radius: 8px; border: 1px solid #EFE8DC;">
-                <a href="${resetLink}" style="color: #44403C; text-decoration: underline;">${resetLink}</a>
+                <a href="${safeResetLink}" style="color: #44403C; text-decoration: underline;">${safeResetLink}</a>
               </p>
 
               <!-- Aviso de Segurança -->
@@ -224,11 +237,18 @@ export async function sendPasswordResetEmail({
   }
 
   // 2. Fallback de Desenvolvimento / Notificação no Console
+  if (process.env.NODE_ENV === 'production') {
+    console.error('[FATAL SECURITY] RESEND_API_KEY não configurada no ambiente de produção.');
+    return {
+      success: false,
+      error: 'Serviço de despacho de e-mails não configurado no servidor.',
+    };
+  }
+
   console.log('---------------------------------------------------------');
-  console.log(`[Fralda Online] SOLICITAÇÃO DE RECUPERAÇÃO DE SENHA`);
-  console.log(`Destinatário: ${to} (${name})`);
-  console.log(`Link seguro gerado: ${resetLink}`);
-  console.log(`(Configure RESEND_API_KEY no .env para envio automático em produção)`);
+  console.log(`[Fralda Online][DEV] SOLICITAÇÃO DE RECUPERAÇÃO DE SENHA`);
+  console.log(`Destinatário: ${to}`);
+  console.log(`Link seguro gerado (dev apenas): ${resetLink}`);
   console.log('---------------------------------------------------------');
 
   return { success: true };
