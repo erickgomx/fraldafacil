@@ -45,7 +45,19 @@ export async function sendPasswordResetEmail({
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <meta name="supported-color-schemes" content="light dark">
   <title>Redefinição de Senha — Fralda Online</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      supported-color-schemes: light dark;
+    }
+    @media (prefers-color-scheme: dark) {
+      .dark-img { display: block !important; width: 64px !important; height: 64px !important; }
+      .light-img { display: none !important; }
+    }
+  </style>
 </head>
 <body style="margin: 0; padding: 0; background-color: #FAF7F2; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1C1917;">
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #FAF7F2; padding: 40px 16px;">
@@ -59,15 +71,26 @@ export async function sendPasswordResetEmail({
               <table role="presentation" cellspacing="0" cellpadding="0">
                 <tr>
                   <td align="center">
-                    <!-- Logo Oficial Fralda Online -->
+                    <!-- Logo Oficial Fralda Online (Modo Claro & Escuro) -->
                     <a href="https://fralda.online" target="_blank" style="text-decoration: none; display: inline-block;">
                       <img
-                        src="https://fralda.online/logo-card.png"
-                        width="56"
-                        height="56"
+                        class="light-img"
+                        src="https://fralda.online/logo-light.png"
+                        width="64"
+                        height="64"
                         alt="Fralda Online"
-                        style="display: block; width: 56px; height: 56px; border: 0; outline: none; margin: 0 auto;"
+                        style="display: block; width: 64px; height: 64px; border: 0; outline: none; margin: 0 auto;"
                       />
+                      <!--[if !mso]><!-->
+                      <img
+                        class="dark-img"
+                        src="https://fralda.online/logo-dark.png"
+                        width="64"
+                        height="64"
+                        alt="Fralda Online"
+                        style="display: none; width: 0; height: 0; border: 0; outline: none; margin: 0 auto;"
+                      />
+                      <!--<![endif]-->
                     </a>
                     <h1 style="margin: 14px 0 2px 0; font-size: 22px; font-weight: 600; color: #1C1917; letter-spacing: -0.02em;">
                       Fralda Online
