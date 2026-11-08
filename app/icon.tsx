@@ -1,3 +1,11 @@
+/**
+ * ============================================================================
+ * GERADOR DINÂMICO DE FAVICON (app/icon.tsx)
+ * ============================================================================
+ * Gera o ícone vetorial nítido de aba do navegador (32x32) dinamicamente
+ * via ImageResponse na Edge Runtime.
+ */
+
 import { ImageResponse } from 'next/og';
 
 export const runtime = 'edge';

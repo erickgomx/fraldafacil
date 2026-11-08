@@ -1,3 +1,11 @@
+/**
+ * ============================================================================
+ * PÁGINA DO LIVRO DE RECADOS DOS PAIS (/painel/recados)
+ * ============================================================================
+ * Exibe todas as mensagens de afeto e votos deixados pelos convidados
+ * junto com os presentes enviados pelo Pix.
+ */
+
 import { getSession } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { redirect } from 'next/navigation';

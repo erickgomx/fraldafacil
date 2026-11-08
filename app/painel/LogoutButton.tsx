@@ -1,3 +1,11 @@
+/**
+ * ============================================================================
+ * BOTÃO DE LOGOUT DO PAINEL (LogoutButton)
+ * ============================================================================
+ * Dispara a chamada ao endpoint `/api/auth/logout` para remover o cookie `auth_token`
+ * e redireciona o usuário de volta à tela de login.
+ */
+
 'use client';
 
 import { LogOut } from 'lucide-react';

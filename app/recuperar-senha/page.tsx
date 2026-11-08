@@ -1,3 +1,11 @@
+/**
+ * ============================================================================
+ * PÁGINA DE SOLICITAÇÃO DE RECUPERAÇÃO DE SENHA (/recuperar-senha)
+ * ============================================================================
+ * Formulário simples e seguro onde o usuário digita seu e-mail para receber
+ * as instruções e link de redefinição com validade de 1 hora.
+ */
+
 'use client';
 
 import { useState } from 'react';

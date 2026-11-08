@@ -1,3 +1,13 @@
+/**
+ * ============================================================================
+ * LAYOUT DO PAINEL DO ORGANIZADOR (/painel/layout)
+ * ============================================================================
+ * Estrutura comum com barra lateral de navegação:
+ * - Acesso rápido à Visão Geral, Presentes & Fraldas, Livro de Recados e Configurações.
+ * - Link direto para visualizar a página pública do evento.
+ * - Alternador de tema Dark/Light e botão de logout.
+ */
+
 import { redirect } from 'next/navigation';
 import { getSession } from '@/lib/auth';
 import prisma from '@/lib/prisma';

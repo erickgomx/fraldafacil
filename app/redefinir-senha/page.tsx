@@ -1,3 +1,11 @@
+/**
+ * ============================================================================
+ * PÁGINA DE REDEFINIÇÃO DE SENHA (/redefinir-senha)
+ * ============================================================================
+ * Valida o token temporário passado na URL (`?token=...`) e permite que o usuário
+ * cadastre sua nova senha com segurança.
+ */
+
 'use client';
 
 import { Suspense, useState } from 'react';

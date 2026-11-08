@@ -1,3 +1,15 @@
+/**
+ * ============================================================================
+ * CLIENTE DO DASHBOARD ADMINISTRATIVO (AdminDashboardClient)
+ * ============================================================================
+ * Interface visual rica para supervisão de faturamento, transações e auditoria:
+ * - Cards de resumo financeiro (Faturamento Bruto, Lucro da Plataforma, Repasse aos Pais).
+ * - Gráfico interativo com barras dos últimos 30 dias de movimentação.
+ * - Tabela completa de auditoria com busca em tempo real por nome, e-mail, CPF ou evento.
+ * - Exportação de relatórios para CSV em um clique.
+ * - Lista ranqueada dos Chás de Bebê com maior arrecadação.
+ */
+
 'use client';
 
 import React, { useState, useMemo } from 'react';

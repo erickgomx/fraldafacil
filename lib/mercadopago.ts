@@ -1,3 +1,23 @@
+/**
+ * ============================================================================
+ * INTEGRAÇÃO COM MERCADO PAGO (Pix, Cartão de Crédito e Split de Pagamentos)
+ * ============================================================================
+ * Este módulo é o coração dos pagamentos do Fralda Online.
+ * Suporta dois modelos operacionais flexíveis:
+ *
+ * 1. MODO MARKETPLACE (OAuth dos Pais):
+ *    - Os pais conectam sua própria conta do Mercado Pago via OAuth.
+ *    - O token do vendedor é armazenado de forma criptografada no banco (AES-256-GCM).
+ *    - O dinheiro dos presentes cai diretamente na conta Mercado Pago dos pais.
+ *    - A taxa de 4,99% da plataforma é retida automaticamente via `application_fee`.
+ *
+ * 2. MODO CONTINGÊNCIA (Token Central da Plataforma):
+ *    - Se os pais ainda não conectaram o MP ou se a chamada com split falhar,
+ *      a plataforma assume a transação para não perder a venda do convidado.
+ *
+ * Tecnologias: SDK oficial do Mercado Pago, QRCode generator e chaves de idempotência.
+ */
+
 import QRCode from 'qrcode';
 import { decryptSecret } from '@/lib/crypto';
 

@@ -1,3 +1,13 @@
+/**
+ * ============================================================================
+ * CLIENTE DA DEMONSTRAÇÃO INTERATIVA (DemoClient)
+ * ============================================================================
+ * Ambiente simulado e dinâmico com dados de exemplo:
+ * - Alternador de revelação ao vivo (testar revelação de Menino 💙, Menina 🌸 ou Segredo).
+ * - Vitrine de presentes interativa com abertura do modal de Pix.
+ * - Mural de recados pré-carregado com mensagens carinhosas de tios e avós.
+ */
+
 'use client';
 
 import { useState } from 'react';

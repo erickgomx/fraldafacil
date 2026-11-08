@@ -1,6 +1,16 @@
 /**
- * Serviço de e-mail do Fralda Online (fralda.online)
- * Suporta Resend oficial (nativo via fetch sem dependências extras) ou fallback em dev.
+ * ============================================================================
+ * SERVIÇO DE DISPACHO DE E-MAILS (Fralda Online)
+ * ============================================================================
+ * Responsável pela composição visual e entrega de e-mails transacionais (ex: recuperação de senha).
+ *
+ * Arquitetura de envio:
+ * - Utiliza a API REST oficial do Resend via chamada nativa `fetch` (sem dependências pesadas adicionais).
+ * - Sanitização automática anti-XSS em variáveis interpoladas no HTML.
+ * - Tratamento inteligente de fallback: se o domínio principal `fralda.online` ainda estiver
+ *   aguardando propagação de DNS, tenta automaticamente a entrega via `onboarding@resend.dev`.
+ * - Em ambiente de desenvolvimento local (sem chave Resend), simula o disparo imprimindo
+ *   o link seguro diretamente no console do terminal.
  */
 
 interface SendResetEmailInput {

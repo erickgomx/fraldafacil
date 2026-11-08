@@ -1,3 +1,15 @@
+/**
+ * ============================================================================
+ * CLIENTE DO DASHBOARD DO ORGANIZADOR (DashboardClient)
+ * ============================================================================
+ * Painel interativo dos pais:
+ * - Visão geral de arrecadação financeira com valores líquidos transparentes.
+ * - Controle da Revelação ao Vivo: botão para revelar se é Menino 💙 ou Menina 🌸
+ *   com animação de confetes e atualização instantânea na página pública.
+ * - Compartilhamento do convite oficial para WhatsApp em um clique.
+ * - Lista das últimas mensagens e presentes recebidos da família.
+ */
+
 'use client';
 
 import { useState } from 'react';

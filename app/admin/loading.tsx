@@ -1,3 +1,11 @@
+/**
+ * ============================================================================
+ * ESTADO DE CARREGAMENTO DO PAINEL ADMINISTRATIVO (/admin/loading)
+ * ============================================================================
+ * Esqueleto animado (Skeleton UI) com shimmer e pulsação suave enquanto os dados
+ * de faturamento, pedidos e ranking são carregados no servidor.
+ */
+
 export default function AdminLoading() {
   return (
     <div className="space-y-8 animate-pulse">

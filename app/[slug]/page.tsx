@@ -1,3 +1,17 @@
+/**
+ * ============================================================================
+ * PÁGINA PÚBLICA DO CHÁ DE BEBÊ OU REVELAÇÃO (/[slug])
+ * ============================================================================
+ * A página compartilhada com amigos e família (ex: fralda.online/mariana-e-lucas).
+ *
+ * Funcionalidades:
+ * - Geração dinâmica de metadados OpenGraph (`generateMetadata`) para que,
+ *   ao colar o link no WhatsApp, apareça o card com a foto do casal, título do chá
+ *   ou anúncio do sexo do bebê ("É Menino!" / "É Menina!").
+ * - Carregamento otimizado de presentes e livro de recados no Server Component.
+ * - Suporta 404 instantâneo (`notFound()`) caso o slug não exista.
+ */
+
 import { notFound } from 'next/navigation';
 import prisma from '@/lib/prisma';
 import PublicEventClient from './PublicEventClient';

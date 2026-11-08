@@ -1,3 +1,13 @@
+/**
+ * ============================================================================
+ * CLIENTE DE EDIÇÃO DA LISTA DE PRESENTES (PresentesClient)
+ * ============================================================================
+ * Permite aos pais:
+ * - Adicionar novos presentes personalizados com título, valor e foto.
+ * - Ativar ou desativar itens da lista com um switch toggle em tempo real.
+ * - Excluir presentes não desejados da vitrine.
+ */
+
 'use client';
 
 import { useState } from 'react';

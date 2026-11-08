@@ -1,3 +1,11 @@
+/**
+ * ============================================================================
+ * PÁGINA DE TERMOS DE USO E CONDIÇÕES GERAIS (/termos)
+ * ============================================================================
+ * Documento jurídico e institucional que rege os direitos e deveres dos organizadores
+ * e convidados da plataforma Fralda Online.
+ */
+
 import Link from 'next/link';
 import { ArrowLeft, FileText, AlertCircle } from 'lucide-react';
 import BrandLogo from '@/components/BrandLogo';

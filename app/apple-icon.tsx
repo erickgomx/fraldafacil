@@ -1,3 +1,11 @@
+/**
+ * ============================================================================
+ * GERADOR DINÂMICO DE ÍCONE APPLE TOUCH (app/apple-icon.tsx)
+ * ============================================================================
+ * Gera a imagem oficial de 180x180 para dispositivos Apple (iOS / Safari)
+ * via ImageResponse na Edge Runtime.
+ */
+
 import { ImageResponse } from 'next/og';
 
 export const runtime = 'edge';

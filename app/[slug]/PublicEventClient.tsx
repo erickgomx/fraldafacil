@@ -1,3 +1,13 @@
+/**
+ * ============================================================================
+ * CLIENTE DA PÁGINA PÚBLICA DO EVENTO (PublicEventClient)
+ * ============================================================================
+ * Centraliza a experiência do convidado na página do evento:
+ * - Renderiza o Hero (`BabyHero`), Bolão (`GenderPoll`), Catálogo (`DiaperCatalog`) e Mural (`GuestbookWall`).
+ * - Controla a abertura do modal de Checkout Pix (`PixCheckoutModal`).
+ * - Botão flutuante/topo de compartilhamento fácil com Web Share API ou cópia para WhatsApp.
+ */
+
 'use client';
 
 import { useState } from 'react';

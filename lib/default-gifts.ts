@@ -1,3 +1,14 @@
+/**
+ * ============================================================================
+ * CATÁLOGO DE PRESENTES PADRÃO (Sugestões Iniciais)
+ * ============================================================================
+ * Quando uma futura mãe ou pai cria a sua página no Fralda Online, nós
+ * pré-povoamos a lista com estes itens essenciais de maternidade.
+ *
+ * Dessa forma, a página já nasce linda, completa e pronta para receber mimos,
+ * mas os pais continuam livres para editar valores, desativar itens ou criar novos!
+ */
+
 export interface DefaultGiftItem {
   title: string;
   description: string;

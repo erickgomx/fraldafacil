@@ -1,3 +1,14 @@
+/**
+ * ============================================================================
+ * CLIENTE DO FORMULÁRIO DE CONFIGURAÇÕES (ConfigClient)
+ * ============================================================================
+ * Formulário completo de gerenciamento:
+ * - Edição de nomes dos pais e do bebê.
+ * - Integração oficial com Mercado Pago via OAuth (botão "Conectar minha conta").
+ * - Seletor de quem absorve as taxas (Convidado ou Pais).
+ * - Chave Pix para recebimento de transferências diretas.
+ */
+
 'use client';
 
 import { useState, useEffect } from 'react';

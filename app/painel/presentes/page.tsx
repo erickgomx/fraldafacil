@@ -1,3 +1,11 @@
+/**
+ * ============================================================================
+ * PÁGINA DE GESTÃO DA LISTA DE PRESENTES (/painel/presentes)
+ * ============================================================================
+ * Busca todos os itens cadastrados no banco para o evento ativo e passa para
+ * o componente interativo de gerenciamento.
+ */
+
 import { getSession } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { redirect } from 'next/navigation';

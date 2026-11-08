@@ -1,3 +1,11 @@
+/**
+ * ============================================================================
+ * GERADOR DINÂMICO DE CARD OPEN GRAPH (app/opengraph-image.tsx)
+ * ============================================================================
+ * Gera a imagem de 1200x630 pixels utilizada nos compartilhamentos em redes sociais
+ * e mensageiros como WhatsApp, Telegram, Facebook e Twitter.
+ */
+
 import { ImageResponse } from 'next/og';
 
 export const runtime = 'edge';

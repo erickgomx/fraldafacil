@@ -1,3 +1,16 @@
+/**
+ * ============================================================================
+ * PÁGINA DE CADASTRO E CRIAÇÃO DO CHÁ (/cadastro)
+ * ============================================================================
+ * Assistente acolhedor para que os pais criem sua conta e página em 2 minutos:
+ * - Seleção intuitiva do tipo de evento:
+ *   1. Chá Revelação (com campos para nome de menino e menina ou opção "ainda não definimos").
+ *   2. Chá de Fralda tradicional.
+ *   3. Ambos juntos.
+ * - Gerador inteligente de link amigável (slug) em tempo real conforme os pais digitam.
+ * - Pré-visualização do link oficial: `fralda.online/seu-link`.
+ */
+
 'use client';
 
 import { useState, useEffect } from 'react';

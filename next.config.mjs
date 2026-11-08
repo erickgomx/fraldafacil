@@ -1,3 +1,13 @@
+/**
+ * ⚙️ Configuração Principal do Next.js (next.config.mjs)
+ *
+ * Define políticas de segurança HTTP avançadas para o Fralda Online:
+ * - Content-Security-Policy (CSP) com permissões restritas e compatíveis com o SDK do Mercado Pago
+ * - Anti-Clickjacking (X-Frame-Options: DENY, frame-ancestors 'none')
+ * - Anti-MIME-sniffing (X-Content-Type-Options: nosniff)
+ * - HSTS com max-age estrito de 2 anos (somente em produção HTTPS)
+ * - Headers de cache estático e otimização de imagens externas (Unsplash / Mercado Pago CDN)
+ */
 /** @type {import('next').NextConfig} */
 const isProd = process.env.NODE_ENV === 'production';
 

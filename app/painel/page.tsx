@@ -1,3 +1,14 @@
+/**
+ * ============================================================================
+ * PAINEL DE CONTROLE DO ORGANIZADOR (/painel)
+ * ============================================================================
+ * Tela principal dos pais:
+ * - Resumo financeiro: total arrecadado, líquido a receber e taxa da plataforma.
+ * - Placar em tempo real do Bolão (Menino vs Menina).
+ * - Lista das últimas transações e presentes recebidos.
+ * - Atalhos rápidos para compartilhar o convite no WhatsApp.
+ */
+
 import { getSession } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import DashboardClient from './DashboardClient';

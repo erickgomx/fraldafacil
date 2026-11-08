@@ -1,3 +1,15 @@
+/**
+ * ============================================================================
+ * DASHBOARD DE ADMINISTRAÇÃO E AUDITORIA GERAL (/admin)
+ * ============================================================================
+ * Painel executivo exclusivo para administradores com papel 'ADMIN':
+ * - Verificação de autenticação e papel de acesso no banco de dados.
+ * - Carregamento paralelo em lote de todos os pedidos, eventos, usuários e votos.
+ * - Consolidação analítica do GMV (Gross Merchandise Volume), taxa de plataforma (4,99%),
+ *   taxa do gateway e repasse líquido para os pais.
+ * - Recortes diários (últimos 30 dias) para gráficos analíticos de desempenho.
+ */
+
 import { redirect } from 'next/navigation';
 import { getSession, getAdminSession } from '@/lib/auth';
 import prisma from '@/lib/prisma';

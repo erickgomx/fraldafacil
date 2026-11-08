@@ -1,3 +1,12 @@
+/**
+ * 🎨 Sistema de Design e Temas (Tailwind CSS Configuration)
+ *
+ * Configuração visual do Fralda Online:
+ * - Paleta Afetiva: tons pastel sofisticados (Cream, Dusty Blue, Dusty Rose, Terracotta)
+ * - Tipografia Editorial: tipografia com serifa clássica (Newsreader / Playfair / Georgia) e sans-serif limpa
+ * - Suporte a Modo Escuro comutável via classe `.dark` no elemento raiz
+ * - Animações orgânicas: float, shimmer, pulse-slow para celebrações e feedback
+ */
 import type { Config } from "tailwindcss";
 
 const config: Config = {

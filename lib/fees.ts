@@ -1,12 +1,23 @@
 /**
- * Taxas oficiais e regras de split da plataforma Fralda Online
+ * ============================================================================
+ * MOTOR DE CÁLCULO FINANCEIRO E TAXAS (Fralda Online)
+ * ============================================================================
+ * Este módulo centraliza a matemática de divisão de pagamentos (split de recebíveis)
+ * entre a plataforma Fralda Online, o gateway de pagamento (Mercado Pago) e os pais.
+ *
+ * Como funciona a monetização:
+ * - A taxa de serviço da nossa plataforma é fixada em 4,99% (PLATFORM_FEE_RATE).
+ * - O Mercado Pago cobra taxas de intermediação bancária (0,99% para Pix e 3,99% para Cartão).
+ * - Os pais podem escolher quem absorve esses custos:
+ *   1) O CONVIDADO: O valor das taxas é somado no checkout. Os pais recebem 100% limpo!
+ *   2) OS PAIS: O convidado paga o valor exato do presente e as taxas são descontadas do total.
  */
 
-// Comissão fixa e garantida da plataforma Fralda Online
+// Comissão fixa e garantida da plataforma Fralda Online (4,99%)
 export const PLATFORM_FEE_RATE = 0.0499; // 4,99%
 
 // Taxas oficiais estimadas de processamento do Mercado Pago no Brasil
-export const MP_PIX_FEE_RATE = 0.0099; // 0,99%
+export const MP_PIX_FEE_RATE = 0.0099; // 0,99% para transações instantâneas via Pix
 export const MP_CARD_FEE_RATE = 0.0399; // 3,99% (crédito à vista liberação imediata)
 
 export interface FeeCalculationInput {

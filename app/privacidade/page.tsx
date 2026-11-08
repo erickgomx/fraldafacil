@@ -1,3 +1,13 @@
+/**
+ * ============================================================================
+ * PÁGINA DE POLÍTICA DE PRIVACIDADE E DADOS LGPD (/privacidade)
+ * ============================================================================
+ * Declaração formal de conformidade com a LGPD (Lei nº 13.709/2018):
+ * - Princípios de finalidade, adequação e minimização de dados.
+ * - Ciclo de anonimização e expurgo seguro de registros sensíveis após 90 dias.
+ * - Direitos dos titulares de dados e canais de contato.
+ */
+
 import Link from 'next/link';
 import { ArrowLeft, Shield, Lock, Eye, CheckCircle2 } from 'lucide-react';
 import BrandLogo from '@/components/BrandLogo';

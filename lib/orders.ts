@@ -1,3 +1,13 @@
+/**
+ * 📦 Gerenciamento de Transição de Estado de Pedidos (Order Lifecycle & Idempotency)
+ *
+ * Este módulo orquestra a aprovação e rejeição de pedidos no banco de dados com
+ * garantias estritas de atomicidade e concorrência:
+ * 1. Previne race conditions entre Webhook assíncrono do Mercado Pago e retorno síncrono da API
+ * 2. Garante que efeitos colaterais (publicação de recado carinhoso no mural e voto no bolão)
+ *    ocorram estritamente uma única vez (idempotência transacional)
+ * 3. Protege pedidos já aprovados contra sobrescrita acidental por notificações atrasadas
+ */
 import prisma from '@/lib/prisma';
 
 /**

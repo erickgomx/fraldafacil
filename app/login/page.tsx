@@ -1,3 +1,13 @@
+/**
+ * ============================================================================
+ * PÁGINA DE LOGIN DOS PAIS E ADMINISTRADORES (/login)
+ * ============================================================================
+ * Formulário de autenticação seguro:
+ * - Validação em tempo real e redirecionamento para o Painel (/painel).
+ * - Notificação de sucesso caso o usuário venha do fluxo de redefinição de senha (`?reset=success`).
+ * - Envolvido em `Suspense` para suporte nativo ao SSR com `useSearchParams()`.
+ */
+
 'use client';
 
 import { Suspense, useState, useEffect } from 'react';

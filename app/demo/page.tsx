@@ -1,3 +1,11 @@
+/**
+ * ============================================================================
+ * PÁGINA DE DEMONSTRAÇÃO PÚBLICA (/demo)
+ * ============================================================================
+ * Permite que visitantes e futuros pais experimentem todas as funcionalidades
+ * interativas da página de evento sem precisar criar conta antes.
+ */
+
 import DemoClient from './DemoClient';
 import type { Metadata } from 'next';
 

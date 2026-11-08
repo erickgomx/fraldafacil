@@ -1,3 +1,11 @@
+/**
+ * ============================================================================
+ * PÁGINA DE CONFIGURAÇÕES DO CHÁ (/painel/configuracoes)
+ * ============================================================================
+ * Carrega as preferências do evento ativo e renderiza o cliente interativo
+ * de edição de dados dos pais, data comemorativa, split de taxas e integração Mercado Pago.
+ */
+
 import { getSession } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { redirect } from 'next/navigation';
