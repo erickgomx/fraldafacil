@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import { Share2, Check } from 'lucide-react';
 import Link from 'next/link';
 import BrandLogo from '@/components/BrandLogo';
+import ThemeToggle from '@/components/ThemeToggle';
 import { shareEvent } from '@/lib/share';
 
 interface PublicEventClientProps {
@@ -84,24 +85,27 @@ export default function PublicEventClient({
             <BrandLogo size="sm" />
           </Link>
 
-          <button
-            onClick={handleShare}
-            className="inline-flex items-center gap-1.5 py-1.5 px-3 sm:px-3.5 rounded-lg text-xs font-medium bg-white hover:bg-stone-50 border border-warm-border text-charcoal-700 shadow-subtle transition active:scale-[0.98] whitespace-nowrap shrink-0"
-          >
-            {copiedLink ? (
-              <>
-                <Check className="w-3.5 h-3.5 text-stone-900" />
-                <span className="hidden sm:inline">Link Copiado</span>
-                <span className="sm:hidden">Copiado</span>
-              </>
-            ) : (
-              <>
-                <Share2 className="w-3.5 h-3.5 text-charcoal-400" />
-                <span className="hidden sm:inline">Compartilhar Chá</span>
-                <span className="sm:hidden">Compartilhar</span>
-              </>
-            )}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleShare}
+              className="inline-flex items-center gap-1.5 py-1.5 px-3 sm:px-3.5 rounded-lg text-xs font-medium bg-white hover:bg-stone-50 border border-warm-border text-charcoal-700 shadow-subtle transition active:scale-[0.98] whitespace-nowrap shrink-0"
+            >
+              {copiedLink ? (
+                <>
+                  <Check className="w-3.5 h-3.5 text-stone-900" />
+                  <span className="hidden sm:inline">Link Copiado</span>
+                  <span className="sm:hidden">Copiado</span>
+                </>
+              ) : (
+                <>
+                  <Share2 className="w-3.5 h-3.5 text-charcoal-400" />
+                  <span className="hidden sm:inline">Compartilhar Chá</span>
+                  <span className="sm:hidden">Compartilhar</span>
+                </>
+              )}
+            </button>
+            <ThemeToggle size="sm" />
+          </div>
         </div>
       </header>
 

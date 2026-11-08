@@ -17,6 +17,7 @@ import {
   X,
 } from 'lucide-react';
 import BrandLogo from '@/components/BrandLogo';
+import ThemeToggle from '@/components/ThemeToggle';
 
 const fadeUp: Variants = {
   hidden: { opacity: 0, y: 28 },
@@ -114,6 +115,7 @@ export default function HomePage() {
               <span>Criar meu Chá</span>
               <ArrowRight className="w-3.5 h-3.5 text-stone-300 hidden sm:inline" />
             </Link>
+            <ThemeToggle />
           </nav>
         </div>
       </header>

@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import LogoutButton from './LogoutButton';
 import BrandLogo from '@/components/BrandLogo';
+import ThemeToggle from '@/components/ThemeToggle';
 
 export default async function PainelLayout({
   children,
@@ -44,11 +45,12 @@ export default async function PainelLayout({
       {/* Sidebar */}
       <aside className="w-full md:w-64 bg-white border-r border-warm-border flex flex-col justify-between shrink-0">
         <div>
-          {/* Logo */}
-          <div className="p-6 border-b border-warm-border flex items-center justify-between">
+          {/* Logo & Theme */}
+          <div className="p-5 border-b border-warm-border flex items-center justify-between">
             <Link href="/painel" className="group">
               <BrandLogo size="sm" />
             </Link>
+            <ThemeToggle size="sm" />
           </div>
 
           {/* Dados do Evento Ativo */}

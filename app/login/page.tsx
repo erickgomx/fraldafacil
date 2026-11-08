@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Lock, Mail, ArrowRight, CheckCircle2 } from 'lucide-react';
 import BrandLogo from '@/components/BrandLogo';
 import BrandLoader from '@/components/BrandLoader';
+import ThemeToggle from '@/components/ThemeToggle';
 
 function LoginForm() {
   const router = useRouter();
@@ -148,7 +149,10 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <main className="min-h-screen bg-cream-50 text-charcoal-900 flex flex-col justify-center items-center p-6">
+    <main className="min-h-screen bg-cream-50 text-charcoal-900 flex flex-col justify-center items-center p-6 relative">
+      <div className="absolute top-5 right-5 sm:top-6 sm:right-6">
+        <ThemeToggle size="sm" />
+      </div>
       <div className="w-full max-w-sm">
         {/* Header */}
         <div className="text-center mb-8">

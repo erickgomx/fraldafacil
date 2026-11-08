@@ -10,6 +10,7 @@ import PixCheckoutModal from '@/components/PixCheckoutModal';
 import Link from 'next/link';
 import { ArrowRight, Eye, RefreshCw } from 'lucide-react';
 import { DEFAULT_GIFT_ITEMS } from '@/lib/default-gifts';
+import ThemeToggle from '@/components/ThemeToggle';
 
 const DEMO_GIFTS: GiftItemData[] = DEFAULT_GIFT_ITEMS.map((item, index) => ({
   id: `demo-gift-${index + 1}`,
@@ -104,13 +105,16 @@ export default function DemoClient() {
             </span>
           </div>
 
-          <Link
-            href="/cadastro"
-            className="py-1 px-3.5 rounded-lg text-xs font-medium bg-charcoal-900 text-white hover:bg-charcoal-800 transition flex items-center gap-1.5 shadow-subtle shrink-0"
-          >
-            <span>Criar meu Chá</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/cadastro"
+              className="py-1 px-3.5 rounded-lg text-xs font-medium bg-charcoal-900 text-white hover:bg-charcoal-800 transition flex items-center gap-1.5 shadow-subtle shrink-0"
+            >
+              <span>Criar meu Chá</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+            <ThemeToggle size="sm" />
+          </div>
         </div>
       </div>
 

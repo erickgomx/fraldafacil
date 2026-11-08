@@ -5,19 +5,31 @@
 :root {
   --background: #FAF8F5;
   --foreground: #1C1917;
+  --surface-card: #FFFFFF;
+  --surface-border: #E7E2DA;
+}
+
+html.dark {
+  --background: #12100E;
+  --foreground: #F7F3EC;
+  --surface-card: #1C1917;
+  --surface-border: #2C2723;
+  color-scheme: dark;
 }
 
 html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #FAF8F5;
-  color: #1C1917;
+  background-color: var(--background);
+  color: var(--foreground);
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
 body {
-  background-color: #FAF8F5;
-  color: #1C1917;
+  background-color: var(--background);
+  color: var(--foreground);
   min-height: 100vh;
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
 /* Tipografia Editorial */
@@ -70,4 +82,131 @@ p {
 img {
   outline: 1px solid rgba(28, 25, 23, 0.06);
   outline-offset: -1px;
+}
+
+/* =========================================================
+   DARK MODE — COESÃO EDITORIAL SUAVE & CONSISTENTE
+   ========================================================= */
+
+html.dark body {
+  background-color: #12100E;
+  color: #F7F3EC;
+}
+
+/* Superfícies e fundos */
+html.dark .bg-cream-50 {
+  background-color: #12100E !important;
+}
+
+html.dark .bg-cream-100 {
+  background-color: #1A1715 !important;
+}
+
+html.dark .bg-cream-200 {
+  background-color: #24201D !important;
+}
+
+html.dark .bg-white {
+  background-color: #1C1917 !important;
+}
+
+html.dark .bg-white\/70,
+html.dark .bg-white\/80,
+html.dark .bg-white\/90,
+html.dark .bg-cream-50\/70,
+html.dark .bg-cream-50\/80,
+html.dark .bg-cream-50\/85,
+html.dark .bg-cream-50\/90 {
+  background-color: rgba(20, 18, 16, 0.85) !important;
+}
+
+html.dark .bg-\[\#F5F1E9\] {
+  background-color: #181614 !important;
+}
+
+/* Bordas e divisores */
+html.dark .border-warm-border,
+html.dark .border-warm-border\/60,
+html.dark .border-warm-border\/70,
+html.dark .border-warm-border\/80,
+html.dark .border-stone-200 {
+  border-color: #2D2824 !important;
+}
+
+html.dark .border-\[\#E6DDCF\] {
+  border-color: #38322D !important;
+}
+
+html.dark .divide-warm-border > * + * {
+  border-color: #2D2824 !important;
+}
+
+/* Hierarquia tipográfica em Modo Escuro */
+html.dark .text-charcoal-900 {
+  color: #F7F3EC !important;
+}
+
+html.dark .text-charcoal-800 {
+  color: #EFE8DC !important;
+}
+
+html.dark .text-charcoal-700 {
+  color: #D6CEC3 !important;
+}
+
+html.dark .text-charcoal-600 {
+  color: #A8A29A !important;
+}
+
+html.dark .text-charcoal-500 {
+  color: #8C857E !important;
+}
+
+html.dark .text-charcoal-400 {
+  color: #706A63 !important;
+}
+
+/* Botões escuros e contrastes invertidos */
+html.dark .bg-charcoal-900 {
+  background-color: #FAF8F5 !important;
+  color: #1C1917 !important;
+}
+
+html.dark .bg-charcoal-900:hover {
+  background-color: #EFE8DC !important;
+}
+
+html.dark .bg-charcoal-800 {
+  background-color: #EFE8DC !important;
+  color: #1C1917 !important;
+}
+
+/* Inputs, Textareas e Seletores */
+html.dark input,
+html.dark textarea,
+html.dark select {
+  background-color: #24201D !important;
+  color: #F7F3EC !important;
+  border-color: #38322D !important;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #78716C !important;
+}
+
+/* Sombras ambientais para modo escuro */
+html.dark .shadow-subtle {
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.35) !important;
+}
+
+html.dark .shadow-card,
+html.dark .shadow-elevated {
+  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.45) !important;
+}
+
+/* Acessibilidade de seleção de texto */
+html.dark ::selection {
+  background-color: #44403C;
+  color: #FAF8F5;
 }
