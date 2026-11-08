@@ -78,8 +78,8 @@ p {
   }
 }
 
-/* Imagens com acabamento fotográfico sutil */
-img {
+/* Imagens com acabamento fotográfico sutil (exceto logos e ícones) */
+img:not(.no-outline) {
   outline: 1px solid rgba(28, 25, 23, 0.06);
   outline-offset: -1px;
 }

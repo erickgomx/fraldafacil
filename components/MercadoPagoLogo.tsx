@@ -22,13 +22,14 @@ export default function MercadoPagoLogo({
   }[size];
 
   return (
-    <span className={`inline-flex items-center shrink-0 ${className}`}>
+    <span className={`inline-flex items-center shrink-0 border-0 !outline-none ${className}`}>
       <Image
         src="/mercado-pago.png"
         alt="Mercado Pago"
         width={dimensions.width}
         height={dimensions.height}
-        className="w-auto h-auto object-contain select-none"
+        className="w-auto h-auto object-contain select-none no-outline !outline-none !border-none"
+        style={{ outline: 'none', border: 'none', boxShadow: 'none' }}
       />
     </span>
   );
