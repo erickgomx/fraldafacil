@@ -79,7 +79,7 @@ p {
 }
 
 /* Imagens com acabamento fotográfico sutil (exceto logos e ícones) */
-img:not(.no-outline) {
+img:not(.no-outline):not([src*="logo"]):not([src*="favicon"]):not([src*="icon"]) {
   outline: 1px solid rgba(28, 25, 23, 0.06);
   outline-offset: -1px;
 }

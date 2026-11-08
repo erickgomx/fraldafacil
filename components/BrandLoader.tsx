@@ -98,14 +98,15 @@ export default function BrandLoader({
           className="absolute w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-cream-300/40 dark:bg-stone-700/30 blur-xl pointer-events-none"
         />
 
-        {/* Emblema Oficial Fralda Online: Modo Claro & Escuro */}
-        <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl sm:rounded-3xl bg-white dark:bg-[#1A1715] border border-[#E7E2DA] dark:border-[#332D28] shadow-card flex items-center justify-center p-2.5 sm:p-3 overflow-hidden">
+        {/* Emblema Oficial Fralda Online: Modo Claro & Escuro (sem caixa quadrada de fundo) */}
+        <div className="relative w-20 h-20 sm:w-24 sm:h-24 flex items-center justify-center border-0 !outline-none">
           <Image
             src="/logo-light.png"
             alt="Fralda Online"
             width={160}
             height={160}
-            className="w-full h-full object-contain dark:hidden"
+            className="w-full h-full object-contain dark:hidden no-outline !outline-none !border-none"
+            style={{ outline: 'none', border: 'none', boxShadow: 'none' }}
             priority
           />
           <Image
@@ -113,7 +114,8 @@ export default function BrandLoader({
             alt="Fralda Online"
             width={160}
             height={160}
-            className="w-full h-full object-contain hidden dark:block"
+            className="w-full h-full object-contain hidden dark:block no-outline !outline-none !border-none"
+            style={{ outline: 'none', border: 'none', boxShadow: 'none' }}
             priority
           />
         </div>

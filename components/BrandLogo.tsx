@@ -40,7 +40,7 @@ export default function BrandLogo({
     <div className={`inline-flex items-center gap-2.5 select-none ${className}`}>
       {/* Emblema Oficial Fralda Online (Modo Claro & Modo Escuro) */}
       <div
-        className={`relative ${sizeMap.box} shrink-0 transition-transform group-hover:scale-105 flex items-center justify-center`}
+        className={`relative ${sizeMap.box} shrink-0 transition-transform group-hover:scale-105 flex items-center justify-center border-0 !outline-none`}
         aria-hidden="true"
       >
         <Image
@@ -48,7 +48,8 @@ export default function BrandLogo({
           alt="Fralda Online"
           width={sizeMap.iconWidth * 2}
           height={sizeMap.iconWidth * 2}
-          className="w-full h-full object-contain dark:hidden"
+          className="w-full h-full object-contain dark:hidden no-outline !outline-none !border-none"
+          style={{ outline: 'none', border: 'none', boxShadow: 'none' }}
           priority
         />
         <Image
@@ -56,7 +57,8 @@ export default function BrandLogo({
           alt="Fralda Online"
           width={sizeMap.iconWidth * 2}
           height={sizeMap.iconWidth * 2}
-          className="w-full h-full object-contain hidden dark:block"
+          className="w-full h-full object-contain hidden dark:block no-outline !outline-none !border-none"
+          style={{ outline: 'none', border: 'none', boxShadow: 'none' }}
           priority
         />
       </div>
