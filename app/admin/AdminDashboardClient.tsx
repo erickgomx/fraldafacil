@@ -133,7 +133,7 @@ export default function AdminDashboardClient({
   metrics,
   orders,
   topEvents,
-  chartData,
+  chartData: _chartData,
 }: AdminDashboardClientProps) {
   const router = useRouter();
   const [isRefreshing, setIsRefreshing] = useState(false);

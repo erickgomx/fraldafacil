@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 
 interface MercadoPagoLogoProps {
   className?: string;
@@ -13,23 +14,21 @@ export default function MercadoPagoLogo({
   className = '',
   size = 'md',
 }: MercadoPagoLogoProps) {
-  const sizeMap = {
-    xs: 'h-3.5 w-auto',
-    sm: 'h-4.5 w-auto',
-    md: 'h-6 w-auto',
-    lg: 'h-7 w-auto',
+  const dimensions = {
+    xs: { width: 57, height: 15 },
+    sm: { width: 76, height: 20 },
+    md: { width: 95, height: 25 },
+    lg: { width: 114, height: 30 },
   }[size];
 
   return (
     <span className={`inline-flex items-center shrink-0 ${className}`}>
-      {/* Container com fundo suave quando necessário para manter legibilidade impecável */}
-      <img
+      <Image
         src="/mercado-pago.png"
         alt="Mercado Pago"
-        className={`${sizeMap} object-contain select-none`}
-        loading="lazy"
-        width={292}
-        height={77}
+        width={dimensions.width}
+        height={dimensions.height}
+        className="w-auto h-auto object-contain select-none"
       />
     </span>
   );
