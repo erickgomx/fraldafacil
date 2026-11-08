@@ -575,13 +575,11 @@ export default function HomePage() {
                   Intermediação oficial via Mercado Pago
                 </h2>
               </div>
-              <div className="shrink-0">
-                <div className="px-3.5 py-2 rounded-xl bg-white dark:bg-white border border-warm-border dark:border-stone-700 flex items-center gap-2.5 shadow-subtle">
-                  <span className="text-[11px] font-mono uppercase tracking-wider text-charcoal-500">
-                    Processador Oficial
-                  </span>
-                  <MercadoPagoLogo size="sm" />
-                </div>
+              <div className="shrink-0 flex items-center gap-3">
+                <span className="text-[11px] font-mono uppercase tracking-wider text-charcoal-400 dark:text-stone-500">
+                  Processador Oficial
+                </span>
+                <MercadoPagoLogo size="md" />
               </div>
             </div>
 
