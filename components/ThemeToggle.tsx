@@ -31,12 +31,16 @@ export default function ThemeToggle({
       document.documentElement.classList.add('dark');
       try {
         localStorage.setItem('theme', 'dark');
-      } catch (_) {}
+      } catch {
+        // Ignora erro em ambientes restritos de storage
+      }
     } else {
       document.documentElement.classList.remove('dark');
       try {
         localStorage.setItem('theme', 'light');
-      } catch (_) {}
+      } catch {
+        // Ignora erro em ambientes restritos de storage
+      }
     }
   };
 
