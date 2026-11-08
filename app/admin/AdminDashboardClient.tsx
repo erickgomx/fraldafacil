@@ -318,41 +318,123 @@ export default function AdminDashboardClient({
     });
   }, [ordersList, statusFilter, methodFilter, searchTerm]);
 
+  // Referências temporais para cálculos reativos em tempo real
+  const now = useMemo(() => new Date(), []);
+  const startOfToday = useMemo(() => new Date(now.getFullYear(), now.getMonth(), now.getDate()), [now]);
+  const sevenDaysAgo = useMemo(() => new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000), [now]);
+  const thirtyDaysAgo = useMemo(() => new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000), [now]);
+
+  // Pedidos aprovados no período selecionado
+  const approvedInPeriod = useMemo(() => {
+    return ordersList.filter((o) => {
+      if (o.status !== 'APPROVED') return false;
+      const orderDate = new Date(o.createdAt);
+      if (timePeriod === 'TODAY') return orderDate >= startOfToday;
+      if (timePeriod === 'WEEK') return orderDate >= sevenDaysAgo;
+      if (timePeriod === 'MONTH') return orderDate >= thirtyDaysAgo;
+      return true; // ALL
+    });
+  }, [ordersList, timePeriod, startOfToday, sevenDaysAgo, thirtyDaysAgo]);
+
+  const periodGross = useMemo(() => {
+    return approvedInPeriod.reduce((sum, o) => sum + o.amount, 0);
+  }, [approvedInPeriod]);
+
+  const periodEarnings = useMemo(() => {
+    return approvedInPeriod.reduce((sum, o) => sum + (o.platformFee ?? o.amount * 0.0499), 0);
+  }, [approvedInPeriod]);
+
   // Valores calculados de acordo com o seletor de período rápido
   const currentPeriodData = useMemo(() => {
-    switch (timePeriod) {
-      case 'TODAY':
-        return {
-          gross: metrics.grossToday,
-          earnings: metrics.earningsToday,
-          label: 'Hoje',
-        };
-      case 'WEEK':
-        return {
-          gross: metrics.grossWeek,
-          earnings: metrics.earningsWeek,
-          label: 'Últimos 7 dias',
-        };
-      case 'MONTH':
-        return {
-          gross: metrics.grossMonth,
-          earnings: metrics.earningsMonth,
-          label: 'Últimos 30 dias',
-        };
-      default:
-        return {
-          gross: metrics.totalGross,
-          earnings: metrics.totalPlatformFee,
-          label: 'Todo o Histórico',
-        };
-    }
-  }, [timePeriod, metrics]);
+    const labels = {
+      TODAY: 'Hoje',
+      WEEK: 'Últimos 7 dias',
+      MONTH: 'Últimos 30 dias',
+      ALL: 'Todo o Histórico',
+    };
+    return {
+      gross: periodGross,
+      earnings: periodEarnings,
+      label: labels[timePeriod],
+    };
+  }, [timePeriod, periodGross, periodEarnings]);
 
-  // Cálculo de altura máxima do gráfico
+  // Geração dinâmica dos pontos do gráfico sincronizados com a lista de pedidos e o período selecionado
+  const computedChartData = useMemo(() => {
+    const numDays = timePeriod === 'WEEK' ? 7 : timePeriod === 'TODAY' ? 1 : 30;
+    const points: DailyChartPoint[] = [];
+
+    if (timePeriod === 'TODAY') {
+      for (let h = 0; h < 24; h += 3) {
+        const slotStart = new Date(startOfToday.getTime() + h * 60 * 60 * 1000);
+        const slotEnd = new Date(slotStart.getTime() + 3 * 60 * 60 * 1000 - 1);
+
+        const slotOrders = ordersList.filter((o) => {
+          if (o.status !== 'APPROVED') return false;
+          const d = new Date(o.createdAt);
+          return d >= slotStart && d <= slotEnd;
+        });
+
+        const gross = slotOrders.reduce((sum, o) => sum + o.amount, 0);
+        const earnings = slotOrders.reduce(
+          (sum, o) => sum + (o.platformFee ?? o.amount * 0.0499),
+          0
+        );
+
+        points.push({
+          date: slotStart.toISOString(),
+          label: `${String(h).padStart(2, '0')}:00`,
+          gross: Math.round(gross * 100) / 100,
+          earnings: Math.round(earnings * 100) / 100,
+          orders: slotOrders.length,
+        });
+      }
+      return points;
+    }
+
+    for (let i = numDays - 1; i >= 0; i--) {
+      const targetDate = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+      const dayStart = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
+      const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000 - 1);
+
+      const dayOrders = ordersList.filter((o) => {
+        if (o.status !== 'APPROVED') return false;
+        const d = new Date(o.createdAt);
+        return d >= dayStart && d <= dayEnd;
+      });
+
+      const dayGross = dayOrders.reduce((sum, o) => sum + o.amount, 0);
+      const dayEarnings = dayOrders.reduce(
+        (sum, o) => sum + (o.platformFee ?? o.amount * 0.0499),
+        0
+      );
+
+      const dayStr = String(targetDate.getDate()).padStart(2, '0');
+      const monthStr = String(targetDate.getMonth() + 1).padStart(2, '0');
+
+      points.push({
+        date: targetDate.toISOString().slice(0, 10),
+        label: `${dayStr}/${monthStr}`,
+        gross: Math.round(dayGross * 100) / 100,
+        earnings: Math.round(dayEarnings * 100) / 100,
+        orders: dayOrders.length,
+      });
+    }
+
+    return points;
+  }, [ordersList, timePeriod, now, startOfToday]);
+
+  // Altura máxima proporcional para as barras do gráfico
   const maxChartValue = useMemo(() => {
-    const max = Math.max(...chartData.map((d) => d.gross), 100);
-    return max;
-  }, [chartData]);
+    const max = Math.max(...computedChartData.map((d) => d.gross), 0);
+    return max > 0 ? max : 100;
+  }, [computedChartData]);
+
+  // Intervalo de exibição dos rótulos no eixo horizontal
+  const labelInterval = useMemo(() => {
+    if (timePeriod === 'TODAY' || timePeriod === 'WEEK') return 1;
+    return 4;
+  }, [timePeriod]);
 
   return (
     <div className="space-y-8 pb-12">
@@ -691,80 +773,129 @@ export default function AdminDashboardClient({
         </div>
       </div>
 
-      {/* Gráfico de Evolução Financeira Diária (Últimos 30 dias) */}
+      {/* Gráfico de Evolução Financeira Diária */}
       <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
             <h3 className="font-serif font-bold text-lg text-slate-900">
-              Curva de Arrecadação e Lucro (Últimos 30 Dias)
+              Curva de Arrecadação e Lucro ({currentPeriodData.label})
             </h3>
             <p className="text-xs text-slate-500">
-              Volume arrecadado por dia e receita líquida gerada para a plataforma.
+              Volume arrecadado por período e receita gerada para a plataforma.
             </p>
           </div>
-          <div className="flex items-center gap-4 text-xs font-medium">
+          <div className="flex flex-wrap items-center gap-4 text-xs font-medium">
             <span className="flex items-center gap-1.5 text-slate-700">
               <span className="w-3 h-3 rounded-md bg-amber-500" />
-              Arrecadação Bruta (R$)
+              Arrecadação Bruta ({formatBRL(currentPeriodData.gross)})
             </span>
             <span className="flex items-center gap-1.5 text-emerald-700">
               <span className="w-3 h-3 rounded-md bg-emerald-600" />
-              Lucro do Site (4,99%)
+              Lucro do Site ({formatBRL(currentPeriodData.earnings)})
             </span>
           </div>
         </div>
 
-        {/* Gráfico SVG / Barras Dinâmicas */}
-        <div className="relative pt-4">
-          <div className="h-64 flex items-end gap-1.5 sm:gap-2.5 overflow-x-auto pb-6 border-b border-slate-100">
-            {chartData.map((pt, idx) => {
-              const grossHeight = Math.max(
-                4,
-                Math.round((pt.gross / maxChartValue) * 180)
-              );
-              const earningsHeight = Math.max(
-                2,
-                Math.round((pt.earnings / maxChartValue) * 180)
-              );
+        {/* Gráfico de Barras com Linhas Guia e Eixo X Separado */}
+        <div className="relative pt-2">
+          {/* Linhas de grade de fundo (Rótulos de valor de referência no eixo Y) */}
+          <div className="absolute inset-x-0 top-6 h-48 flex flex-col justify-between pointer-events-none opacity-40">
+            <div className="border-b border-dashed border-slate-200 w-full flex justify-end">
+              <span className="text-[10px] font-mono text-slate-400 -mt-2.5 bg-white px-1">
+                {formatBRL(maxChartValue)}
+              </span>
+            </div>
+            <div className="border-b border-dashed border-slate-200 w-full flex justify-end">
+              <span className="text-[10px] font-mono text-slate-400 -mt-2.5 bg-white px-1">
+                {formatBRL(maxChartValue / 2)}
+              </span>
+            </div>
+            <div className="border-b border-dashed border-slate-200 w-full flex justify-end">
+              <span className="text-[10px] font-mono text-slate-400 -mt-2.5 bg-white px-1">
+                R$ 0,00
+              </span>
+            </div>
+          </div>
+
+          {/* Área das Barras (Plot Area) */}
+          <div className="relative h-48 flex items-end gap-1.5 sm:gap-2.5 overflow-x-auto pt-6 pb-0 border-b border-slate-200">
+            {computedChartData.map((pt, idx) => {
+              const maxBarHeight = 150;
+              const grossHeight = pt.gross > 0
+                ? Math.max(8, Math.round((pt.gross / maxChartValue) * maxBarHeight))
+                : 4;
+              const earningsHeight = pt.earnings > 0
+                ? Math.max(4, Math.round((pt.earnings / maxChartValue) * maxBarHeight))
+                : 2;
 
               return (
                 <div
                   key={idx}
-                  className="flex-1 min-w-[20px] flex flex-col items-center justify-end group relative h-full"
+                  className="flex-1 min-w-[20px] h-full flex items-end justify-center group relative z-10"
                 >
                   {/* Tooltip Hover */}
-                  <div className="absolute bottom-full mb-2 hidden group-hover:flex flex-col items-center z-20 pointer-events-none whitespace-nowrap">
+                  <div className="absolute bottom-full mb-3 hidden group-hover:flex flex-col items-center z-30 pointer-events-none whitespace-nowrap">
                     <div className="bg-slate-900 text-white rounded-xl p-2.5 shadow-xl text-[11px] space-y-1">
                       <p className="font-semibold border-b border-slate-700 pb-1">{pt.label}</p>
-                      <p className="text-amber-300">Bruto: {formatBRL(pt.gross)}</p>
-                      <p className="text-emerald-400">Lucro Site: {formatBRL(pt.earnings)}</p>
-                      <p className="text-slate-300">{pt.orders} presente(s)</p>
+                      <p className="text-amber-300 font-mono">Bruto: {formatBRL(pt.gross)}</p>
+                      <p className="text-emerald-400 font-mono">Lucro Site: {formatBRL(pt.earnings)}</p>
+                      <p className="text-slate-300">{pt.orders} presente(s) aprovado(s)</p>
                     </div>
                     <div className="w-2 h-2 bg-slate-900 rotate-45 -mt-1" />
                   </div>
 
-                  {/* Barras Empilhadas ou Duplas */}
-                  <div className="w-full flex items-end justify-center gap-0.5">
+                  {/* Barras Lado a Lado apoiadas na mesma linha horizontal */}
+                  <div className="w-full flex items-end justify-center gap-0.5 sm:gap-1">
                     <div
                       style={{ height: `${grossHeight}px` }}
-                      className="w-full max-w-[12px] bg-amber-400 hover:bg-amber-500 rounded-t-sm transition-all"
+                      className={`w-full max-w-[10px] sm:max-w-[14px] rounded-t-sm transition-all duration-200 ${
+                        pt.gross > 0
+                          ? 'bg-amber-400 group-hover:bg-amber-500 shadow-xs'
+                          : 'bg-slate-100 group-hover:bg-slate-200'
+                      }`}
                     />
                     <div
                       style={{ height: `${earningsHeight}px` }}
-                      className="w-full max-w-[8px] bg-emerald-600 hover:bg-emerald-500 rounded-t-sm transition-all"
+                      className={`w-full max-w-[6px] sm:max-w-[10px] rounded-t-sm transition-all duration-200 ${
+                        pt.earnings > 0
+                          ? 'bg-emerald-600 group-hover:bg-emerald-500 shadow-xs'
+                          : 'bg-slate-100 group-hover:bg-slate-200'
+                      }`}
                     />
                   </div>
-
-                  {/* Label inferior a cada intervalo */}
-                  {idx % 4 === 0 && (
-                    <span className="text-[10px] font-mono text-slate-400 mt-2 block whitespace-nowrap">
-                      {pt.label}
-                    </span>
-                  )}
                 </div>
               );
             })}
           </div>
+
+          {/* Rótulos do Eixo X em linha dedicada */}
+          <div className="flex items-center gap-1.5 sm:gap-2.5 pt-2">
+            {computedChartData.map((pt, idx) => (
+              <div key={idx} className="flex-1 min-w-[20px] text-center">
+                {idx % labelInterval === 0 ? (
+                  <span className="text-[10px] font-mono text-slate-400 block truncate">
+                    {pt.label}
+                  </span>
+                ) : (
+                  <span className="text-[10px] font-mono block opacity-0 select-none">
+                    --
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Feedback se não houver faturamento aprovado no período */}
+          {currentPeriodData.gross === 0 && (
+            <div className="text-center py-4 text-xs text-slate-400 mt-2 bg-slate-50/50 rounded-xl border border-slate-100">
+              Nenhuma transação aprovada registrada em <strong>{currentPeriodData.label.toLowerCase()}</strong>.
+              {ordersList.some((o) => o.status === 'PENDING') && (
+                <span className="ml-1 text-amber-600 font-medium">
+                  (Há {ordersList.filter((o) => o.status === 'PENDING').length} pagamento(s) pendente(s) na tabela abaixo aguardando verificação)
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
