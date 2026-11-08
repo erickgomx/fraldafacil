@@ -26,22 +26,22 @@ export function buildSharePayload(input: ShareDataInput) {
   let message = '';
 
   if (input.eventType === 'REVELACAO' && input.boyName && input.girlName) {
-    title = `Chá Revelação: ${input.boyName} ou ${input.girlName}? 💙🌸`;
-    message = `🍼✨ Você está convidado(a) para o nosso Chá Revelação! 👶🎉\n\nSerá ${input.boyName} ou ${input.girlName}? 💙🌸\nVenha dar o seu palpite no nosso Bolão Oficial e conferir a lista de fraldas!\n\n👉 Acesse a página aqui:\n${url}\n\nEsperamos você com muito carinho! 🥰🎉\n— ${input.parentsNames}`;
+    title = `Chá Revelação: ${input.boyName} ou ${input.girlName}?`;
+    message = `Oi! Preparamos a página do nosso *Chá Revelação* com muito carinho (${input.parentsNames}). ✨\n\nSerá *${input.boyName}* ou *${input.girlName}*? Deixe seu palpite no bolão e veja nossa lista de fraldas aqui:\n${url}`;
   } else if (input.babyName || input.boyName || input.girlName) {
     const name = input.babyName || input.boyName || input.girlName;
-    title = `Chá de Bebê de ${name} 👶💛`;
-    message = `🍼✨ Você está convidado(a) para o Chá de Bebê de ${name}! 👶💛\n\nPreparamos uma página linda com nossa lista de presentes em fraldas e mural de recados!\n\n👉 Acesse a página aqui:\n${url}\n\nEsperamos você com muito carinho! 🥰🎉\n— ${input.parentsNames}`;
+    title = `Chá de Bebê de ${name}`;
+    message = `Oi! Preparamos a página do Chá de Bebê de *${name}* com muito carinho (${input.parentsNames}). ✨\n\nPara deixar um recado para a gente e ver nossa lista de fraldas, é só acessar aqui:\n${url}`;
   } else {
-    title = `Chá de Bebê de ${input.parentsNames} 👶💛`;
-    message = `🍼✨ Você está convidado(a) para o Chá de Bebê de ${input.parentsNames}! 👶💛\n\nPreparamos uma página linda com nossa lista de presentes em fraldas, bolão e mural de recados!\n\n👉 Acesse a página aqui:\n${url}\n\nEsperamos você com muito carinho! 🥰🎉\n— ${input.parentsNames}`;
+    title = `Chá de Bebê de ${input.parentsNames}`;
+    message = `Oi! Preparamos a página do nosso Chá de Bebê com muito carinho (${input.parentsNames}). ✨\n\nPara participar, deixar um recado e ver nossa lista de fraldas, é só acessar aqui:\n${url}`;
   }
 
   return { title, message, url };
 }
 
 export async function shareEvent(input: ShareDataInput): Promise<'SHARED' | 'COPIED' | 'CANCELLED'> {
-  const { title, message, url } = buildSharePayload(input);
+  const { title, message } = buildSharePayload(input);
 
   if (typeof window !== 'undefined') {
     // Tenta compartilhamento nativo no celular (abre WhatsApp / Apps)
@@ -50,7 +50,7 @@ export async function shareEvent(input: ShareDataInput): Promise<'SHARED' | 'COP
         await navigator.share({
           title,
           text: message,
-          url,
+
         });
         return 'SHARED';
       } catch (err) {
