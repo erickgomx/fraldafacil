@@ -155,16 +155,6 @@ export default function HomePage() {
             variants={staggerContainer}
             className="lg:col-span-7 text-center lg:text-left"
           >
-            {/* Selo Minimalista de Autoridade Mercado Pago */}
-            <motion.div
-              variants={fadeUp}
-              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/90 dark:bg-[#1E1B18] border border-warm-border dark:border-[#2E2925] text-xs text-charcoal-700 dark:text-stone-300 mb-6 shadow-subtle"
-            >
-              <MercadoPagoLogo size="xs" colorVariant="brand" />
-              <span className="text-charcoal-300 dark:text-stone-600">·</span>
-              <span>Intermediação oficial &amp; segurança bancária</span>
-            </motion.div>
-
             <motion.h1
               variants={fadeUp}
               className="font-serif text-4xl sm:text-5xl lg:text-[3.5rem] text-charcoal-900 font-normal tracking-tight leading-[1.08] mb-6"
@@ -558,7 +548,7 @@ export default function HomePage() {
               </div>
               <div className="mt-6 pt-4 border-t border-warm-border/60 flex items-center justify-between text-xs font-mono">
                 <span className="text-terracotta font-medium">Intermediação Oficial</span>
-                <MercadoPagoLogo size="xs" colorVariant="brand" />
+                <MercadoPagoLogo size="xs" />
               </div>
             </motion.div>
           </motion.div>
@@ -586,11 +576,11 @@ export default function HomePage() {
                 </h2>
               </div>
               <div className="shrink-0">
-                <div className="px-4 py-2.5 rounded-xl bg-cream-50 dark:bg-stone-900 border border-warm-border dark:border-stone-800 flex items-center gap-2.5 shadow-subtle">
-                  <span className="text-[11px] font-mono uppercase tracking-wider text-charcoal-500 dark:text-stone-400">
+                <div className="px-3.5 py-2 rounded-xl bg-white dark:bg-white border border-warm-border dark:border-stone-700 flex items-center gap-2.5 shadow-subtle">
+                  <span className="text-[11px] font-mono uppercase tracking-wider text-charcoal-500">
                     Processador Oficial
                   </span>
-                  <MercadoPagoLogo size="sm" colorVariant="brand" />
+                  <MercadoPagoLogo size="sm" />
                 </div>
               </div>
             </div>
@@ -860,7 +850,7 @@ export default function HomePage() {
             <span className="text-charcoal-300 hidden sm:inline">·</span>
             <span className="inline-flex items-center gap-1.5 text-charcoal-500">
               <span>Pagamentos via</span>
-              <MercadoPagoLogo size="xs" colorVariant="brand" />
+              <MercadoPagoLogo size="xs" />
             </span>
           </div>
 
