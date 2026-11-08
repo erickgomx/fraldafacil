@@ -26,6 +26,7 @@ import {
   XCircle,
   Search,
   Download,
+  FileText,
   RefreshCw,
   ExternalLink,
   ShieldCheck,
@@ -34,6 +35,8 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 export interface AdminMetricsData {
   totalGross: number;
@@ -136,6 +139,7 @@ export default function AdminDashboardClient({
 }: AdminDashboardClientProps) {
   const router = useRouter();
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isExportingPDF, setIsExportingPDF] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'APPROVED' | 'PENDING' | 'REJECTED'>('ALL');
   const [methodFilter, setMethodFilter] = useState<'ALL' | 'PIX' | 'CREDIT_CARD'>('ALL');
@@ -435,47 +439,390 @@ export default function AdminDashboardClient({
     return 4;
   }, [timePeriod]);
 
+  // Exportar Relatório em PDF
+  const handleExportPDF = () => {
+    if (ordersList.length === 0) {
+      alert('Nenhuma transação disponível para exportação.');
+      return;
+    }
+
+    try {
+      setIsExportingPDF(true);
+
+      const doc = new jsPDF({
+        orientation: 'landscape',
+        unit: 'mm',
+        format: 'a4',
+      });
+
+      const primaryColor: [number, number, number] = [15, 23, 42]; // slate-900
+      const secondaryColor: [number, number, number] = [71, 85, 105]; // slate-600
+      const borderColor: [number, number, number] = [226, 232, 240]; // slate-200
+
+      // Header do Relatório
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(15);
+      doc.setTextColor(...primaryColor);
+      doc.text('FRALDA FACIL', 14, 15);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(...secondaryColor);
+      doc.text('Relatorio Administrativo & Auditoria Financeira', 14, 21);
+
+      // Metadados à direita
+      doc.setFontSize(8);
+      const generatedAt = new Date().toLocaleString('pt-BR');
+      doc.text(`Gerado em: ${generatedAt}`, 283, 13, { align: 'right' });
+      doc.text(`Responsavel: ${admin.name} (${admin.email})`, 283, 18, { align: 'right' });
+      doc.text(`Filtro de Periodo: ${currentPeriodData.label}`, 283, 23, { align: 'right' });
+
+      // Linha horizontal elegante
+      doc.setDrawColor(...borderColor);
+      doc.setLineWidth(0.4);
+      doc.line(14, 26, 283, 26);
+
+      let currentY = 32;
+
+      // Seção 1: Resumo Financeiro & KPIs
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(...primaryColor);
+      doc.text('1. RESUMO FINANCEIRO & PERFORMANCE', 14, currentY);
+
+      currentY += 4;
+
+      const summaryHead = [
+        [
+          'Total Bruto',
+          'Lucro Plataforma (4,99%)',
+          'Repasse Pais (~95,01%)',
+          'Taxa Gateway MP',
+          'Ticket Medio',
+          'Conversao',
+          'Pedidos Aprov.',
+          'Total Pedidos',
+          'Total Chas',
+        ],
+      ];
+
+      const summaryBody = [
+        [
+          formatBRL(currentPeriodData.gross),
+          formatBRL(currentPeriodData.earnings),
+          formatBRL(metrics.totalParentsNet),
+          formatBRL(metrics.totalGatewayFee),
+          formatBRL(metrics.averageTicket),
+          `${metrics.conversionRate.toFixed(1)}%`,
+          String(metrics.approvedOrdersCount),
+          String(metrics.totalOrdersCount),
+          String(metrics.totalEvents),
+        ],
+      ];
+
+      autoTable(doc, {
+        startY: currentY,
+        head: summaryHead,
+        body: summaryBody,
+        theme: 'grid',
+        headStyles: {
+          fillColor: primaryColor,
+          textColor: [255, 255, 255],
+          fontSize: 7.5,
+          fontStyle: 'bold',
+          halign: 'center',
+        },
+        bodyStyles: {
+          fontSize: 7.5,
+          halign: 'center',
+          textColor: primaryColor,
+        },
+        styles: {
+          cellPadding: 2.5,
+          lineColor: borderColor,
+          lineWidth: 0.2,
+        },
+        margin: { left: 14, right: 14 },
+      });
+
+      currentY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 7;
+
+      // Seção 2: Métodos de Pagamento e Taxas
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(...primaryColor);
+      doc.text('2. METODOS DE PAGAMENTO & REPASSE', 14, currentY);
+
+      currentY += 4;
+
+      const paymentHead = [
+        [
+          'PIX (Qtd)',
+          'PIX (Volume R$)',
+          'Cartao (Qtd)',
+          'Cartao (Volume R$)',
+          'Taxa Paga por Convidado',
+          'Taxa Paga pelos Pais',
+          'Chas com MP Conectado',
+          'Chas MP Pendente',
+        ],
+      ];
+
+      const paymentBody = [
+        [
+          String(metrics.pixOrdersCount),
+          formatBRL(metrics.pixGrossAmount),
+          String(metrics.cardOrdersCount),
+          formatBRL(metrics.cardGrossAmount),
+          `${metrics.guestFeeCount} pedidos`,
+          `${metrics.parentsFeeCount} pedidos`,
+          `${metrics.mpConnectedCount} eventos`,
+          `${metrics.mpPendingCount} eventos`,
+        ],
+      ];
+
+      autoTable(doc, {
+        startY: currentY,
+        head: paymentHead,
+        body: paymentBody,
+        theme: 'grid',
+        headStyles: {
+          fillColor: [51, 65, 85],
+          textColor: [255, 255, 255],
+          fontSize: 7.5,
+          fontStyle: 'bold',
+          halign: 'center',
+        },
+        bodyStyles: {
+          fontSize: 7.5,
+          halign: 'center',
+          textColor: primaryColor,
+        },
+        styles: {
+          cellPadding: 2.5,
+          lineColor: borderColor,
+          lineWidth: 0.2,
+        },
+        margin: { left: 14, right: 14 },
+      });
+
+      currentY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 7;
+
+      // Seção 3: Ranking de Chás / Top Eventos
+      if (topEvents && topEvents.length > 0) {
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.setTextColor(...primaryColor);
+        doc.text('3. TOP CHAS DE BEBE (MAIOR ARRECADACAO)', 14, currentY);
+
+        currentY += 4;
+
+        const eventsHead = [
+          ['#', 'Bebe / Slug', 'Organizadores', 'Email Responsavel', 'Tipo', 'MP', 'Pedidos', 'Total Arrecadado', 'Lucro Plataforma'],
+        ];
+
+        const eventsBody = topEvents.slice(0, 10).map((e, idx) => [
+          String(idx + 1),
+          `${e.babyName ? e.babyName + ' ' : ''}(${e.slug})`,
+          e.parentsNames,
+          e.ownerEmail,
+          e.eventType === 'REVELACAO' ? 'Revelacao' : e.eventType === 'FRALDA' ? 'Cha de Fralda' : 'Ambos',
+          e.mpConnected ? 'Conectado' : 'Pendente',
+          String(e.ordersCount),
+          formatBRL(e.grossRaised),
+          formatBRL(e.platformEarnings),
+        ]);
+
+        autoTable(doc, {
+          startY: currentY,
+          head: eventsHead,
+          body: eventsBody,
+          theme: 'striped',
+          headStyles: {
+            fillColor: [51, 65, 85],
+            textColor: [255, 255, 255],
+            fontSize: 7,
+            fontStyle: 'bold',
+          },
+          bodyStyles: {
+            fontSize: 7,
+            textColor: primaryColor,
+          },
+          columnStyles: {
+            0: { halign: 'center', cellWidth: 10 },
+            4: { halign: 'center', cellWidth: 24 },
+            5: { halign: 'center', cellWidth: 20 },
+            6: { halign: 'center', cellWidth: 16 },
+            7: { halign: 'right', fontStyle: 'bold' },
+            8: { halign: 'right' },
+          },
+          styles: {
+            cellPadding: 2,
+            lineColor: borderColor,
+            lineWidth: 0.1,
+          },
+          margin: { left: 14, right: 14 },
+        });
+
+        currentY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 7;
+      }
+
+      // Seção 4: Tabela de Pedidos e Auditoria
+      const ordersToExport = filteredOrders.length > 0 ? filteredOrders : ordersList;
+
+      if (currentY > 145) {
+        doc.addPage();
+        currentY = 20;
+      }
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(...primaryColor);
+      doc.text(
+        `4. EXTRATO DE PEDIDOS & AUDITORIA (${ordersToExport.length} registro${ordersToExport.length === 1 ? '' : 's'})`,
+        14,
+        currentY
+      );
+
+      currentY += 4;
+
+      const ordersHead = [
+        ['ID Pedido', 'Data', 'Evento / Slug', 'Pagador', 'CPF', 'Metodo', 'Bruto (R$)', 'Lucro (R$)', 'Liq. Pais (R$)', 'Status'],
+      ];
+
+      const ordersBody = ordersToExport.map((o) => [
+        o.id.slice(-8),
+        formatDate(o.createdAt),
+        o.babyName ? `${o.babyName} (${o.eventSlug})` : o.eventSlug,
+        o.payerName,
+        o.payerCpf || '-',
+        o.paymentMethod === 'PIX' ? 'PIX' : 'Cartao',
+        formatBRL(o.amount),
+        formatBRL(o.platformFee),
+        formatBRL(o.netAmount),
+        o.status === 'APPROVED' ? 'Aprovado' : o.status === 'PENDING' ? 'Pendente' : 'Rejeitado',
+      ]);
+
+      autoTable(doc, {
+        startY: currentY,
+        head: ordersHead,
+        body: ordersBody,
+        theme: 'striped',
+        headStyles: {
+          fillColor: primaryColor,
+          textColor: [255, 255, 255],
+          fontSize: 7,
+          fontStyle: 'bold',
+        },
+        bodyStyles: {
+          fontSize: 7,
+          textColor: primaryColor,
+        },
+        columnStyles: {
+          0: { fontStyle: 'bold', cellWidth: 20 },
+          1: { cellWidth: 26 },
+          4: { cellWidth: 24 },
+          5: { halign: 'center', cellWidth: 16 },
+          6: { halign: 'right', fontStyle: 'bold', cellWidth: 24 },
+          7: { halign: 'right', cellWidth: 24 },
+          8: { halign: 'right', cellWidth: 24 },
+          9: { halign: 'center', cellWidth: 20 },
+        },
+        styles: {
+          cellPadding: 2,
+          lineColor: borderColor,
+          lineWidth: 0.1,
+        },
+        margin: { left: 14, right: 14 },
+        didParseCell: (data) => {
+          if (data.section === 'body' && data.column.index === 9) {
+            const val = String(data.cell.raw);
+            if (val === 'Aprovado') {
+              data.cell.styles.textColor = [16, 185, 129];
+              data.cell.styles.fontStyle = 'bold';
+            } else if (val === 'Pendente') {
+              data.cell.styles.textColor = [245, 158, 11];
+            } else {
+              data.cell.styles.textColor = [239, 68, 68];
+            }
+          }
+        },
+      });
+
+      // Rodapé em todas as páginas com número de página e aviso
+      const totalPages = doc.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7.5);
+        doc.setTextColor(148, 163, 184); // slate-400
+        doc.line(14, 198, 283, 198);
+        doc.text('Fralda Facil • Documento confidencial para uso administrativo exclusivo', 14, 203);
+        doc.text(`Pagina ${i} de ${totalPages}`, 283, 203, { align: 'right' });
+      }
+
+      const dateStr = new Date().toISOString().slice(0, 10);
+      doc.save(`relatorio_admin_fralda_online_${dateStr}.pdf`);
+    } catch (err) {
+      console.error('Erro ao gerar relatorio em PDF:', err);
+      alert('Ocorreu um erro ao gerar o relatorio em PDF. Tente novamente.');
+    } finally {
+      setIsExportingPDF(false);
+    }
+  };
+
   return (
     <div className="space-y-8 pb-12">
-      {/* Top Header com Boas-vindas e Controles */}
-      <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm">
+      {/* Top Header Minimalista e Controles */}
+      <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold tracking-wide uppercase bg-emerald-50 text-emerald-700 border border-emerald-200">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping mr-0.5" />
-                Live Hub Operacional
+              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium text-slate-600 bg-slate-100 border border-slate-200">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                admin
               </span>
               <span className="text-xs text-slate-400">•</span>
-              <span className="text-xs text-slate-500 font-mono">
-                Logado como: <strong className="text-slate-800">{admin.name}</strong> ({admin.email})
+              <span className="text-xs text-slate-500">
+                {admin.name} <span className="text-slate-400">({admin.email})</span>
               </span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-serif font-bold text-slate-900 tracking-tight">
-              Relatórios Gerais do Site
+            <h1 className="text-xl sm:text-2xl font-serif font-semibold text-slate-900 tracking-tight">
+              Painel Administrativo
             </h1>
-            <p className="text-sm text-slate-500 mt-1 max-w-2xl">
-              Consolidação financeira global, divisão de lucros da plataforma (split 4,99%), conversão de pagamentos e auditoria de chás.
+            <p className="text-xs sm:text-sm text-slate-500 mt-0.5 max-w-2xl">
+              Métricas financeiras, comissões da plataforma (4,99%), conversão e auditoria de pedidos.
             </p>
           </div>
 
           {/* Botões de Ação */}
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2.5">
             <button
               onClick={handleRefresh}
               disabled={isRefreshing}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-sm transition disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium shadow-2xs transition disabled:opacity-50"
             >
               <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${isRefreshing ? 'animate-spin' : ''}`} />
-              <span>{isRefreshing ? 'Atualizando...' : 'Atualizar Dados'}</span>
+              <span>{isRefreshing ? 'Atualizando...' : 'Atualizar'}</span>
             </button>
 
             <button
               onClick={handleExportCSV}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-sm transition"
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium shadow-2xs transition"
+              title="Exportar dados em formato CSV"
             >
-              <Download className="w-3.5 h-3.5" />
-              <span>Exportar Planilha CSV</span>
+              <Download className="w-3.5 h-3.5 text-slate-500" />
+              <span>Exportar CSV</span>
+            </button>
+
+            <button
+              onClick={handleExportPDF}
+              disabled={isExportingPDF}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium shadow-xs transition disabled:opacity-50"
+              title="Exportar relatório completo em PDF"
+            >
+              <FileText className="w-3.5 h-3.5" />
+              <span>{isExportingPDF ? 'Gerando PDF...' : 'Exportar PDF'}</span>
             </button>
           </div>
         </div>
@@ -532,73 +879,72 @@ export default function AdminDashboardClient({
         </div>
       </div>
 
-      {/* Grid de Cards Financeiros de Alto Impacto */}
-      <div id="relatorios-financeiros" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      {/* Grid de Cards Financeiros */}
+      <div id="relatorios-financeiros" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: Total Arrecadado Bruto */}
-        <div className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs hover:border-slate-300 transition-colors">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+            <span className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">
               Total Arrecadado ({currentPeriodData.label})
             </span>
-            <div className="w-9 h-9 rounded-2xl bg-amber-50 border border-amber-100 text-amber-700 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-xl bg-amber-50 border border-amber-100 text-amber-700 flex items-center justify-center">
               <DollarSign className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl sm:text-3xl font-bold font-serif text-slate-900 tracking-tight">
+          <div className="text-2xl font-bold font-serif text-slate-900 tracking-tight">
             {formatBRL(currentPeriodData.gross)}
           </div>
           <div className="mt-3 flex items-center justify-between text-xs text-slate-500 pt-3 border-t border-slate-100">
-            <span>Ticket Médio Geral:</span>
-            <strong className="text-slate-800 font-mono">{formatBRL(metrics.averageTicket)}</strong>
+            <span>Ticket Médio:</span>
+            <strong className="text-slate-700 font-mono">{formatBRL(metrics.averageTicket)}</strong>
           </div>
         </div>
 
         {/* Card 2: Lucro / Ganhos da Plataforma */}
-        <div className="bg-gradient-to-br from-emerald-900 to-teal-950 text-white rounded-3xl p-6 shadow-md hover:shadow-lg transition-shadow relative overflow-hidden group">
-          <div className="absolute -right-6 -bottom-6 w-28 h-28 bg-emerald-500/10 rounded-full blur-xl pointer-events-none" />
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs hover:border-slate-300 transition-colors">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-1.5">
-              <span className="text-xs font-semibold text-emerald-300 uppercase tracking-wider">
+              <span className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">
                 Ganhos da Plataforma
               </span>
-              <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-emerald-400/20 text-emerald-200 border border-emerald-400/30">
+              <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
                 4,99%
               </span>
             </div>
-            <div className="w-9 h-9 rounded-2xl bg-emerald-800/60 border border-emerald-600/40 text-emerald-300 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-700 flex items-center justify-center">
               <TrendingUp className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl sm:text-3xl font-bold font-serif text-white tracking-tight">
+          <div className="text-2xl font-bold font-serif text-slate-900 tracking-tight">
             {formatBRL(currentPeriodData.earnings)}
           </div>
-          <div className="mt-3 flex items-center justify-between text-xs text-emerald-200/80 pt-3 border-t border-emerald-800/60">
-            <span>Lucro Líquido Retido</span>
-            <span className="text-emerald-300 font-semibold">100% Automático</span>
+          <div className="mt-3 flex items-center justify-between text-xs text-slate-500 pt-3 border-t border-slate-100">
+            <span>Lucro Líquido:</span>
+            <span className="text-emerald-600 font-medium font-mono">Split Automático</span>
           </div>
         </div>
 
         {/* Card 3: Repassado aos Pais */}
-        <div className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs hover:border-slate-300 transition-colors">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+            <span className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">
               Repassado aos Pais
             </span>
-            <div className="w-9 h-9 rounded-2xl bg-indigo-50 border border-indigo-100 text-indigo-700 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-700 flex items-center justify-center">
               <Wallet className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl sm:text-3xl font-bold font-serif text-slate-900 tracking-tight">
+          <div className="text-2xl font-bold font-serif text-slate-900 tracking-tight">
             {formatBRL(metrics.totalParentsNet)}
           </div>
           <div className="mt-3 flex items-center justify-between text-xs text-slate-500 pt-3 border-t border-slate-100">
-            <span>Destinado aos Organizadores</span>
-            <strong className="text-indigo-700 font-semibold font-mono">~95,01%</strong>
+            <span>Repasse Líquido:</span>
+            <strong className="text-indigo-700 font-medium font-mono">~95,01%</strong>
           </div>
         </div>
 
         {/* Card 4: Taxas Gateway (Mercado Pago) */}
-        <div className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs hover:border-slate-300 transition-colors">
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
               Taxas Gateway (MP)
@@ -620,7 +966,7 @@ export default function AdminDashboardClient({
       {/* Grid de Indicadores de Conversão e Plataforma */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         {/* Painel 1: Conversão de Pedidos */}
-        <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold text-sm text-slate-900 flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-600" />
@@ -693,7 +1039,7 @@ export default function AdminDashboardClient({
         </div>
 
         {/* Painel 2: Métodos de Pagamento e Split */}
-        <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
           <h3 className="font-semibold text-sm text-slate-900 mb-4 flex items-center gap-2">
             <QrCode className="w-4 h-4 text-indigo-600" />
             Métodos &amp; Pagador da Taxa
@@ -731,7 +1077,7 @@ export default function AdminDashboardClient({
         </div>
 
         {/* Painel 3: Base e Comunidade */}
-        <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
           <h3 className="font-semibold text-sm text-slate-900 mb-4 flex items-center gap-2">
             <Users className="w-4 h-4 text-rose-600" />
             Comunidade &amp; Engajamento
@@ -773,7 +1119,7 @@ export default function AdminDashboardClient({
       </div>
 
       {/* Gráfico de Evolução Financeira Diária */}
-      <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm">
+      <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
             <h3 className="font-serif font-bold text-lg text-slate-900">
@@ -899,7 +1245,7 @@ export default function AdminDashboardClient({
       </div>
 
       {/* Tabela de Top Eventos / Chás com Maior Arrecadação */}
-      <div id="top-eventos" className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm">
+      <div id="top-eventos" className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
             <h3 className="font-serif font-bold text-lg text-slate-900 flex items-center gap-2">
@@ -991,7 +1337,7 @@ export default function AdminDashboardClient({
       </div>
 
       {/* Auditoria Geral de Pedidos / Transações do Site */}
-      <div id="transacoes-gerais" className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+      <div id="transacoes-gerais" className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-sm space-y-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <h3 className="font-serif font-bold text-lg text-slate-900 flex items-center gap-2">

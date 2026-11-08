@@ -54,25 +54,18 @@ export default async function AdminLayout({
               <BrandLogo size="sm" showTagline={false} />
             </Link>
             <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold tracking-wide uppercase bg-rose-50 text-rose-700 border border-rose-200">
-                <ShieldCheck className="w-3 h-3 text-rose-600" />
-                Super Admin
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium tracking-wide text-slate-600 bg-slate-100 border border-slate-200">
+                <ShieldCheck className="w-3 h-3 text-slate-500" />
+                admin
               </span>
               <ThemeToggle size="sm" />
             </div>
           </div>
 
-          {/* Banner de Segurança */}
-          <div className="p-3.5 mx-4 my-4 rounded-xl bg-slate-900 text-white shadow-inner">
-            <div className="flex items-center gap-2 mb-1">
-              <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-[10px] font-mono tracking-wider text-slate-300 uppercase">
-                Acesso Restrito 100% Seguro
-              </span>
-            </div>
-            <p className="text-[11px] text-slate-300 leading-tight">
-              Sessão autenticada e validada em tempo real com o banco de dados.
-            </p>
+          {/* Indicador de Status Minimalista */}
+          <div className="px-5 py-3 flex items-center gap-2 text-[11px] text-slate-400">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            <span className="font-mono uppercase tracking-wider text-[10px] text-slate-500">Sessão ativa</span>
           </div>
 
           {/* Links de Navegação */}
