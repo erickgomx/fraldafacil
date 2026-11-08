@@ -270,3 +270,103 @@ html.dark ::selection {
   background-color: #44403C;
   color: #FAF8F5;
 }
+
+/* =========================================================
+   DASHBOARDS (CLIENTE E ADMIN) — CORES E CONTRASTES NO MODO ESCURO
+   ========================================================= */
+
+/* Admin Dashboard & Escala Slate */
+html.dark .bg-\[\#F8FAFC\] {
+  background-color: #0B1120 !important;
+}
+
+html.dark .bg-slate-50,
+html.dark .bg-slate-50\/50,
+html.dark .bg-slate-50\/70 {
+  background-color: #111827 !important;
+}
+
+html.dark .bg-slate-100,
+html.dark .bg-slate-100\/80 {
+  background-color: #1E293B !important;
+}
+
+html.dark .bg-slate-200 {
+  background-color: #334155 !important;
+}
+
+html.dark .border-slate-100,
+html.dark .border-slate-200,
+html.dark .border-slate-200\/90,
+html.dark .border-slate-300 {
+  border-color: #243044 !important;
+}
+
+html.dark .text-slate-900 {
+  color: #F8FAFC !important;
+}
+
+html.dark .text-slate-800 {
+  color: #F1F5F9 !important;
+}
+
+html.dark .text-slate-700 {
+  color: #E2E8F0 !important;
+}
+
+html.dark .text-slate-600 {
+  color: #CBD5E1 !important;
+}
+
+html.dark .text-slate-500 {
+  color: #94A3B8 !important;
+}
+
+html.dark .text-slate-400 {
+  color: #64748B !important;
+}
+
+/* Painel do Cliente (Pais): Badges, alertas e botões de revelação */
+html.dark .bg-amber-50,
+html.dark .bg-amber-50\/90 {
+  background-color: #291A07 !important;
+  border-color: #78350F !important;
+}
+
+html.dark .text-amber-950,
+html.dark .text-amber-900,
+html.dark .text-amber-900\/80 {
+  color: #FDE68A !important;
+}
+
+html.dark .bg-dusty-blue-light,
+html.dark .bg-dusty-blue-light\/70 {
+  background-color: rgba(74, 107, 130, 0.25) !important;
+  color: #BAE6FD !important;
+  border-color: rgba(74, 107, 130, 0.4) !important;
+}
+
+html.dark .bg-dusty-rose-light,
+html.dark .bg-dusty-rose-light\/70 {
+  background-color: rgba(184, 107, 119, 0.25) !important;
+  color: #FBCFE8 !important;
+  border-color: rgba(184, 107, 119, 0.4) !important;
+}
+
+html.dark .text-dusty-blue {
+  color: #7DD3FC !important;
+}
+
+html.dark .text-dusty-rose {
+  color: #F472B6 !important;
+}
+
+html.dark .bg-emerald-50 {
+  background-color: rgba(6, 78, 59, 0.5) !important;
+  border-color: rgba(16, 185, 129, 0.3) !important;
+}
+
+html.dark .text-emerald-700,
+html.dark .text-emerald-800 {
+  color: #6EE7B7 !important;
+}

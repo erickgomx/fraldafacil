@@ -1,3 +1,13 @@
+/**
+ * ============================================================================
+ * LAYOUT DA ÁREA ADMINISTRATIVA (/admin/layout)
+ * ============================================================================
+ * Shell de navegação da área de administração:
+ * - Validação em nível de servidor da sessão de Superusuário ('ADMIN').
+ * - Barra lateral fixa com atalhos de auditoria de pedidos, relatórios e ranking de eventos.
+ * - Selo de segurança visual e atalho de retorno ao Painel de Organizador.
+ */
+
 import { redirect } from 'next/navigation';
 import { getSession, getAdminSession } from '@/lib/auth';
 import Link from 'next/link';
@@ -12,6 +22,7 @@ import {
 } from 'lucide-react';
 import LogoutButton from '@/app/painel/LogoutButton';
 import BrandLogo from '@/components/BrandLogo';
+import ThemeToggle from '@/components/ThemeToggle';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,15 +48,18 @@ export default async function AdminLayout({
       {/* Sidebar Administrativa */}
       <aside className="w-full md:w-72 bg-white border-r border-slate-200 flex flex-col justify-between shrink-0 shadow-sm">
         <div>
-          {/* Logo com Selo ADM */}
-          <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+          {/* Logo com Selo ADM & Seletor de Tema */}
+          <div className="p-5 border-b border-slate-100 flex items-center justify-between gap-2">
             <Link href="/admin" className="group">
               <BrandLogo size="sm" showTagline={false} />
             </Link>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold tracking-wide uppercase bg-rose-50 text-rose-700 border border-rose-200">
-              <ShieldCheck className="w-3 h-3 text-rose-600" />
-              Super Admin
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold tracking-wide uppercase bg-rose-50 text-rose-700 border border-rose-200">
+                <ShieldCheck className="w-3 h-3 text-rose-600" />
+                Super Admin
+              </span>
+              <ThemeToggle size="sm" />
+            </div>
           </div>
 
           {/* Banner de Segurança */}
