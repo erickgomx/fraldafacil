@@ -60,7 +60,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR" suppressHydrationWarning className={`${serif.variable} ${sans.variable}`}>
-      <head>
+      <body className="font-sans bg-cream-50 text-charcoal-900 antialiased selection:bg-stone-200">
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -78,8 +78,6 @@ export default function RootLayout({
             `,
           }}
         />
-      </head>
-      <body className="font-sans bg-cream-50 text-charcoal-900 antialiased selection:bg-stone-200">
         {children}
       </body>
     </html>
