@@ -201,6 +201,7 @@ export default async function AdminPage() {
     babyName: o.event?.babyName || null,
     parentsNames: o.event?.parentsNames || 'Não informado',
     ownerEmail: o.event?.user?.email || 'N/A',
+    mpPaymentId: o.mpPaymentId || null,
   }));
 
   // Ranking dos Top Eventos

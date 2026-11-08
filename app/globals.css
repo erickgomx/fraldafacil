@@ -85,7 +85,7 @@ img {
 }
 
 /* =========================================================
-   DARK MODE — COESÃO EDITORIAL SUAVE & CONSISTENTE
+   DARK MODE — COESÃO EDITORIAL SUAVE, LEGÍVEL & CONSISTENTE
    ========================================================= */
 
 html.dark body {
@@ -113,11 +113,21 @@ html.dark .bg-white {
 html.dark .bg-white\/70,
 html.dark .bg-white\/80,
 html.dark .bg-white\/90,
+html.dark .bg-cream-50\/40,
+html.dark .bg-cream-50\/50,
+html.dark .bg-cream-50\/60,
 html.dark .bg-cream-50\/70,
 html.dark .bg-cream-50\/80,
 html.dark .bg-cream-50\/85,
-html.dark .bg-cream-50\/90 {
-  background-color: rgba(20, 18, 16, 0.85) !important;
+html.dark .bg-cream-50\/90,
+html.dark .bg-cream-50\/95,
+html.dark .bg-cream-100\/50,
+html.dark .bg-cream-100\/60,
+html.dark .bg-cream-100\/70,
+html.dark .bg-cream-100\/80,
+html.dark .bg-cream-200\/80,
+html.dark .bg-cream-300\/40 {
+  background-color: rgba(26, 23, 21, 0.9) !important;
 }
 
 html.dark .bg-\[\#F5F1E9\],
@@ -125,13 +135,27 @@ html.dark .bg-\[\#F7F3EC\] {
   background-color: #161412 !important;
 }
 
+/* Superfícies Stone (neutras) */
+html.dark .bg-stone-50,
+html.dark .bg-stone-100,
+html.dark .bg-stone-200 {
+  background-color: #24201D !important;
+}
+
+html.dark .hover\:bg-stone-50:hover {
+  background-color: #2D2824 !important;
+}
+
 /* Bordas e divisores */
 html.dark .border-warm-border,
 html.dark .border-warm-border\/40,
+html.dark .border-warm-border\/50,
 html.dark .border-warm-border\/60,
 html.dark .border-warm-border\/70,
 html.dark .border-warm-border\/80,
-html.dark .border-stone-200 {
+html.dark .border-stone-100,
+html.dark .border-stone-200,
+html.dark .border-stone-300 {
   border-color: #2D2824 !important;
 }
 
@@ -143,29 +167,57 @@ html.dark .divide-warm-border > * + * {
   border-color: #2D2824 !important;
 }
 
-/* Hierarquia tipográfica em Modo Escuro */
+/* Hierarquia tipográfica em Modo Escuro (Alto Contraste WCAG AA) */
 html.dark .text-charcoal-900 {
-  color: #F7F3EC !important;
+  color: #FAF8F5 !important;
 }
 
 html.dark .text-charcoal-800 {
-  color: #EFE8DC !important;
+  color: #F4EFE6 !important;
 }
 
 html.dark .text-charcoal-700 {
-  color: #D6CEC3 !important;
+  color: #EAE4DB !important;
 }
 
 html.dark .text-charcoal-600 {
-  color: #A8A29A !important;
+  color: #DDD7CC !important;
 }
 
 html.dark .text-charcoal-500 {
-  color: #8C857E !important;
+  color: #C7C1B8 !important;
 }
 
 html.dark .text-charcoal-400 {
-  color: #706A63 !important;
+  color: #A8A29E !important;
+}
+
+html.dark .text-charcoal-300 {
+  color: #9C958E !important;
+}
+
+html.dark .text-stone-700 {
+  color: #DDD7CC !important;
+}
+
+html.dark .text-stone-600 {
+  color: #C7C1B8 !important;
+}
+
+html.dark .text-stone-500 {
+  color: #B5AFA8 !important;
+}
+
+html.dark .text-stone-400 {
+  color: #A8A29A !important;
+}
+
+html.dark .text-stone-300 {
+  color: #D6CEC3 !important;
+}
+
+html.dark .text-stone-200 {
+  color: #E8E2D8 !important;
 }
 
 html.dark .text-white {
@@ -177,6 +229,7 @@ html.dark button.bg-charcoal-900,
 html.dark a.bg-charcoal-900,
 html.dark label.bg-charcoal-900 {
   background-color: #FAF8F5 !important;
+  border-color: #FAF8F5 !important;
   color: #1C1917 !important;
 }
 
@@ -191,50 +244,101 @@ html.dark a.bg-charcoal-900:hover {
   background-color: #EFE8DC !important;
 }
 
-/* CARDS E BANNERS ESCUROS (ex: notificação Tia Camila e CTA Final): permanecem escuros e legíveis */
+/* Botões primários Slate (Admin CTA) */
+html.dark button.bg-slate-900,
+html.dark a.bg-slate-900 {
+  background-color: #F8FAFC !important;
+  border-color: #F8FAFC !important;
+  color: #0F172A !important;
+}
+
+html.dark button.bg-slate-900 *,
+html.dark a.bg-slate-900 * {
+  color: #0F172A !important;
+}
+
+html.dark button.bg-slate-900:hover,
+html.dark a.bg-slate-900:hover {
+  background-color: #E2E8F0 !important;
+}
+
+/* Pílula / Indicador ativo de categoria */
+html.dark span.bg-charcoal-900 {
+  background-color: #38322D !important;
+}
+
+/* CARDS E BANNERS ESCUROS: permanecem escuros, confortáveis e legíveis */
 html.dark div.bg-charcoal-900,
-html.dark section.bg-charcoal-900 {
+html.dark section.bg-charcoal-900,
+html.dark article.bg-charcoal-900 {
   background-color: #1A1715 !important;
   border-color: #332D28 !important;
   color: #FAF8F5 !important;
 }
 
+html.dark div.bg-slate-900 {
+  background-color: #111827 !important;
+  border-color: #1F2937 !important;
+  color: #F8FAFC !important;
+}
+
 html.dark div.bg-charcoal-900 p,
 html.dark div.bg-charcoal-900 h2,
+html.dark div.bg-charcoal-900 h3,
 html.dark div.bg-charcoal-900 span {
   color: inherit;
 }
 
 html.dark div.bg-charcoal-900 .text-white,
-html.dark section.bg-charcoal-900 .text-white {
+html.dark section.bg-charcoal-900 .text-white,
+html.dark article.bg-charcoal-900 .text-white {
   color: #FAF8F5 !important;
 }
 
 html.dark div.bg-charcoal-900 .text-stone-300,
-html.dark section.bg-charcoal-900 .text-stone-300 {
+html.dark section.bg-charcoal-900 .text-stone-300,
+html.dark article.bg-charcoal-900 .text-stone-300 {
   color: #D6CEC3 !important;
 }
 
 html.dark div.bg-charcoal-900 .text-stone-200,
-html.dark section.bg-charcoal-900 .text-stone-200 {
+html.dark section.bg-charcoal-900 .text-stone-200,
+html.dark article.bg-charcoal-900 .text-stone-200 {
   color: #E8E2D8 !important;
 }
 
-/* Botões claros dentro de cards escuros (ex: botão do CTA Final) */
-html.dark div.bg-charcoal-900 a.bg-cream-50 {
+/* Botões claros dentro de cards escuros (ex: botão do CTA Final e Card de Valor Livre) */
+html.dark div.bg-charcoal-900 a.bg-cream-50,
+html.dark div.bg-charcoal-900 button.bg-cream-50,
+html.dark section.bg-charcoal-900 a.bg-cream-50,
+html.dark section.bg-charcoal-900 button.bg-cream-50,
+html.dark article.bg-charcoal-900 a.bg-cream-50,
+html.dark article.bg-charcoal-900 button.bg-cream-50,
+html.dark [class*="bg-charcoal-900"] a.bg-cream-50,
+html.dark [class*="bg-charcoal-900"] button.bg-cream-50 {
   background-color: #FAF8F5 !important;
   color: #1C1917 !important;
 }
 
-html.dark div.bg-charcoal-900 a.bg-cream-50 * {
+html.dark div.bg-charcoal-900 a.bg-cream-50 *,
+html.dark div.bg-charcoal-900 button.bg-cream-50 *,
+html.dark section.bg-charcoal-900 a.bg-cream-50 *,
+html.dark section.bg-charcoal-900 button.bg-cream-50 *,
+html.dark article.bg-charcoal-900 a.bg-cream-50 *,
+html.dark article.bg-charcoal-900 button.bg-cream-50 *,
+html.dark [class*="bg-charcoal-900"] a.bg-cream-50 *,
+html.dark [class*="bg-charcoal-900"] button.bg-cream-50 * {
   color: #1C1917 !important;
 }
 
-html.dark div.bg-charcoal-900 a.bg-cream-50:hover {
+html.dark div.bg-charcoal-900 a.bg-cream-50:hover,
+html.dark div.bg-charcoal-900 button.bg-cream-50:hover,
+html.dark article.bg-charcoal-900 button.bg-cream-50:hover {
   background-color: #FFFFFF !important;
 }
 
-html.dark div.bg-charcoal-900 a.bg-white\/10 {
+html.dark div.bg-charcoal-900 a.bg-white\/10,
+html.dark section.bg-charcoal-900 a.bg-white\/10 {
   background-color: rgba(255, 255, 255, 0.12) !important;
   color: #FAF8F5 !important;
   border-color: rgba(255, 255, 255, 0.2) !important;
@@ -244,14 +348,19 @@ html.dark div.bg-charcoal-900 a.bg-white\/10 {
 html.dark input,
 html.dark textarea,
 html.dark select {
-  background-color: #24201D !important;
+  background-color: #1E1B18 !important;
   color: #F7F3EC !important;
   border-color: #38322D !important;
 }
 
+html.dark select option {
+  background-color: #1E1B18 !important;
+  color: #F7F3EC !important;
+}
+
 html.dark input::placeholder,
 html.dark textarea::placeholder {
-  color: #78716C !important;
+  color: #A8A29E !important;
 }
 
 /* Sombras ambientais para modo escuro */
@@ -282,8 +391,15 @@ html.dark .bg-\[\#F8FAFC\] {
 
 html.dark .bg-slate-50,
 html.dark .bg-slate-50\/50,
-html.dark .bg-slate-50\/70 {
+html.dark .bg-slate-50\/70,
+html.dark .bg-slate-50\/80 {
   background-color: #111827 !important;
+}
+
+html.dark .hover\:bg-slate-50:hover,
+html.dark .hover\:bg-slate-50\/70:hover,
+html.dark .hover\:bg-slate-50\/80:hover {
+  background-color: #1E293B !important;
 }
 
 html.dark .bg-slate-100,
@@ -292,81 +408,191 @@ html.dark .bg-slate-100\/80 {
 }
 
 html.dark .bg-slate-200 {
-  background-color: #334155 !important;
+  background-color: #2E3D52 !important;
 }
 
 html.dark .border-slate-100,
 html.dark .border-slate-200,
+html.dark .border-slate-200\/60,
 html.dark .border-slate-200\/90,
 html.dark .border-slate-300 {
-  border-color: #243044 !important;
+  border-color: #273549 !important;
+}
+
+html.dark .divide-slate-100 > * + * {
+  border-color: #273549 !important;
 }
 
 html.dark .text-slate-900 {
-  color: #F8FAFC !important;
+  color: #FFFFFF !important;
 }
 
 html.dark .text-slate-800 {
-  color: #F1F5F9 !important;
+  color: #F8FAFC !important;
 }
 
 html.dark .text-slate-700 {
-  color: #E2E8F0 !important;
+  color: #F1F5F9 !important;
 }
 
 html.dark .text-slate-600 {
-  color: #CBD5E1 !important;
+  color: #E2E8F0 !important;
 }
 
 html.dark .text-slate-500 {
-  color: #94A3B8 !important;
+  color: #CBD5E1 !important;
 }
 
 html.dark .text-slate-400 {
-  color: #64748B !important;
+  color: #94A3B8 !important;
 }
 
-/* Painel do Cliente (Pais): Badges, alertas e botões de revelação */
+html.dark .text-slate-300 {
+  color: #E2E8F0 !important;
+}
+
+/* Seletor de Período Rápido no Admin (Botão Ativo Destacado) */
+html.dark .bg-slate-100 button.bg-white {
+  background-color: #334155 !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4) !important;
+}
+
+html.dark .bg-slate-100 button.bg-white * {
+  color: #FFFFFF !important;
+}
+
+/* =========================================================
+   STATUS BADGES, ALERTAS E ACENTOS COLORIDOS
+   (Prevenção de texto claro sobre fundo claro em dark mode)
+   ========================================================= */
+
+/* 1. Emerald (Aprovados / Ganhos Plataforma / Sucesso) */
+html.dark .bg-emerald-50,
+html.dark .bg-emerald-50\/50,
+html.dark .bg-emerald-50\/60,
+html.dark .bg-emerald-100 {
+  background-color: rgba(6, 78, 59, 0.45) !important;
+}
+
+html.dark .border-emerald-100,
+html.dark .border-emerald-200 {
+  border-color: rgba(52, 211, 153, 0.3) !important;
+}
+
+html.dark .text-emerald-600 {
+  color: #34D399 !important;
+}
+
+html.dark .text-emerald-700 {
+  color: #6EE7B7 !important;
+}
+
+html.dark .text-emerald-800,
+html.dark .text-emerald-900 {
+  color: #A7F3D0 !important;
+}
+
+/* 2. Amber (Pendentes / Arrecadação / Avisos) */
 html.dark .bg-amber-50,
-html.dark .bg-amber-50\/90 {
-  background-color: #291A07 !important;
-  border-color: #78350F !important;
+html.dark .bg-amber-50\/60,
+html.dark .bg-amber-50\/90,
+html.dark .bg-amber-100 {
+  background-color: rgba(120, 53, 15, 0.4) !important;
 }
 
-html.dark .text-amber-950,
+html.dark .border-amber-100,
+html.dark .border-amber-200,
+html.dark .border-amber-300 {
+  border-color: rgba(245, 158, 11, 0.3) !important;
+}
+
+html.dark .text-amber-600,
+html.dark .text-amber-700,
+html.dark .text-amber-800 {
+  color: #FBBF24 !important;
+}
+
 html.dark .text-amber-900,
-html.dark .text-amber-900\/80 {
+html.dark .text-amber-900\/80,
+html.dark .text-amber-950 {
   color: #FDE68A !important;
 }
 
+/* 3. Rose (Cancelados / Rejeitados / Selo Admin) */
+html.dark .bg-rose-50,
+html.dark .bg-rose-50\/60,
+html.dark .bg-rose-100 {
+  background-color: rgba(136, 19, 55, 0.4) !important;
+}
+
+html.dark .border-rose-100,
+html.dark .border-rose-200 {
+  border-color: rgba(251, 113, 133, 0.3) !important;
+}
+
+html.dark .text-rose-500,
+html.dark .text-rose-600,
+html.dark .text-rose-700,
+html.dark .text-rose-800 {
+  color: #FB7185 !important;
+}
+
+/* 4. Indigo (Repasse aos Pais / Carteira / Ranking) */
+html.dark .bg-indigo-50,
+html.dark .bg-indigo-100 {
+  background-color: rgba(49, 46, 129, 0.4) !important;
+}
+
+html.dark .border-indigo-100,
+html.dark .border-indigo-200 {
+  border-color: rgba(129, 140, 248, 0.3) !important;
+}
+
+html.dark .text-indigo-600,
+html.dark .text-indigo-700 {
+  color: #A5B4FC !important;
+}
+
+/* 5. Dusty Blue & Dusty Rose (Bolão, Temas & Revelação) */
 html.dark .bg-dusty-blue-light,
+html.dark .bg-dusty-blue-light\/50,
 html.dark .bg-dusty-blue-light\/70 {
-  background-color: rgba(74, 107, 130, 0.25) !important;
-  color: #BAE6FD !important;
-  border-color: rgba(74, 107, 130, 0.4) !important;
+  background-color: rgba(74, 107, 130, 0.3) !important;
 }
 
-html.dark .bg-dusty-rose-light,
-html.dark .bg-dusty-rose-light\/70 {
-  background-color: rgba(184, 107, 119, 0.25) !important;
-  color: #FBCFE8 !important;
-  border-color: rgba(184, 107, 119, 0.4) !important;
+html.dark .border-dusty-blue\/30,
+html.dark .border-dusty-blue\/40 {
+  border-color: rgba(125, 211, 252, 0.3) !important;
 }
 
-html.dark .text-dusty-blue {
+html.dark .text-dusty-blue,
+html.dark .text-dusty-blue\/90 {
   color: #7DD3FC !important;
 }
 
-html.dark .text-dusty-rose {
+html.dark .bg-dusty-rose-light,
+html.dark .bg-dusty-rose-light\/50,
+html.dark .bg-dusty-rose-light\/70 {
+  background-color: rgba(184, 107, 119, 0.3) !important;
+}
+
+html.dark .border-dusty-rose\/20,
+html.dark .border-dusty-rose\/30,
+html.dark .border-dusty-rose\/40 {
+  border-color: rgba(244, 114, 182, 0.3) !important;
+}
+
+html.dark .text-dusty-rose,
+html.dark .text-dusty-rose\/90 {
   color: #F472B6 !important;
 }
 
-html.dark .bg-emerald-50 {
-  background-color: rgba(6, 78, 59, 0.5) !important;
-  border-color: rgba(16, 185, 129, 0.3) !important;
+/* 6. Ícones Tecnológicos (Teal / Blue) */
+html.dark .text-teal-600 {
+  color: #2DD4BF !important;
 }
 
-html.dark .text-emerald-700,
-html.dark .text-emerald-800 {
-  color: #6EE7B7 !important;
+html.dark .text-blue-600 {
+  color: #60A5FA !important;
 }

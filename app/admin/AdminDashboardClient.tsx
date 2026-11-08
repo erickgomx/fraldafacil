@@ -12,7 +12,7 @@
 
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   TrendingUp,
   DollarSign,
@@ -89,6 +89,7 @@ export interface AdminOrderRow {
   babyName: string | null;
   parentsNames: string;
   ownerEmail: string;
+  mpPaymentId?: string | null;
 }
 
 export interface AdminEventSummary {
@@ -141,6 +142,62 @@ export default function AdminDashboardClient({
   const [methodFilter, setMethodFilter] = useState<'ALL' | 'PIX' | 'CREDIT_CARD'>('ALL');
   const [timePeriod, setTimePeriod] = useState<'ALL' | 'MONTH' | 'WEEK' | 'TODAY'>('ALL');
 
+  const [ordersList, setOrdersList] = useState<AdminOrderRow[]>(orders);
+  const [verifyingId, setVerifyingId] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<{
+    type: 'success' | 'error' | 'info';
+    message: string;
+  } | null>(null);
+
+  useEffect(() => {
+    setOrdersList(orders);
+  }, [orders]);
+
+  const handleVerifyPayment = async (orderId: string) => {
+    if (verifyingId) return;
+    setVerifyingId(orderId);
+    setFeedback(null);
+
+    try {
+      const res = await fetch(`/api/admin/orders/${orderId}/verify`, {
+        method: 'POST',
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        setFeedback({
+          type: 'error',
+          message: data.message || data.error || 'Erro ao verificar status do pagamento.',
+        });
+        return;
+      }
+
+      if (data.status && data.status !== 'PENDING') {
+        setOrdersList((prev) =>
+          prev.map((o) => (o.id === orderId ? { ...o, status: data.status } : o))
+        );
+        setFeedback({
+          type: data.status === 'APPROVED' ? 'success' : 'info',
+          message: data.message,
+        });
+        router.refresh();
+      } else {
+        setFeedback({
+          type: 'info',
+          message: data.message || 'Pagamento ainda está pendente no Mercado Pago.',
+        });
+      }
+    } catch (err: unknown) {
+      console.error('Erro na verificação de pagamento:', err);
+      setFeedback({
+        type: 'error',
+        message: 'Falha de comunicação ao verificar o pagamento. Tente novamente.',
+      });
+    } finally {
+      setVerifyingId(null);
+    }
+  };
+
   // Formatação de Moeda Brasileira
   const formatBRL = (val: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -173,7 +230,7 @@ export default function AdminDashboardClient({
 
   // Exportar Relatório em CSV
   const handleExportCSV = () => {
-    if (orders.length === 0) {
+    if (ordersList.length === 0) {
       alert('Nenhuma transação disponível para exportação.');
       return;
     }
@@ -199,7 +256,7 @@ export default function AdminDashboardClient({
       'Mensagem Convidado',
     ];
 
-    const rows = orders.map((o) => [
+    const rows = ordersList.map((o) => [
       `"${o.id}"`,
       `"${formatDate(o.createdAt)}"`,
       `"${o.eventSlug}"`,
@@ -234,7 +291,7 @@ export default function AdminDashboardClient({
 
   // Filtragem dinâmica de pedidos
   const filteredOrders = useMemo(() => {
-    return orders.filter((order) => {
+    return ordersList.filter((order) => {
       // Filtro de Status
       if (statusFilter !== 'ALL' && order.status !== statusFilter) return false;
 
@@ -259,7 +316,7 @@ export default function AdminDashboardClient({
 
       return true;
     });
-  }, [orders, statusFilter, methodFilter, searchTerm]);
+  }, [ordersList, statusFilter, methodFilter, searchTerm]);
 
   // Valores calculados de acordo com o seletor de período rápido
   const currentPeriodData = useMemo(() => {
@@ -817,9 +874,40 @@ export default function AdminDashboardClient({
           </div>
 
           <div className="text-xs text-slate-500 font-mono">
-            Exibindo <strong>{filteredOrders.length}</strong> de {orders.length} pedidos
+            Exibindo <strong>{filteredOrders.length}</strong> de {ordersList.length} pedidos
           </div>
         </div>
+
+        {/* Banner de Feedback de Verificação */}
+        {feedback && (
+          <div
+            className={`p-3.5 rounded-2xl border flex items-center justify-between gap-3 text-xs transition-all ${
+              feedback.type === 'success'
+                ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                : feedback.type === 'info'
+                ? 'bg-blue-50 border-blue-200 text-blue-800'
+                : 'bg-rose-50 border-rose-200 text-rose-800'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              {feedback.type === 'success' ? (
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              ) : feedback.type === 'info' ? (
+                <Clock className="w-4 h-4 text-blue-600 shrink-0" />
+              ) : (
+                <XCircle className="w-4 h-4 text-rose-600 shrink-0" />
+              )}
+              <span className="font-medium">{feedback.message}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setFeedback(null)}
+              className="text-slate-400 hover:text-slate-600 p-1 text-sm font-bold leading-none cursor-pointer"
+            >
+              ×
+            </button>
+          </div>
+        )}
 
         {/* Barra de Filtros e Busca em Tempo Real */}
         <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
@@ -929,10 +1017,24 @@ export default function AdminDashboardClient({
                         Aprovado
                       </span>
                     ) : ord.status === 'PENDING' ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-                        <Clock className="w-3 h-3 text-amber-600" />
-                        Pendente
-                      </span>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                          <Clock className="w-3 h-3 text-amber-600" />
+                          Pendente
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleVerifyPayment(ord.id)}
+                          disabled={verifyingId === ord.id}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 shadow-xs hover:border-slate-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                          title="Consultar status deste pagamento em tempo real no Mercado Pago"
+                        >
+                          <RefreshCw
+                            className={`w-2.5 h-2.5 ${verifyingId === ord.id ? 'animate-spin text-rose-500' : 'text-slate-500'}`}
+                          />
+                          <span>{verifyingId === ord.id ? 'Verificando...' : 'Verificar'}</span>
+                        </button>
+                      </div>
                     ) : (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">
                         <XCircle className="w-3 h-3 text-rose-600" />
