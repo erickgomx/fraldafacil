@@ -1,7 +1,21 @@
+/**
+ * ============================================================================
+ * LAYOUT RAIZ DA APLICAÇÃO (RootLayout)
+ * ============================================================================
+ * Estrutura base de todas as páginas da plataforma Fralda Online:
+ * - Carregamento otimizado de tipografia do Google Fonts:
+ *   - Lora (`--font-serif`): Títulos com elegância editorial, calor e afeto.
+ *   - Plus Jakarta Sans (`--font-sans`): Interface limpa, legível e moderna.
+ * - Metadados de SEO padrão, OpenGraph para cards no WhatsApp e Twitter, favicons.
+ * - Script inline anti-flicker de tema (garante que o Dark Mode ou Light Mode seja
+ *   aplicado antes da primeira renderização da página, evitando tela piscando).
+ */
+
 import type { Metadata } from 'next';
 import { Lora, Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css';
 
+// Fonte Serifada Editorial para títulos acolhedores
 const serif = Lora({
   subsets: ['latin'],
   style: ['normal', 'italic'],
@@ -9,6 +23,7 @@ const serif = Lora({
   display: 'swap',
 });
 
+// Fonte Sans-Serif moderna e geométrica para textos de interface e botões
 const sans = Plus_Jakarta_Sans({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700'],
@@ -16,6 +31,7 @@ const sans = Plus_Jakarta_Sans({
   display: 'swap',
 });
 
+// Metadados canônicos de SEO, OpenGraph e Favicon
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://fralda.online'),
   title: {
@@ -61,6 +77,7 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" suppressHydrationWarning className={`${serif.variable} ${sans.variable}`}>
       <body className="font-sans bg-cream-50 text-charcoal-900 antialiased selection:bg-stone-200">
+        {/* Script síncrono para prevenir Flash of Incorrect Theme (FOIT) */}
         <script
           dangerouslySetInnerHTML={{
             __html: `

@@ -1,3 +1,16 @@
+/**
+ * ============================================================================
+ * HERO PRINCIPAL DO EVENTO (BabyHero)
+ * ============================================================================
+ * Seção de destaque no topo da página pública do evento.
+ * Apresenta:
+ * - Título emocional com os nomes dos pais e do bebê (ou dúvida Menino/Menina no Chá Revelação).
+ * - Foto de capa opcional com moldura e zoom suave (hover).
+ * - Relógio regressivo tipográfico animado com rolagem de dígitos (`RollingNumber`).
+ * - Efeito especial de Chuva de Confetes (`canvas-confetti`) e destaque em grande escala
+ *   assim que os pais ativam a Revelação oficial do sexo do bebê!
+ */
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -5,19 +18,25 @@ import confetti from 'canvas-confetti';
 import { AnimatePresence, motion, type Variants } from 'framer-motion';
 import { Calendar, Clock } from 'lucide-react';
 
+// Curva suave cúbica bezier para movimento orgânico
 const EASE = [0.22, 1, 0.36, 1] as const;
 
+// Variantes de orquestração de animação do container principal
 const container: Variants = {
   hidden: {},
   show: { transition: { staggerChildren: 0.12, delayChildren: 0.1 } },
 };
 
+// Efeito de subida e desfoque suave para cada elemento filho
 const rise: Variants = {
   hidden: { opacity: 0, y: 18, filter: 'blur(6px)' },
   show: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 0.9, ease: EASE } },
 };
 
-/** Dígito que desliza verticalmente quando o valor muda */
+/**
+ * Componente que exibe um dígito com efeito de rolagem vertical animada (Rolling Number)
+ * sempre que o segundo ou minuto muda na contagem regressiva.
+ */
 function RollingNumber({ value }: { value: number }) {
   const text = String(value).padStart(2, '0');
   return (
@@ -38,6 +57,7 @@ function RollingNumber({ value }: { value: number }) {
   );
 }
 
+// Propriedades do Hero do Bebê
 interface BabyHeroProps {
   parentsNames: string;
   babyName?: string | null;
@@ -62,6 +82,7 @@ export default function BabyHero({
   revealedGender,
   eventType = 'REVELACAO',
 }: BabyHeroProps) {
+  // Estado de tempo restante para a contagem regressiva
   const [timeLeft, setTimeLeft] = useState<{
     days: number;
     hours: number;
@@ -69,6 +90,7 @@ export default function BabyHero({
     seconds: number;
   } | null>(null);
 
+  // Atualização em tempo real da contagem regressiva a cada segundo
   useEffect(() => {
     const target = new Date(eventDate).getTime();
 
@@ -93,6 +115,7 @@ export default function BabyHero({
     return () => clearInterval(interval);
   }, [eventDate]);
 
+  // Efeito de confetes festivos disparado quando a página abre com o sexo já revelado
   useEffect(() => {
     if (revealedGender === 'BOY') {
       confetti({
@@ -127,13 +150,17 @@ export default function BabyHero({
 
   return (
     <section className="relative pt-10 pb-16 px-6 overflow-hidden">
-      {/* Atmosfera suave ao fundo */}
-      <div aria-hidden className="pointer-events-none absolute inset-0 -z-0">
+      {/* Atmosfera suave ao fundo com orbes de luz difusa azul e rosa (ajustada para não ofuscar o modo escuro) */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 -z-0 overflow-hidden">
         <div className={`absolute -top-24 left-1/2 -translate-x-[70%] w-[420px] h-[420px] rounded-full blur-3xl transition-opacity duration-1000 ${
-          isRevealed ? (isGirl ? 'bg-dusty-rose-light opacity-90' : 'opacity-20') : 'bg-dusty-rose-light opacity-70 animate-drift'
+          isRevealed
+            ? (isGirl ? 'bg-dusty-rose-light dark:bg-dusty-rose/15 opacity-90 dark:opacity-30' : 'opacity-20 dark:opacity-0')
+            : 'bg-dusty-rose-light dark:bg-dusty-rose/10 opacity-70 dark:opacity-20 animate-drift'
         }`} />
         <div className={`absolute top-10 left-1/2 translate-x-[5%] w-[380px] h-[380px] rounded-full blur-3xl transition-opacity duration-1000 ${
-          isRevealed ? (isBoy ? 'bg-dusty-blue-light opacity-90' : 'opacity-20') : 'bg-dusty-blue-light opacity-70 animate-drift [animation-delay:-7s]'
+          isRevealed
+            ? (isBoy ? 'bg-dusty-blue-light dark:bg-dusty-blue/15 opacity-90 dark:opacity-30' : 'opacity-20 dark:opacity-0')
+            : 'bg-dusty-blue-light dark:bg-dusty-blue/10 opacity-70 dark:opacity-20 animate-drift [animation-delay:-7s]'
         }`} />
       </div>
 
@@ -190,7 +217,7 @@ export default function BabyHero({
         ) : (
           /* ANTES DA REVELAÇÃO */
           <>
-            {/* Badge */}
+            {/* Badge indicando o tipo de evento */}
             <motion.div variants={rise} className="mb-6">
               <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/90 backdrop-blur-sm border border-warm-border text-charcoal-600 text-xs font-mono uppercase tracking-wider shadow-subtle">
                 <span className="relative flex w-1.5 h-1.5">
@@ -226,7 +253,7 @@ export default function BabyHero({
 
             <motion.p
               variants={rise}
-              className="text-xs sm:text-sm text-charcoal-600 max-w-lg mx-auto leading-relaxed font-sans mb-8"
+              className="text-xs sm:text-sm text-charcoal-600 dark:text-stone-300 max-w-lg mx-auto leading-relaxed font-sans mb-8"
             >
               {storyMessage ||
                 'Criamos este espaço para compartilhar com você a alegria dessa espera e receber seu carinho em forma de fraldas e recados.'}
@@ -238,7 +265,7 @@ export default function BabyHero({
         {coverImageUrl && (
           <motion.div
             variants={rise}
-            className="group mb-10 max-w-md mx-auto rounded-2xl overflow-hidden border border-warm-border shadow-card bg-white p-1.5"
+            className="group mb-10 max-w-md mx-auto rounded-2xl overflow-hidden border border-warm-border dark:border-[#332D28] shadow-card bg-white dark:bg-[#1C1816] p-1.5"
           >
             <div className="overflow-hidden rounded-xl">
               {/* eslint-disable-next-line @next/next/no-img-element */}

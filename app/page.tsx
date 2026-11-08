@@ -1,3 +1,17 @@
+/**
+ * ============================================================================
+ * PÁGINA INICIAL / LANDING PAGE OFICIAL (Fralda Online)
+ * ============================================================================
+ * Apresenta o produto Fralda Online para futuros pais e mães:
+ * - Seção Hero: Proposta de valor clara ("Receba fraldas em dinheiro via Pix").
+ * - Preview Interativo ao Vivo: Simulação realista da página do bebê no celular.
+ * - Como Funciona (3 passos simples): Criação em 2 minutos, compartilhamento e Pix na conta.
+ * - Tabela Comparativa: Fralda física tradicional vs Fralda Online (adeus trocas e perdas).
+ * - Calculadora / Demonstração do Bolão do Chá Revelação.
+ * - Perguntas Frequentes (FAQ) em formato sanfona (Accordion) interativo.
+ * - Call to Action (CTA) Final de Conversão.
+ */
+
 'use client';
 
 import { useState } from 'react';
@@ -125,7 +139,7 @@ export default function HomePage() {
         {/* Luzes de fundo sutis e orgânicas */}
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 w-[680px] h-[360px] rounded-full bg-gradient-to-tr from-dusty-rose-light/70 via-cream-200/50 to-dusty-blue-light/70 blur-3xl opacity-80"
+          className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 w-[680px] h-[360px] rounded-full bg-gradient-to-tr from-dusty-rose-light/70 via-cream-200/50 to-dusty-blue-light/70 dark:from-dusty-rose/10 dark:via-transparent dark:to-dusty-blue/10 blur-3xl opacity-80 dark:opacity-30"
         />
 
         <div className="relative max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-10 items-center">
