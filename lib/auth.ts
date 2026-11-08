@@ -1,8 +1,17 @@
+/**
+ * ============================================================================
+ * MÓDULO DE AUTENTICAÇÃO E SESSÕES (Fralda Online)
+ * ============================================================================
+ * Centraliza o controle de segurança, emissão/validação de tokens JWT,
+ * verificação de senhas com bcrypt e revogação de acessos via tokenVersion.
+ */
+
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { cookies } from 'next/headers';
 import prisma from '@/lib/prisma';
 
+// Lista de senhas/chaves fracas conhecidas que são bloqueadas em produção para garantir a segurança dos usuários
 const FORBIDDEN_SECRETS = [
   'super-secret-fralda-facil-jwt-token-change-in-production',
   'fralda-facil-secret-key-123456',
@@ -13,6 +22,7 @@ const FORBIDDEN_SECRETS = [
   'gere_um_segredo_criptografico_forte_com_openssl_rand_hex_32',
 ];
 
+// Carrega e valida o segredo do JWT. Em ambiente de produção, exige um segredo forte com no mínimo 32 caracteres
 const JWT_SECRET = (() => {
   const secret = process.env.JWT_SECRET;
   if (process.env.NODE_ENV === 'production') {
@@ -29,8 +39,10 @@ const JWT_SECRET = (() => {
   return secret || 'fralda-facil-dev-secret-key-must-be-changed-in-prod-32chars!';
 })();
 
+// Nome padrão do cookie seguro de autenticação HTTP-Only
 const COOKIE_NAME = 'auth_token';
 
+// Estrutura do payload gravado dentro do token JWT do usuário autenticado
 export interface TokenPayload {
   userId: string;
   email: string;
@@ -38,15 +50,24 @@ export interface TokenPayload {
   tokenVersion?: number;
 }
 
+// Estrutura do estado temporário usado na autorização OAuth do Mercado Pago
 export interface OAuthStatePayload {
   eventId: string;
   userId: string;
 }
 
+/**
+ * Assina o token de estado temporário para o fluxo de autorização OAuth do Mercado Pago.
+ * Tem validade de 15 minutos para evitar ataques de repetição ou falsificação de requisição (CSRF).
+ */
 export function signOAuthState(payload: OAuthStatePayload): string {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: '15m' });
 }
 
+/**
+ * Valida o estado OAuth retornado pelo Mercado Pago no callback.
+ * Retorna os dados se a assinatura for válida ou null caso tenha expirado ou sido adulterada.
+ */
 export function verifyOAuthState(token: string): OAuthStatePayload | null {
   try {
     return jwt.verify(token, JWT_SECRET) as OAuthStatePayload;
@@ -55,18 +76,30 @@ export function verifyOAuthState(token: string): OAuthStatePayload | null {
   }
 }
 
+/**
+ * Gera o hash criptográfico unidirecional seguro da senha do usuário com 10 rounds de salt via bcrypt.
+ */
 export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, 10);
 }
 
+/**
+ * Compara uma senha digitada em texto puro com o hash criptografado armazenado no banco de dados.
+ */
 export async function comparePassword(password: string, hash: string): Promise<boolean> {
   return bcrypt.compare(password, hash);
 }
 
+/**
+ * Emite um token JWT de sessão autenticada com validade de 7 dias para o usuário logado.
+ */
 export function signJwt(payload: TokenPayload): string {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
 }
 
+/**
+ * Valida a integridade e a assinatura de um JWT emitido pela plataforma.
+ */
 export function verifyJwt(token: string): TokenPayload | null {
   try {
     return jwt.verify(token, JWT_SECRET) as TokenPayload;
@@ -75,6 +108,11 @@ export function verifyJwt(token: string): TokenPayload | null {
   }
 }
 
+/**
+ * Recupera e valida a sessão do usuário atual a partir dos cookies HTTP da requisição.
+ * Se o token possuir controle de versão (tokenVersion), checa no banco de dados se a sessão ainda é válida,
+ * permitindo revogação instantânea de sessões quando a senha é trocada.
+ */
 export async function getSession(): Promise<TokenPayload | null> {
   try {
     const cookieStore = cookies();
@@ -152,8 +190,10 @@ export async function getAdminSession(): Promise<{
   }
 }
 
+// Exporta o nome padrão do cookie para uso compartilhado em rotas de login e logout
 export const AUTH_COOKIE_NAME = COOKIE_NAME;
 
+// Dados que compõem o payload do token de redefinição de senha
 export interface PasswordResetPayload {
   userId: string;
   email: string;

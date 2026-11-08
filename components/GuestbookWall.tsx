@@ -1,9 +1,25 @@
+/**
+ * ============================================================================
+ * MURAL DE RECADOS E MENSAGENS DOS CONVIDADOS (GuestbookWall)
+ * ============================================================================
+ * Apresenta o Livro de Recados virtual com as felicitações, bênçãos e carinhos
+ * deixados pelos convidados ao presentearem os pais no evento.
+ *
+ * Funcionalidades:
+ * - Cartões estilizados com fonte serifada elegante e data formatada em pt-BR.
+ * - Selo visual indicando o palpite do bolão (Menino 💙 ou Menina 🌸), caso haja.
+ * - Estado de mural vazio acolhedor com chamada para ação ("Seja o primeiro a enviar").
+ * - Animações suaves de entrada em cascata com Framer Motion.
+ */
+
 'use client';
 
 import { motion } from 'framer-motion';
 
+// Curva cúbica bezier suave para transições físicas elegantes
 const EASE = [0.22, 1, 0.36, 1] as const;
 
+// Estrutura de dados de uma mensagem deixada pelo convidado
 export interface GuestMessageData {
   id: string;
   name: string;
@@ -15,14 +31,16 @@ export interface GuestMessageData {
   } | null;
 }
 
+// Propriedades recebidas pelo mural
 interface GuestbookWallProps {
-  messages: GuestMessageData[];
-  onOpenGiftModal: () => void;
+  messages: GuestMessageData[]; // Lista de recados aprovados
+  onOpenGiftModal: () => void; // Ação para abrir o modal de escolha de presentes
 }
 
 export default function GuestbookWall({ messages, onOpenGiftModal }: GuestbookWallProps) {
   return (
     <section className="my-16 max-w-4xl mx-auto px-6">
+      {/* Cabeçalho do Mural */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -41,6 +59,7 @@ export default function GuestbookWall({ messages, onOpenGiftModal }: GuestbookWa
         </p>
       </motion.div>
 
+      {/* Estado Vazio: Quando nenhum recado foi enviado ainda */}
       {messages.length === 0 ? (
         <motion.div
           initial={{ opacity: 0, y: 16 }}
@@ -63,6 +82,7 @@ export default function GuestbookWall({ messages, onOpenGiftModal }: GuestbookWa
           </button>
         </motion.div>
       ) : (
+        /* Grid de Recados dos Amigos e Familiares */
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {messages.map((item, i) => (
             <motion.div
@@ -90,6 +110,7 @@ export default function GuestbookWall({ messages, onOpenGiftModal }: GuestbookWa
                     </span>
                   </div>
 
+                  {/* Badge de aposta do bolão no Chá Revelação */}
                   {item.order?.pollGuess && (
                     <span
                       className={`text-[10px] font-mono uppercase px-2 py-0.5 rounded border ${
@@ -103,6 +124,7 @@ export default function GuestbookWall({ messages, onOpenGiftModal }: GuestbookWa
                   )}
                 </div>
 
+                {/* Texto do recadinho */}
                 <p className="text-xs text-charcoal-700 leading-relaxed font-sans italic bg-cream-50/70 p-3.5 rounded-lg border border-warm-border/50">
                   &ldquo;{item.message}&rdquo;
                 </p>

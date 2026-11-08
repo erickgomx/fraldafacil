@@ -1,10 +1,25 @@
+/**
+ * ============================================================================
+ * MÓDULO DE CRIPTOGRAFIA SIMÉTRICA AUTENTICADA (AES-256-GCM)
+ * ============================================================================
+ * Este módulo protege dados altamente sensíveis em repouso no banco de dados,
+ * especificamente os tokens de acesso e de atualização (access/refresh tokens)
+ * obtidos via OAuth do Mercado Pago.
+ *
+ * Por que AES-256-GCM?
+ * - O modo GCM (Galois/Counter Mode) oferece confidencialidade e integridade simultâneas.
+ * - Utiliza uma authentication tag (authTag) de 128 bits que garante que o texto cifrado
+ *   não foi adulterado ou corrompido no banco.
+ * - Cada operação de cifra utiliza um vetor de inicialização (IV) aleatório de 96 bits.
+ */
+
 import crypto from 'crypto';
 
 /**
- * Módulo de Criptografia Simétrica Autenticada (AES-256-GCM)
- * Protege tokens OAuth de terceiros (Mercado Pago access/refresh tokens) em repouso no banco de dados.
+ * Obtém ou deriva a chave mestra de criptografia com tamanho exato de 256 bits (32 bytes).
+ * Em ambiente de produção, valida o princípio de segregação criptográfica (NIST SP 800-57),
+ * garantindo que a chave de dados não seja a mesma do segredo JWT.
  */
-
 function getEncryptionKey(): Buffer {
   const encKey = process.env.DATA_ENCRYPTION_KEY;
   const jwtSecret = process.env.JWT_SECRET;
@@ -22,18 +37,26 @@ function getEncryptionKey(): Buffer {
     }
   }
 
+  // Fonte da chave com fallback seguro apenas para desenvolvimento local
   const keySource = encKey || jwtSecret || 'fralda-facil-fallback-encryption-key-dev-only';
   // Deriva exatamente 32 bytes para AES-256 usando SHA-256
   return crypto.createHash('sha256').update(keySource).digest();
 }
 
-const IV_LENGTH = 12; // 96 bits recomendado para GCM
+// Tamanho recomendado para o vetor de inicialização (IV) no algoritmo GCM: 12 bytes (96 bits)
+const IV_LENGTH = 12;
 
+/**
+ * Criptografa uma string em texto claro usando AES-256-GCM.
+ * Retorna uma string compacta contendo: "ivHex:authTagHex:encryptedHex".
+ * Se o valor for vazio ou nulo, retorna null com segurança.
+ */
 export function encryptSecret(plainText: string | null | undefined): string | null {
   if (!plainText || plainText.trim() === '') return null;
 
   try {
     const key = getEncryptionKey();
+    // Gera 12 bytes aleatórios e imprevisíveis para o IV
     const iv = crypto.randomBytes(IV_LENGTH);
     const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
 
@@ -41,7 +64,7 @@ export function encryptSecret(plainText: string | null | undefined): string | nu
     encrypted += cipher.final('hex');
     const authTag = cipher.getAuthTag().toString('hex');
 
-    // Formato: iv:authTag:cipherHex
+    // Formato de armazenamento seguro: iv:authTag:cipherHex
     return `${iv.toString('hex')}:${authTag}:${encrypted}`;
   } catch (error) {
     console.error('Erro ao criptografar segredo:', error);
@@ -49,6 +72,11 @@ export function encryptSecret(plainText: string | null | undefined): string | nu
   }
 }
 
+/**
+ * Decifra uma string protegida no formato "ivHex:authTagHex:encryptedHex".
+ * Se o dado for texto simples legado (sem separadores ':'), retorna o dado como está,
+ * facilitando compatibilidade e migrações transparentes sem quebrar o sistema.
+ */
 export function decryptSecret(cipherText: string | null | undefined): string | null {
   if (!cipherText || cipherText.trim() === '') return null;
 
@@ -71,7 +99,7 @@ export function decryptSecret(cipherText: string | null | undefined): string | n
     decrypted += decipher.final('utf8');
     return decrypted;
   } catch (error) {
-    // Se a decifragem falhar (ex: string contendo dois pontos que não é cifra), retorna null ou texto bruto
+    // Se a decifragem falhar (ex: string contendo dois pontos que não é cifra), retorna null com log amigável
     console.error('Falha ao decifrar token:', error);
     return null;
   }

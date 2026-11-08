@@ -1,12 +1,27 @@
+/**
+ * ============================================================================
+ * ALTERNADOR DE TEMA ESCURO / CLARO (ThemeToggle)
+ * ============================================================================
+ * Botão interativo que alterna entre Modo Claro (padrão) e Modo Escuro (Dark Mode).
+ *
+ * Cuidados de Implementação e UX:
+ * - Persistência no LocalStorage com chave 'theme' ('light' ou 'dark').
+ * - Prevenção de Content Layout Shift (CLS): renderiza um placeholder invisível com as
+ *   mesmas dimensões exatas durante a hidratação do React no lado do cliente.
+ * - Animações sutis de rotação e transição nos ícones Sol (Sun) e Lua (Moon).
+ * - Tratamento seguro para navegadores com cookies/storage bloqueados (modo anônimo).
+ */
+
 'use client';
 
 import { useEffect, useState } from 'react';
 import { Moon, Sun } from 'lucide-react';
 
+// Propriedades do componente ThemeToggle
 interface ThemeToggleProps {
-  size?: 'sm' | 'md';
-  showLabel?: boolean;
-  className?: string;
+  size?: 'sm' | 'md'; // Tamanho do botão
+  showLabel?: boolean; // Se deve exibir o texto descritivo 'Claro' ou 'Escuro' ao lado
+  className?: string; // Classes CSS complementares
 }
 
 export default function ThemeToggle({
@@ -17,6 +32,7 @@ export default function ThemeToggle({
   const [isDark, setIsDark] = useState(false);
   const [mounted, setMounted] = useState(false);
 
+  // Lê a preferência salva no LocalStorage na montagem do componente no navegador
   useEffect(() => {
     setMounted(true);
     try {
@@ -34,6 +50,7 @@ export default function ThemeToggle({
     }
   }, []);
 
+  // Alterna o tema no DOM e persiste a escolha no navegador
   const toggleTheme = () => {
     const nextState = !isDark;
     setIsDark(nextState);
@@ -55,6 +72,7 @@ export default function ThemeToggle({
     }
   };
 
+  // Se o componente ainda não foi hidratado no cliente, exibe espaço reservado para evitar pulo de layout (CLS)
   if (!mounted) {
     // Placeholder com dimensões idênticas para evitar Content Layout Shift (CLS)
     return (

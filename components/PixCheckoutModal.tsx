@@ -121,26 +121,106 @@ export default function PixCheckoutModal({
     setCardProcessing(false);
   }, [selectedGift, initialGuess, isOpen]);
 
-  // Polling para confirmação de PIX
-  useEffect(() => {
-    if (step !== 'PIX' || !orderId) return;
+  // Função unificada de checagem do status do pedido (suporta polling, reconexão de rede e checagem manual)
+  const checkStatus = useCallback(
+    async (isManual = false) => {
+      if (!orderId) return;
 
-    const interval = setInterval(async () => {
+      if (isManual) {
+        setCheckingPayment(true);
+        setError('');
+      }
+
       try {
-        const res = await fetch(`/api/orders/${orderId}`);
+        const queryParams = new URLSearchParams({
+          t: String(Date.now()),
+          ...(isManual ? { force: 'true' } : {}),
+        });
+
+        const res = await fetch(`/api/orders/${orderId}?${queryParams.toString()}`, {
+          cache: 'no-store',
+          headers: { Pragma: 'no-cache' },
+        });
+
+        if (res.status === 429) {
+          if (isManual) {
+            setError('Muitas consultas em sequência. Aguarde alguns segundos antes de verificar novamente.');
+            setTimeout(() => setError(''), 5000);
+          }
+          return;
+        }
+
+        if (!res.ok) {
+          if (isManual) {
+            setError('Instabilidade temporária de rede. Tente novamente em instantes.');
+            setTimeout(() => setError(''), 5000);
+          }
+          return;
+        }
+
         const data = await res.json();
 
         if (data.status === 'APPROVED') {
-          clearInterval(interval);
           handleSuccess();
+        } else if (data.status === 'REJECTED') {
+          if (isManual) {
+            setError('O pagamento não foi aprovado ou o código Pix expirou.');
+          }
+        } else if (isManual) {
+          setError('O pagamento ainda não foi identificado pelo banco. Aguarde mais alguns segundos.');
+          setTimeout(() => setError(''), 4500);
         }
       } catch (err) {
-        console.error('Erro no polling do pedido:', err);
+        console.error('Erro ao verificar status do pedido:', err);
+        if (isManual) {
+          setError('Sem conexão com a internet. Verifique sua rede e tente novamente.');
+          setTimeout(() => setError(''), 5000);
+        }
+      } finally {
+        if (isManual) {
+          setCheckingPayment(false);
+        }
       }
-    }, 2500);
+    },
+    [orderId, handleSuccess]
+  );
 
-    return () => clearInterval(interval);
-  }, [step, orderId, handleSuccess]);
+  // Polling resiliente e reativo para confirmação de PIX
+  useEffect(() => {
+    if (step !== 'PIX' || !orderId) return;
+
+    // 1. Polling a cada 3 segundos
+    const interval = setInterval(() => {
+      checkStatus(false);
+    }, 3000);
+
+    // 2. Re-executa verificação imediatamente se o usuário reconectar a internet (após queda de Wi-Fi/4G)
+    const handleOnline = () => {
+      checkStatus(false);
+    };
+
+    // 3. Re-executa verificação imediatamente se o usuário voltar da aba do banco no celular (Safari/Chrome Mobile)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        checkStatus(false);
+      }
+    };
+
+    const handleFocus = () => {
+      checkStatus(false);
+    };
+
+    window.addEventListener('online', handleOnline);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('online', handleOnline);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [step, orderId, checkStatus]);
 
   // Valor numérico base do presente formatado
   const finalNumericAmount = useMemo(() => {
@@ -276,23 +356,8 @@ export default function PixCheckoutModal({
     }
   };
 
-  const handleManualCheck = async () => {
-    if (!orderId) return;
-    setCheckingPayment(true);
-    try {
-      const res = await fetch(`/api/orders/${orderId}`);
-      const data = await res.json();
-      if (data.status === 'APPROVED') {
-        handleSuccess();
-      } else {
-        setError('O pagamento ainda não foi identificado pelo banco. Aguarde mais alguns segundos.');
-        setTimeout(() => setError(''), 4500);
-      }
-    } catch (err) {
-      console.error('Erro na checagem manual:', err);
-    } finally {
-      setCheckingPayment(false);
-    }
+  const handleManualCheck = () => {
+    checkStatus(true);
   };
 
   const handleCopyPix = () => {

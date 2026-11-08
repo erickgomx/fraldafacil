@@ -1,13 +1,27 @@
+/**
+ * ============================================================================
+ * INDICADOR DE CARREGAMENTO OFICIAL (BrandLoader)
+ * ============================================================================
+ * Exibe a animação carinhosa de respiração e brilho do logo do Fralda Online.
+ *
+ * Características de UX:
+ * - Duração mínima de exibição (`minDurationMs = 500ms`): evita o incômodo efeito de
+ *   "flicker" ou piscada na tela quando uma requisição termina em poucos milissegundos.
+ * - Suporta tanto modo tela cheia com overlay (`fullScreen = true`) quanto embutido inline.
+ * - Modo controlado (via prop `visible`) ou descontrolado (para ser usado dentro de `loading.tsx`).
+ */
+
 'use client';
 
 import React, { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+// Propriedades do componente BrandLoader
 export interface BrandLoaderProps {
-  fullScreen?: boolean;
-  className?: string;
-  minDurationMs?: number; // Padrão 500ms para evitar estranhamento/flicker
-  visible?: boolean;
+  fullScreen?: boolean; // Se deve cobrir a tela inteira com backdrop blur
+  className?: string; // Classes CSS adicionais
+  minDurationMs?: number; // Tempo mínimo de permanência para evitar flicker visual (padrão 500ms)
+  visible?: boolean; // Controle explícito de visibilidade booleana
 }
 
 export default function BrandLoader({
@@ -22,6 +36,7 @@ export default function BrandLoader({
   const mountTimeRef = useRef<number>(Date.now());
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Efeito que garante o tempo mínimo de permanência visual na tela
   useEffect(() => {
     if (!isControlled) return;
 
@@ -47,6 +62,7 @@ export default function BrandLoader({
     };
   }, [visible, minDurationMs, isControlled]);
 
+  // Conteúdo visual animado com framer-motion (pulsação suave e halo de luz dourada)
   const loaderBody = (
     <motion.div
       key="brand-loader-content"
@@ -166,6 +182,7 @@ export default function BrandLoader({
     </motion.div>
   );
 
+  // Renderização descontrolada (loading.tsx)
   if (!isControlled) {
     if (fullScreen) {
       return (
@@ -177,6 +194,7 @@ export default function BrandLoader({
     return loaderBody;
   }
 
+  // Renderização controlada com transição de entrada e saída (fade in / fade out)
   return (
     <AnimatePresence>
       {shouldRender && (

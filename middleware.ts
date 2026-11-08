@@ -1,6 +1,29 @@
+/**
+ * ============================================================================
+ * MIDDLEWARE DE BORDA, SEGURANÇA E RATE LIMITING (Edge Runtime)
+ * ============================================================================
+ * Executado antes que qualquer requisição atinja as páginas ou APIs.
+ * Suas principais responsabilidades:
+ *
+ * 1. Detecção Confiável de IP:
+ *    - Lê cabeçalhos oficiais da infraestrutura (Vercel, Cloudflare).
+ *    - Se x-forwarded-for existir, avalia o último hop para impedir spoofing do cliente.
+ *
+ * 2. Rate Limiting Híbrido e Resiliente:
+ *    - Suporta Upstash Redis REST (distribuído entre data centers mundiais).
+ *    - Fallback imediato para memória local (zero dependência externa se Redis não estiver configurado).
+ *
+ * 3. Barreiras de Segurança Específicas:
+ *    - Anti-Carding em pagamentos com cartão (bloqueia bots testadores de cartões clonados).
+ *    - Anti-Brute Force em telas de login e recuperação de senha.
+ *    - Anti-Spam em criação de pedidos Pix e votos no bolão.
+ *    - Validação de JWT em tempo de borda (Edge-safe Web Crypto API) para área de Administração.
+ */
+
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
+// Estrutura de controle para a janela de rate limit em memória
 interface RateLimitRecord {
   count: number;
   resetTime: number;
@@ -9,7 +32,7 @@ interface RateLimitRecord {
 // Armazenamento em memória para Rate Limiting na borda (Edge / Node runtime)
 const rateLimits = new Map<string, RateLimitRecord>();
 
-// Limpeza periódica de entradas antigas a cada 5 minutos
+// Limpeza periódica de entradas antigas a cada 5 minutos para evitar vazamento de memória
 setInterval(() => {
   const now = Date.now();
   rateLimits.forEach((record, key) => {
@@ -19,6 +42,10 @@ setInterval(() => {
   });
 }, 5 * 60 * 1000);
 
+/**
+ * Extrai o endereço IP real e autêntico do cliente que originou a requisição.
+ * Evita ataques de falsificação de IP (IP Spoofing) priorizando headers de proxy confiáveis.
+ */
 function getClientIp(req: NextRequest): string {
   // 1. Headers autoritativos de borda da infraestrutura (Vercel, Cloudflare, Next.js nativo)
   const edgeIp = req.ip || req.headers.get('x-vercel-ip') || req.headers.get('cf-connecting-ip');
@@ -45,11 +72,15 @@ function getClientIp(req: NextRequest): string {
   return '127.0.0.1';
 }
 
+/**
+ * Algoritmo clássico de Janela Fixa (Fixed Window) em memória RAM para limitação de taxa.
+ */
 function checkInMemoryRateLimit(key: string, limit: number, windowSeconds: number): boolean {
   const now = Date.now();
   const windowMs = windowSeconds * 1000;
   const record = rateLimits.get(key) || { count: 0, resetTime: now + windowMs };
 
+  // Se a janela de tempo anterior expirou, reseta o contador
   if (now > record.resetTime) {
     record.count = 0;
     record.resetTime = now + windowMs;
@@ -100,6 +131,10 @@ async function checkRateLimit(key: string, limit: number, windowSeconds: number)
   return checkInMemoryRateLimit(key, limit, windowSeconds);
 }
 
+/**
+ * Converte uma string no formato Base64Url para um array binário Uint8Array.
+ * Necessário para compatibilidade com a Web Crypto API no Edge Runtime do Next.js.
+ */
 function base64UrlToUint8Array(str: string): Uint8Array {
   let base64 = str.replace(/-/g, '+').replace(/_/g, '/');
   while (base64.length % 4) {
@@ -156,6 +191,9 @@ async function verifyEdgeJwt(
   }
 }
 
+/**
+ * Função interceptadora principal do Middleware do Next.js.
+ */
 export async function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname;
   const ip = getClientIp(req);
@@ -372,6 +410,7 @@ export async function middleware(req: NextRequest) {
   return NextResponse.next();
 }
 
+// Configuração das rotas que o Middleware deve interceptar
 export const config = {
   matcher: [
     '/api/orders/card',
