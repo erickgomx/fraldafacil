@@ -120,12 +120,14 @@ html.dark .bg-cream-50\/90 {
   background-color: rgba(20, 18, 16, 0.85) !important;
 }
 
-html.dark .bg-\[\#F5F1E9\] {
-  background-color: #181614 !important;
+html.dark .bg-\[\#F5F1E9\],
+html.dark .bg-\[\#F7F3EC\] {
+  background-color: #161412 !important;
 }
 
 /* Bordas e divisores */
 html.dark .border-warm-border,
+html.dark .border-warm-border\/40,
 html.dark .border-warm-border\/60,
 html.dark .border-warm-border\/70,
 html.dark .border-warm-border\/80,
@@ -166,19 +168,76 @@ html.dark .text-charcoal-400 {
   color: #706A63 !important;
 }
 
-/* Botões escuros e contrastes invertidos */
-html.dark .bg-charcoal-900 {
+html.dark .text-white {
+  color: #FAF8F5 !important;
+}
+
+/* BOTÕES PRIMÁRIOS ESCUROS: Ganham fundo claro e texto escuro em Dark Mode */
+html.dark button.bg-charcoal-900,
+html.dark a.bg-charcoal-900,
+html.dark label.bg-charcoal-900 {
   background-color: #FAF8F5 !important;
   color: #1C1917 !important;
 }
 
-html.dark .bg-charcoal-900:hover {
+html.dark button.bg-charcoal-900 *,
+html.dark a.bg-charcoal-900 *,
+html.dark label.bg-charcoal-900 * {
+  color: #1C1917 !important;
+}
+
+html.dark button.bg-charcoal-900:hover,
+html.dark a.bg-charcoal-900:hover {
   background-color: #EFE8DC !important;
 }
 
-html.dark .bg-charcoal-800 {
-  background-color: #EFE8DC !important;
+/* CARDS E BANNERS ESCUROS (ex: notificação Tia Camila e CTA Final): permanecem escuros e legíveis */
+html.dark div.bg-charcoal-900,
+html.dark section.bg-charcoal-900 {
+  background-color: #1A1715 !important;
+  border-color: #332D28 !important;
+  color: #FAF8F5 !important;
+}
+
+html.dark div.bg-charcoal-900 p,
+html.dark div.bg-charcoal-900 h2,
+html.dark div.bg-charcoal-900 span {
+  color: inherit;
+}
+
+html.dark div.bg-charcoal-900 .text-white,
+html.dark section.bg-charcoal-900 .text-white {
+  color: #FAF8F5 !important;
+}
+
+html.dark div.bg-charcoal-900 .text-stone-300,
+html.dark section.bg-charcoal-900 .text-stone-300 {
+  color: #D6CEC3 !important;
+}
+
+html.dark div.bg-charcoal-900 .text-stone-200,
+html.dark section.bg-charcoal-900 .text-stone-200 {
+  color: #E8E2D8 !important;
+}
+
+/* Botões claros dentro de cards escuros (ex: botão do CTA Final) */
+html.dark div.bg-charcoal-900 a.bg-cream-50 {
+  background-color: #FAF8F5 !important;
   color: #1C1917 !important;
+}
+
+html.dark div.bg-charcoal-900 a.bg-cream-50 * {
+  color: #1C1917 !important;
+}
+
+html.dark div.bg-charcoal-900 a.bg-cream-50:hover {
+  background-color: #FFFFFF !important;
+}
+
+html.dark div.bg-charcoal-900 a.bg-white\/10 {
+  background-color: rgba(255, 255, 255, 0.12) !important;
+  color: #FAF8F5 !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
 }
 
 /* Inputs, Textareas e Seletores */
@@ -201,7 +260,8 @@ html.dark .shadow-subtle {
 }
 
 html.dark .shadow-card,
-html.dark .shadow-elevated {
+html.dark .shadow-elevated,
+html.dark .shadow-lift {
   box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.45) !important;
 }
 

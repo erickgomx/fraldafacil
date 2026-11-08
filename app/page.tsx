@@ -317,16 +317,16 @@ export default function HomePage() {
               </div>
 
               {/* Notificação de Pix Recebido (compreensão instantânea do benefício) */}
-              <div className="rounded-xl bg-charcoal-900 text-white p-3.5 flex items-center justify-between gap-3 shadow-card">
+              <div className="rounded-xl bg-charcoal-900 text-white p-3.5 flex items-center justify-between gap-3 shadow-card border border-transparent dark:border-[#332D28] dark:!bg-[#1A1715]">
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 rounded-lg bg-white/10 dark:bg-white/15 flex items-center justify-center shrink-0">
                     <Heart className="w-4 h-4 text-[#E3A088]" />
                   </div>
                   <div className="truncate">
-                    <p className="text-xs font-medium text-white truncate">
+                    <p className="text-xs font-medium text-white truncate dark:!text-[#FAF8F5]">
                       Tia Camila enviou 1 pacote + recado
                     </p>
-                    <p className="text-[11px] text-stone-300 truncate">
+                    <p className="text-[11px] text-stone-300 truncate dark:!text-[#D6CEC3]">
                       &ldquo;Que venha com muita saúde!&rdquo;
                     </p>
                   </div>
@@ -711,39 +711,39 @@ export default function HomePage() {
       </section>
 
       {/* CTA FINAL DE DESTAQUE */}
-      <section className="py-20 px-4 sm:px-6 bg-white">
+      <section className="py-20 px-4 sm:px-6 bg-white dark:bg-[#12100E]">
         <motion.div
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: '-60px' }}
           variants={scaleIn}
-          className="max-w-4xl mx-auto rounded-3xl bg-charcoal-900 text-white p-8 sm:p-14 text-center shadow-lift relative overflow-hidden"
+          className="max-w-4xl mx-auto rounded-3xl bg-charcoal-900 text-white p-8 sm:p-14 text-center shadow-lift relative overflow-hidden dark:!bg-[#1A1715] dark:border dark:border-[#332D28]"
         >
           <div className="relative z-10 max-w-xl mx-auto">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-stone-200 text-xs font-mono mb-6">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 dark:bg-white/15 text-stone-200 dark:!text-[#E8E2D8] text-xs font-mono mb-6">
               <ShieldCheck className="w-3.5 h-3.5 text-[#E3A088]" />
               Criação gratuita · Pronto em 2 minutos
             </span>
 
-            <h2 className="font-serif text-3xl sm:text-5xl text-white font-normal tracking-tight mb-4">
+            <h2 className="font-serif text-3xl sm:text-5xl text-white dark:!text-[#FAF8F5] font-normal tracking-tight mb-4">
               Prepare a chegada do seu bebê com tranquilidade.
             </h2>
 
-            <p className="text-sm sm:text-base text-stone-300 font-sans leading-relaxed mb-8">
+            <p className="text-sm sm:text-base text-stone-300 dark:!text-[#D6CEC3] font-sans leading-relaxed mb-8">
               Crie agora a página do seu Chá de Bebê ou Revelação, personalize do seu jeito e compartilhe com quem você ama.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               <Link
                 href="/cadastro"
-                className="w-full sm:w-auto px-7 py-4 rounded-xl text-sm sm:text-base font-semibold bg-cream-50 text-charcoal-900 hover:bg-white transition flex items-center justify-center gap-2"
+                className="w-full sm:w-auto px-7 py-4 rounded-xl text-sm sm:text-base font-semibold bg-cream-50 text-charcoal-900 hover:bg-white transition flex items-center justify-center gap-2 dark:!bg-[#FAF8F5] dark:!text-[#1C1917]"
               >
-                <span>Criar Página do meu Chá</span>
-                <ArrowRight className="w-4 h-4" />
+                <span className="dark:!text-[#1C1917]">Criar Página do meu Chá</span>
+                <ArrowRight className="w-4 h-4 text-charcoal-900 dark:!text-[#1C1917]" />
               </Link>
               <Link
                 href="/demo"
-                className="w-full sm:w-auto px-6 py-4 rounded-xl text-sm sm:text-base font-medium bg-white/10 text-white hover:bg-white/15 border border-white/15 transition flex items-center justify-center"
+                className="w-full sm:w-auto px-6 py-4 rounded-xl text-sm sm:text-base font-medium bg-white/10 text-white hover:bg-white/15 border border-white/15 transition flex items-center justify-center dark:!text-[#FAF8F5] dark:border-white/20"
               >
                 Testar Demonstração
               </Link>
