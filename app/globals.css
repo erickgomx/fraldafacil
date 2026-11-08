@@ -23,6 +23,7 @@ html {
   background-color: var(--background);
   color: var(--foreground);
   transition: background-color 0.25s ease, color 0.25s ease;
+  touch-action: manipulation;
 }
 
 body {
@@ -30,6 +31,7 @@ body {
   color: var(--foreground);
   min-height: 100vh;
   transition: background-color 0.25s ease, color 0.25s ease;
+  touch-action: manipulation;
 }
 
 /* Tipografia Editorial */
@@ -342,6 +344,21 @@ html.dark section.bg-charcoal-900 a.bg-white\/10 {
   background-color: rgba(255, 255, 255, 0.12) !important;
   color: #FAF8F5 !important;
   border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* =========================================================
+   PREVENÇÃO DE AUTO-ZOOM NO IOS SAFARI, ANDROID & WEBVIEWS
+   WebKit no iOS/Safari e navegadores móveis executam zoom
+   automático ao focar campos com font-size inferior a 16px.
+   Garantir 16px mínimo em telas menores ou dispositivos de toque
+   resolve definitivamente esse bug sem afetar o desktop.
+   ========================================================= */
+@media screen and (max-width: 768px), (hover: none) and (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="range"]):not([type="color"]):not([type="file"]),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
 }
 
 /* Inputs, Textareas e Seletores */

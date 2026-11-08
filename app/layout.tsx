@@ -11,9 +11,16 @@
  *   aplicado antes da primeira renderização da página, evitando tela piscando).
  */
 
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Lora, Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css';
+
+// Configuração de Viewport para escala consistente e prevenção de zoom acidental em dispositivos móveis
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+};
 
 // Fonte Serifada Editorial para títulos acolhedores
 const serif = Lora({
