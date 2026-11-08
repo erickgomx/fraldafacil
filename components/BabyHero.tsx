@@ -176,12 +176,12 @@ export default function BabyHero({
             variants={rise}
             className={`p-6 sm:p-10 rounded-3xl border shadow-card mb-8 text-center relative overflow-hidden backdrop-blur-md transition-all duration-700 ${
               isBoy
-                ? 'bg-gradient-to-b from-dusty-blue-light/90 via-cream-50/80 to-white border-dusty-blue/30 shadow-dusty-blue/10'
-                : 'bg-gradient-to-b from-dusty-rose-light/90 via-cream-50/80 to-white border-dusty-rose/30 shadow-dusty-rose/10'
+                ? 'bg-gradient-to-b from-dusty-blue-light/90 via-cream-50/80 to-white dark:from-[#17222B] dark:via-[#1A1817] dark:to-[#141210] border-dusty-blue/30 dark:border-dusty-blue/40 shadow-dusty-blue/10'
+                : 'bg-gradient-to-b from-dusty-rose-light/90 via-cream-50/80 to-white dark:from-[#29171C] dark:via-[#1D1618] dark:to-[#141210] border-dusty-rose/30 dark:border-dusty-rose/40 shadow-dusty-rose/10'
             }`}
           >
             {/* Tag Festiva */}
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[11px] font-mono uppercase tracking-widest font-semibold mb-3 border bg-white/90 shadow-subtle text-charcoal-700">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[11px] font-mono uppercase tracking-widest font-semibold mb-3 border border-warm-border dark:border-white/15 bg-white/90 dark:bg-white/10 shadow-subtle text-charcoal-700 dark:text-stone-200">
               <span className={`w-2 h-2 rounded-full animate-ping ${isBoy ? 'bg-dusty-blue' : 'bg-dusty-rose'}`} />
               <span>O Segredo Foi Revelado!</span>
             </div>
@@ -189,20 +189,20 @@ export default function BabyHero({
             {/* Subtítulo de Anúncio */}
             <span
               className={`block text-xs sm:text-sm font-mono uppercase tracking-widest font-bold mb-2 ${
-                isBoy ? 'text-dusty-blue' : 'text-dusty-rose'
+                isBoy ? 'text-dusty-blue dark:text-sky-300' : 'text-dusty-rose dark:text-pink-300'
               }`}
             >
               {isBoy ? '💙 É UM MENINO! 💙' : '🌸 É UMA MENINA! 🌸'}
             </span>
 
             {/* O Nome do Bebê em Destaque Absoluto */}
-            <h1 className="font-serif text-4xl sm:text-6xl text-charcoal-900 font-normal tracking-tight leading-tight mb-3">
+            <h1 className="font-serif text-4xl sm:text-6xl text-charcoal-900 dark:text-[#FAF8F5] font-normal tracking-tight leading-tight mb-3">
               {isBoy ? 'O ' : 'A '}
               <span
                 className={`italic font-medium underline decoration-2 underline-offset-8 ${
                   isBoy
-                    ? 'text-dusty-blue decoration-dusty-blue/40'
-                    : 'text-dusty-rose decoration-dusty-rose/40'
+                    ? 'text-dusty-blue dark:text-sky-300 decoration-dusty-blue/40 dark:decoration-sky-300/40'
+                    : 'text-dusty-rose dark:text-pink-300 decoration-dusty-rose/40 dark:decoration-pink-300/40'
                 }`}
               >
                 {winnerName}
@@ -210,8 +210,8 @@ export default function BabyHero({
               vem aí!
             </h1>
 
-            <p className="text-xs sm:text-sm text-charcoal-600 font-sans max-w-md mx-auto leading-relaxed">
-              Com todo o carinho e amor de <strong className="font-medium text-charcoal-900">{parentsNames}</strong> para celebrar essa bênção com você.
+            <p className="text-xs sm:text-sm text-charcoal-600 dark:text-stone-300 font-sans max-w-md mx-auto leading-relaxed">
+              Com todo o carinho e amor de <strong className="font-medium text-charcoal-900 dark:text-[#FAF8F5]">{parentsNames}</strong> para celebrar essa bênção com você.
             </p>
           </motion.div>
         ) : (
@@ -219,7 +219,7 @@ export default function BabyHero({
           <>
             {/* Badge indicando o tipo de evento */}
             <motion.div variants={rise} className="mb-6">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/90 backdrop-blur-sm border border-warm-border text-charcoal-600 text-xs font-mono uppercase tracking-wider shadow-subtle">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/90 dark:bg-white/10 backdrop-blur-sm border border-warm-border dark:border-white/15 text-charcoal-600 dark:text-stone-300 text-xs font-mono uppercase tracking-wider shadow-subtle">
                 <span className="relative flex w-1.5 h-1.5">
                   <span className="absolute inset-0 rounded-full bg-terracotta animate-pulse-ring" />
                   <span className="relative w-1.5 h-1.5 rounded-full bg-terracotta" />
@@ -231,7 +231,7 @@ export default function BabyHero({
             {/* Nomes dos Pais & Opções Menino / Menina */}
             <motion.h1
               variants={rise}
-              className="font-serif text-3xl sm:text-5xl text-charcoal-900 font-normal tracking-tight leading-tight mb-4"
+              className="font-serif text-3xl sm:text-5xl text-charcoal-900 dark:text-[#FAF8F5] font-normal tracking-tight leading-tight mb-4"
             >
               {boyName && girlName ? (
                 <>
