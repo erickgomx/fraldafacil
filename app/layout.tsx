@@ -67,8 +67,8 @@ export default function RootLayout({
               (function() {
                 try {
                   var theme = localStorage.getItem('theme');
-                  var supportDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-                  if (theme === 'dark' || (!theme && supportDark)) {
+                  // Inicia sempre no modo claro por padrão; ativa escuro apenas se o usuário tiver escolhido manualmente
+                  if (theme === 'dark') {
                     document.documentElement.classList.add('dark');
                   } else {
                     document.documentElement.classList.remove('dark');

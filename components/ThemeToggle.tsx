@@ -19,8 +19,19 @@ export default function ThemeToggle({
 
   useEffect(() => {
     setMounted(true);
-    const hasDarkClass = document.documentElement.classList.contains('dark');
-    setIsDark(hasDarkClass);
+    try {
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme === 'dark') {
+        setIsDark(true);
+        document.documentElement.classList.add('dark');
+      } else {
+        setIsDark(false);
+        document.documentElement.classList.remove('dark');
+      }
+    } catch {
+      setIsDark(false);
+      document.documentElement.classList.remove('dark');
+    }
   }, []);
 
   const toggleTheme = () => {
