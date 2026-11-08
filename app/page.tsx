@@ -371,29 +371,29 @@ export default function HomePage() {
             {/* Card: Chá Tradicional */}
             <motion.div
               variants={fadeUp}
-              className="rounded-2xl bg-cream-50/70 border border-warm-border p-7 sm:p-8"
+              className="rounded-2xl bg-cream-50/70 dark:bg-[#161412] border border-warm-border dark:border-[#2A2521] p-7 sm:p-8"
             >
-              <span className="inline-block text-xs font-mono uppercase tracking-wider text-charcoal-500 mb-4">
+              <span className="inline-block text-xs font-mono uppercase tracking-wider text-charcoal-500 dark:text-stone-400 mb-4">
                 Chá de Fraldas Comum
               </span>
-              <h3 className="font-serif text-xl text-charcoal-800 mb-5">
+              <h3 className="font-serif text-xl text-charcoal-800 dark:text-stone-200 mb-5">
                 O que costuma acontecer
               </h3>
-              <ul className="space-y-3.5 text-sm text-charcoal-600">
+              <ul className="space-y-3.5 text-sm text-charcoal-600 dark:text-stone-400">
                 <li className="flex items-start gap-3">
-                  <span className="w-5 h-5 rounded-full bg-stone-200 text-charcoal-600 flex items-center justify-center shrink-0 mt-0.5">
+                  <span className="w-5 h-5 rounded-full bg-stone-200 dark:bg-stone-800 text-charcoal-600 dark:text-stone-400 flex items-center justify-center shrink-0 mt-0.5">
                     <X className="w-3 h-3" />
                   </span>
                   <span>Muitos pacotes tamanho P repetidos que o bebê perde rápido</span>
                 </li>
                 <li className="flex items-start gap-3">
-                  <span className="w-5 h-5 rounded-full bg-stone-200 text-charcoal-600 flex items-center justify-center shrink-0 mt-0.5">
+                  <span className="w-5 h-5 rounded-full bg-stone-200 dark:bg-stone-800 text-charcoal-600 dark:text-stone-400 flex items-center justify-center shrink-0 mt-0.5">
                     <X className="w-3 h-3" />
                   </span>
                   <span>Marcas variadas que podem causar alergia na pele do bebê</span>
                 </li>
                 <li className="flex items-start gap-3">
-                  <span className="w-5 h-5 rounded-full bg-stone-200 text-charcoal-600 flex items-center justify-center shrink-0 mt-0.5">
+                  <span className="w-5 h-5 rounded-full bg-stone-200 dark:bg-stone-800 text-charcoal-600 dark:text-stone-400 flex items-center justify-center shrink-0 mt-0.5">
                     <X className="w-3 h-3" />
                   </span>
                   <span>Parentes que moram longe não conseguem participar</span>
@@ -404,29 +404,29 @@ export default function HomePage() {
             {/* Card: Com Fralda Online */}
             <motion.div
               variants={fadeUp}
-              className="rounded-2xl bg-cream-100/70 border-2 border-charcoal-900 p-7 sm:p-8 shadow-card relative"
+              className="rounded-2xl bg-cream-100/70 dark:bg-[#201C19] border-2 border-charcoal-900 dark:border-stone-400/80 p-7 sm:p-8 shadow-card relative"
             >
-              <span className="inline-block text-xs font-mono uppercase tracking-wider text-terracotta font-semibold mb-4">
+              <span className="inline-block text-xs font-mono uppercase tracking-wider text-terracotta dark:text-[#E8957D] font-semibold mb-4">
                 Com Fralda Online
               </span>
-              <h3 className="font-serif text-xl text-charcoal-900 mb-5">
+              <h3 className="font-serif text-xl text-charcoal-900 dark:text-[#FAF8F5] mb-5">
                 Liberdade para os pais, carinho para o bebê
               </h3>
-              <ul className="space-y-3.5 text-sm text-charcoal-800">
+              <ul className="space-y-3.5 text-sm text-charcoal-800 dark:text-[#F0ECE4]">
                 <li className="flex items-start gap-3">
-                  <span className="w-5 h-5 rounded-full bg-charcoal-900 text-white flex items-center justify-center shrink-0 mt-0.5">
+                  <span className="w-5 h-5 rounded-full bg-charcoal-900 dark:bg-emerald-500/20 dark:border dark:border-emerald-400/40 text-white dark:text-emerald-300 flex items-center justify-center shrink-0 mt-0.5">
                     <Check className="w-3 h-3" />
                   </span>
                   <span>Você recebe o valor em dinheiro no Pix e compra quando precisar</span>
                 </li>
                 <li className="flex items-start gap-3">
-                  <span className="w-5 h-5 rounded-full bg-charcoal-900 text-white flex items-center justify-center shrink-0 mt-0.5">
+                  <span className="w-5 h-5 rounded-full bg-charcoal-900 dark:bg-emerald-500/20 dark:border dark:border-emerald-400/40 text-white dark:text-emerald-300 flex items-center justify-center shrink-0 mt-0.5">
                     <Check className="w-3 h-3" />
                   </span>
                   <span>Vitrine pronta com valores reais para o convidado escolher com gosto</span>
                 </li>
                 <li className="flex items-start gap-3">
-                  <span className="w-5 h-5 rounded-full bg-charcoal-900 text-white flex items-center justify-center shrink-0 mt-0.5">
+                  <span className="w-5 h-5 rounded-full bg-charcoal-900 dark:bg-emerald-500/20 dark:border dark:border-emerald-400/40 text-white dark:text-emerald-300 flex items-center justify-center shrink-0 mt-0.5">
                     <Check className="w-3 h-3" />
                   </span>
                   <span>Bolão interativo e mural de recados para unir toda a família</span>
