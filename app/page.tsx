@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import BrandLogo from '@/components/BrandLogo';
 import ThemeToggle from '@/components/ThemeToggle';
+import MercadoPagoLogo from '@/components/MercadoPagoLogo';
 
 const fadeUp: Variants = {
   hidden: { opacity: 0, y: 28 },
@@ -70,7 +71,11 @@ const FAQS = [
   },
   {
     q: 'Meus convidados precisam baixar aplicativo ou criar conta?',
-    a: 'Não. Basta abrir o link que você enviar no WhatsApp, escolher o presente, deixar um recado carinhoso e pagar com qualquer banco via Pix Copia e Cola ou QR Code.',
+    a: 'Não. Seus convidados não precisam baixar nenhum app nem criar conta. Eles apenas abrem o link no WhatsApp, escolhem o presente e pagam por qualquer aplicativo de banco via Pix ou cartão.',
+  },
+  {
+    q: 'Como recebo o dinheiro dos presentes? Preciso ter conta no Mercado Pago?',
+    a: 'Sim. Por máxima segurança bancária e transparência fiscal, todos os pagamentos são intermediados oficialmente pelo Mercado Pago. O valor dos presentes é transferido diretamente para a sua conta do Mercado Pago, sem que a nossa plataforma retenha o seu dinheiro. Se você ainda não possui uma conta no Mercado Pago, basta criar gratuitamente em 2 minutos durante a configuração.',
   },
   {
     q: 'Serve tanto para Chá Revelação quanto para Chá de Fraldas?',
@@ -150,7 +155,15 @@ export default function HomePage() {
             variants={staggerContainer}
             className="lg:col-span-7 text-center lg:text-left"
           >
-
+            {/* Selo Minimalista de Autoridade Mercado Pago */}
+            <motion.div
+              variants={fadeUp}
+              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/90 dark:bg-[#1E1B18] border border-warm-border dark:border-[#2E2925] text-xs text-charcoal-700 dark:text-stone-300 mb-6 shadow-subtle"
+            >
+              <MercadoPagoLogo size="xs" colorVariant="brand" />
+              <span className="text-charcoal-300 dark:text-stone-600">·</span>
+              <span>Intermediação oficial &amp; segurança bancária</span>
+            </motion.div>
 
             <motion.h1
               variants={fadeUp}
@@ -537,16 +550,87 @@ export default function HomePage() {
                   <span className="font-mono text-xs text-charcoal-400">PASSO 03</span>
                 </div>
                 <h3 className="font-serif text-xl text-charcoal-900 mb-2.5">
-                  Receba os valores via Pix
+                  Receba direto no seu Mercado Pago
                 </h3>
                 <p className="text-sm text-charcoal-600 leading-relaxed">
-                  Acompanhe cada presente recebido em tempo real no seu painel e transfira o saldo acumulado direto para a sua chave Pix.
+                  Por segurança jurídica e bancária, o valor dos presentes cai diretamente na sua conta do Mercado Pago. Caso não tenha, você cria a sua gratuitamente em 2 minutos.
                 </p>
               </div>
-              <div className="mt-6 pt-4 border-t border-warm-border/60 text-xs font-mono text-terracotta font-medium">
-                Painel completo para os pais
+              <div className="mt-6 pt-4 border-t border-warm-border/60 flex items-center justify-between text-xs font-mono">
+                <span className="text-terracotta font-medium">Intermediação Oficial</span>
+                <MercadoPagoLogo size="xs" colorVariant="brand" />
               </div>
             </motion.div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* INTERMEDIAÇÃO FINANCEIRA & SEGURANÇA BANCÁRIA — Minimalista & Confiável */}
+      <section className="py-16 sm:py-20 px-4 sm:px-6 bg-[#FAF7F2] dark:bg-[#151311] border-b border-warm-border/60">
+        <div className="max-w-4xl mx-auto">
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-60px' }}
+            variants={fadeUp}
+            className="rounded-3xl bg-white dark:bg-[#1C1917] border border-warm-border dark:border-[#2D2824] p-7 sm:p-10 shadow-subtle relative overflow-hidden"
+          >
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-5 pb-6 border-b border-warm-border/60">
+              <div>
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cream-100 dark:bg-stone-800/80 border border-warm-border dark:border-stone-700 text-xs text-charcoal-700 dark:text-stone-300 mb-3">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                  <span className="font-mono uppercase tracking-wider text-[11px]">Segurança &amp; Transparência</span>
+                </div>
+                <h2 className="font-serif text-2xl sm:text-3xl text-charcoal-900 dark:text-stone-100 font-normal">
+                  Intermediação oficial via Mercado Pago
+                </h2>
+              </div>
+              <div className="shrink-0">
+                <div className="px-4 py-2.5 rounded-xl bg-cream-50 dark:bg-stone-900 border border-warm-border dark:border-stone-800 flex items-center gap-2.5 shadow-subtle">
+                  <span className="text-[11px] font-mono uppercase tracking-wider text-charcoal-500 dark:text-stone-400">
+                    Processador Oficial
+                  </span>
+                  <MercadoPagoLogo size="sm" colorVariant="brand" />
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6">
+              <div className="space-y-2">
+                <h3 className="font-serif text-lg text-charcoal-900 dark:text-stone-200 flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-terracotta" />
+                  Sem custódia da plataforma
+                </h3>
+                <p className="text-sm text-charcoal-600 dark:text-stone-400 leading-relaxed font-sans">
+                  O Fralda Online não retém o dinheiro do seu chá. Usamos a infraestrutura do Mercado Pago para que o valor de cada presente caia direto na sua conta, com total transparência e proteção antifraude.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <h3 className="font-serif text-lg text-charcoal-900 dark:text-stone-200 flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-terracotta" />
+                  Por que é necessário criar conta no Mercado Pago?
+                </h3>
+                <p className="text-sm text-charcoal-600 dark:text-stone-400 leading-relaxed font-sans">
+                  Por exigência de segurança bancária e regulamentação fiscal, os pais precisam vincular ou criar uma conta gratuita no Mercado Pago. O cadastro leva apenas 2 minutos e garante que o dinheiro fique sempre sob seu controle.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 pt-5 border-t border-warm-border/50 flex flex-wrap items-center justify-between gap-3 text-xs text-charcoal-500 dark:text-stone-400">
+              <span className="flex items-center gap-1.5">
+                <Check className="w-3.5 h-3.5 text-emerald-600" />
+                Conexão simples em 1 clique no painel
+              </span>
+              <span className="flex items-center gap-1.5">
+                <Check className="w-3.5 h-3.5 text-emerald-600" />
+                Convidado não precisa ter conta no Mercado Pago
+              </span>
+              <span className="flex items-center gap-1.5">
+                <Check className="w-3.5 h-3.5 text-emerald-600" />
+                Saques e transferências imediatas via Pix
+              </span>
+            </div>
           </motion.div>
         </div>
       </section>
@@ -773,6 +857,11 @@ export default function HomePage() {
             <span className="font-serif font-medium text-sm text-charcoal-900">Fralda Online</span>
             <span className="text-charcoal-400">·</span>
             <span>A plataforma independente para Chás de Bebê &amp; Revelação</span>
+            <span className="text-charcoal-300 hidden sm:inline">·</span>
+            <span className="inline-flex items-center gap-1.5 text-charcoal-500">
+              <span>Pagamentos via</span>
+              <MercadoPagoLogo size="xs" colorVariant="brand" />
+            </span>
           </div>
 
           <div className="flex items-center gap-3 text-charcoal-500 text-xs">
