@@ -125,7 +125,7 @@ export default function GuestbookWall({ messages, onOpenGiftModal }: GuestbookWa
                 </div>
 
                 {/* Texto do recadinho */}
-                <p className="text-xs text-charcoal-700 leading-relaxed font-sans italic bg-cream-50/70 p-3.5 rounded-lg border border-warm-border/50">
+                <p className="text-[15px] text-charcoal-700 leading-relaxed font-serif italic bg-cream-50/70 p-4 rounded-xl border border-warm-border/50">
                   &ldquo;{item.message}&rdquo;
                 </p>
               </div>

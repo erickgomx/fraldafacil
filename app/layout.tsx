@@ -4,15 +4,15 @@
  * ============================================================================
  * Estrutura base de todas as páginas da plataforma Fralda Online:
  * - Carregamento otimizado de tipografia do Google Fonts:
- *   - Lora (`--font-serif`): Títulos com elegância editorial, calor e afeto.
- *   - Plus Jakarta Sans (`--font-sans`): Interface limpa, legível e moderna.
+ *   - Cormorant Garamond (`--font-serif`): Títulos com elegância editorial, leveza e alta-costura.
+ *   - DM Sans (`--font-sans`): Interface minimalista, suave, legível e contemporânea.
  * - Metadados de SEO padrão, OpenGraph para cards no WhatsApp e Twitter, favicons.
  * - Script inline anti-flicker de tema (garante que o Dark Mode ou Light Mode seja
  *   aplicado antes da primeira renderização da página, evitando tela piscando).
  */
 
 import type { Metadata, Viewport } from 'next';
-import { Lora, Plus_Jakarta_Sans } from 'next/font/google';
+import { Cormorant_Garamond, DM_Sans } from 'next/font/google';
 import './globals.css';
 
 // Configuração de Viewport para escala consistente e prevenção de zoom acidental em dispositivos móveis
@@ -22,18 +22,20 @@ export const viewport: Viewport = {
   maximumScale: 1,
 };
 
-// Fonte Serifada Editorial para títulos acolhedores
-const serif = Lora({
+// Fonte Serifada Editorial de alta-costura para títulos delicados e sofisticados
+const serif = Cormorant_Garamond({
   subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
   style: ['normal', 'italic'],
   variable: '--font-serif',
   display: 'swap',
 });
 
-// Fonte Sans-Serif moderna e geométrica para textos de interface e botões
-const sans = Plus_Jakarta_Sans({
+// Fonte Sans-Serif minimalista e suave para textos corridos, rótulos e botões
+const sans = DM_Sans({
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
+  weight: ['300', '400', '500', '600', '700'],
+  style: ['normal', 'italic'],
   variable: '--font-sans',
   display: 'swap',
 });

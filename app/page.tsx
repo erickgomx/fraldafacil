@@ -129,7 +129,7 @@ export default function HomePage() {
             </Link>
             <Link
               href="/cadastro"
-              className="text-xs sm:text-sm font-semibold px-4 sm:px-5 py-2.5 rounded-xl bg-charcoal-900 text-white hover:bg-charcoal-800 transition shadow-subtle whitespace-nowrap shrink-0 flex items-center gap-1.5"
+              className="text-xs sm:text-sm font-medium px-4 sm:px-5 py-2.5 rounded-xl bg-charcoal-900 text-white hover:bg-charcoal-800 transition shadow-subtle whitespace-nowrap shrink-0 flex items-center gap-1.5"
             >
               <span>Criar meu Chá</span>
               <ArrowRight className="w-3.5 h-3.5 text-stone-300 hidden sm:inline" />
@@ -157,15 +157,15 @@ export default function HomePage() {
           >
             <motion.h1
               variants={fadeUp}
-              className="font-serif text-4xl sm:text-5xl lg:text-[3.5rem] text-charcoal-900 font-normal tracking-tight leading-[1.08] mb-6"
+              className="font-serif text-[2.65rem] sm:text-6xl lg:text-[4.1rem] text-charcoal-900 font-normal tracking-[-0.02em] leading-[1.04] mb-6"
             >
               Ganhe fraldas dos convidados.{' '}
-              <span className="italic text-terracotta">Receba o valor no Pix.</span>
+              <span className="italic font-normal text-terracotta">Receba o valor no Pix.</span>
             </motion.h1>
 
             <motion.p
               variants={fadeUp}
-              className="text-base sm:text-lg text-charcoal-600 font-sans max-w-xl mx-auto lg:mx-0 leading-relaxed mb-8"
+              className="text-base sm:text-[1.08rem] text-charcoal-600 font-sans font-normal max-w-xl mx-auto lg:mx-0 leading-[1.68] mb-8"
             >
               Crie uma página linda em 2 minutos e compartilhe no WhatsApp. Seus convidados escolhem pacotes de fraldas na vitrine e você recebe o dinheiro para comprar o tamanho certo quando o bebê precisar.
             </motion.p>
@@ -177,7 +177,7 @@ export default function HomePage() {
             >
               <Link
                 href="/cadastro"
-                className="w-full sm:w-auto px-7 py-4 rounded-xl text-sm sm:text-base font-semibold bg-charcoal-900 text-white hover:bg-charcoal-800 transition shadow-elevated flex items-center justify-center gap-2.5 group"
+                className="w-full sm:w-auto px-7 py-4 rounded-xl text-sm sm:text-base font-medium bg-charcoal-900 text-white hover:bg-charcoal-800 transition shadow-elevated flex items-center justify-center gap-2.5 group"
               >
                 <span>Criar Página do meu Bebê</span>
                 <ArrowRight className="w-4 h-4 text-stone-300 group-hover:translate-x-1 transition-transform" />
@@ -842,7 +842,10 @@ export default function HomePage() {
       <footer className="py-12 px-6 border-t border-warm-border bg-[#F7F3EC] text-charcoal-600 text-xs font-sans">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="font-serif font-medium text-sm text-charcoal-900">Fralda Online</span>
+            <span className="font-serif text-base tracking-[-0.02em] text-charcoal-900 dark:text-[#FAF8F5]">
+              <span className="font-semibold">Fralda</span>{' '}
+              <span className="italic font-normal text-terracotta dark:text-[#E3A088]">Online</span>
+            </span>
             <span className="text-charcoal-400">·</span>
             <span>A plataforma independente para Chás de Bebê &amp; Revelação</span>
             <span className="text-charcoal-300 hidden sm:inline">·</span>

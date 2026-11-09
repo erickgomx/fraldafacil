@@ -19,8 +19,9 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        serif: ["var(--font-serif)", "Newsreader", "Playfair Display", "Georgia", "serif"],
-        sans: ["var(--font-sans)", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "sans-serif"],
+        serif: ["var(--font-serif)", "Cormorant Garamond", "Playfair Display", "Georgia", "serif"],
+        sans: ["var(--font-sans)", "DM Sans", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "sans-serif"],
+        mono: ["var(--font-sans)", "DM Sans", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "sans-serif"],
       },
       colors: {
         cream: {

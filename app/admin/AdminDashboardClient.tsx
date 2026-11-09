@@ -1086,14 +1086,14 @@ export default function AdminDashboardClient({
           <div className="grid grid-cols-2 gap-3 text-xs">
             <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100">
               <span className="text-slate-500 block mb-0.5">Usuários Cadastrados</span>
-              <strong className="text-xl font-bold font-serif text-slate-900 block font-mono">
+              <strong className="text-xl font-semibold font-serif text-slate-900 block tabular-nums">
                 {metrics.totalUsers}
               </strong>
             </div>
 
             <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100">
               <span className="text-slate-500 block mb-0.5">Total de Chás Criados</span>
-              <strong className="text-xl font-bold font-serif text-slate-900 block font-mono">
+              <strong className="text-xl font-semibold font-serif text-slate-900 block tabular-nums">
                 {metrics.totalEvents}
               </strong>
             </div>
