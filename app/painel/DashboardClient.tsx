@@ -17,9 +17,10 @@ import confetti from 'canvas-confetti';
 import {
   Check,
   Share2,
+  MessageCircle,
 } from 'lucide-react';
 import Link from 'next/link';
-import { shareEvent } from '@/lib/share';
+import { shareEvent, buildSharePayload } from '@/lib/share';
 
 interface DashboardClientProps {
   event: {
@@ -109,6 +110,7 @@ export default function DashboardClient({
       boyName: event.boyName,
       girlName: event.girlName,
       eventType: event.eventType,
+      revealedGender: event.revealedGender,
     });
     if (res !== 'CANCELLED') {
       setCopiedLink(true);
@@ -132,22 +134,44 @@ export default function DashboardClient({
           </p>
         </div>
 
-        <button
-          onClick={copyPublicLink}
-          className="shrink-0 py-2.5 px-4 rounded-lg bg-charcoal-900 hover:bg-charcoal-800 text-white font-medium text-xs transition shadow-subtle flex items-center gap-2"
-        >
-          {copiedLink ? (
-            <>
-              <Check className="w-3.5 h-3.5 text-stone-200" />
-              <span>Convite Copiado!</span>
-            </>
-          ) : (
-            <>
-              <Share2 className="w-3.5 h-3.5 text-stone-300" />
-              <span>Compartilhar Convite</span>
-            </>
-          )}
-        </button>
+        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+          <a
+            href={buildSharePayload({
+              slug: event.slug,
+              parentsNames: event.parentsNames,
+              babyName: event.babyName,
+              boyName: event.boyName,
+              girlName: event.girlName,
+              eventType: event.eventType,
+              revealedGender: event.revealedGender,
+            }).whatsappUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="py-2.5 px-3.5 rounded-lg bg-[#25D366] hover:bg-[#20ba5a] text-white font-medium text-xs transition shadow-subtle flex items-center gap-2"
+            title="Enviar convite com emojis e link no WhatsApp"
+          >
+            <MessageCircle className="w-4 h-4" />
+            <span className="font-semibold">Enviar no WhatsApp</span>
+          </a>
+
+          <button
+            onClick={copyPublicLink}
+            className="py-2.5 px-3.5 rounded-lg bg-charcoal-900 hover:bg-charcoal-800 text-white font-medium text-xs transition shadow-subtle flex items-center gap-2"
+            title="Copiar mensagem formatada"
+          >
+            {copiedLink ? (
+              <>
+                <Check className="w-3.5 h-3.5 text-stone-200" />
+                <span>Copiado!</span>
+              </>
+            ) : (
+              <>
+                <Share2 className="w-3.5 h-3.5 text-stone-300" />
+                <span>Copiar Convite</span>
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
       {/* AVISO SE A CONTA MP NÃO ESTIVER CONECTADA */}

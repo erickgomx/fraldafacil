@@ -1,6 +1,9 @@
 /**
- * Utilitário central de compartilhamento oficial do Fralda Online
- * Garante link canônico https://fralda.online/{slug} e mensagens ricas com emojis.
+ * ============================================================================
+ * UTILITÁRIO CENTRAL DE COMPARTILHAMENTO (lib/share.ts)
+ * ============================================================================
+ * Gera mensagens ricas, afetivas e esteticamente diagramadas com emojis e
+ * bullet points para compartilhamento no WhatsApp, Web Share API e Clipboard.
  */
 
 export interface ShareDataInput {
@@ -10,37 +13,134 @@ export interface ShareDataInput {
   boyName?: string | null;
   girlName?: string | null;
   eventType?: string;
+  revealedGender?: string | null;
 }
 
 export function buildSharePayload(input: ShareDataInput) {
   const defaultBase = 'https://fralda.online';
   const envBase = process.env.NEXT_PUBLIC_APP_URL;
   // Garante que se a env apontar para localhost ou vercel em dev, em prod ou fallback use fralda.online
-  const baseUrl = (envBase && !envBase.includes('localhost') && !envBase.includes('vercel.app'))
-    ? envBase
-    : defaultBase;
+  const baseUrl =
+    envBase && !envBase.includes('localhost') && !envBase.includes('vercel.app')
+      ? envBase
+      : defaultBase;
 
   const url = `${baseUrl.replace(/\/$/, '')}/${input.slug}`;
 
   let title = `Chá de Bebê de ${input.parentsNames}`;
   let message = '';
 
-  if (input.eventType === 'REVELACAO' && input.boyName && input.girlName) {
-    title = `Chá Revelação: ${input.boyName} ou ${input.girlName}?`;
-    message = `Oi! Preparamos a página do nosso *Chá Revelação* com muito carinho (${input.parentsNames}). ✨\n\nSerá *${input.boyName}* ou *${input.girlName}*? Deixe seu palpite no bolão e veja nossa lista de fraldas aqui:\n${url}`;
-  } else if (input.babyName || input.boyName || input.girlName) {
-    const name = input.babyName || input.boyName || input.girlName;
-    title = `Chá de Bebê de ${name}`;
-    message = `Oi! Preparamos a página do Chá de Bebê de *${name}* com muito carinho (${input.parentsNames}). ✨\n\nPara deixar um recado para a gente e ver nossa lista de fraldas, é só acessar aqui:\n${url}`;
-  } else {
+  // 1. CHÁ REVELAÇÃO JÁ REVELADO - MENINO
+  if (input.revealedGender === 'BOY') {
+    const name = input.boyName || input.babyName || 'nosso príncipe';
+    title = `É Menino! Chá de Bebê de ${name} (${input.parentsNames})`;
+    message = `🎉💙 *É MENINO! CHÁ DO ${name.toUpperCase()}* 🍼✨
+
+A revelação aconteceu e a nossa felicidade não cabe no peito! Nosso príncipe *${name}* está a caminho! 👦💙
+
+Preparamos uma página linda para celebrar juntos:
+🎁 *Lista de fraldas e mimos* (fácil, seguro e direto via Pix)
+💌 *Mural de recados* para deixar seus votos de carinho
+🧸 *Celebrar com a gente* esse momento tão abençoado
+
+Toque no link abaixo para visitar a página e deixar seu recado:
+👇👇👇
+${url}
+
+Com todo amor,
+*${input.parentsNames}* 🥰`;
+  }
+  // 2. CHÁ REVELAÇÃO JÁ REVELADO - MENINA
+  else if (input.revealedGender === 'GIRL') {
+    const name = input.girlName || input.babyName || 'nossa princesa';
+    title = `É Menina! Chá de Bebê de ${name} (${input.parentsNames})`;
+    message = `🎉💖 *É MENINA! CHÁ DA ${name.toUpperCase()}* 🍼✨
+
+A revelação aconteceu e nosso coração está transbordando de amor! Nossa princesinha *${name}* está a caminho! 👧💖
+
+Preparamos uma página linda para celebrar juntos:
+🎁 *Lista de fraldas e mimos* (fácil, seguro e direto via Pix)
+💌 *Mural de recados* para deixar seus votos de carinho
+🧸 *Celebrar com a gente* esse momento tão abençoado
+
+Toque no link abaixo para visitar a página e deixar seu recado:
+👇👇👇
+${url}
+
+Com todo amor,
+*${input.parentsNames}* 🥰`;
+  }
+  // 3. CHÁ REVELAÇÃO ATIVO (EM ANDAMENTO COM BOLÃO)
+  else if (input.eventType === 'REVELACAO' || (input.boyName && input.girlName)) {
+    const boy = input.boyName || 'Menino';
+    const girl = input.girlName || 'Menina';
+    title = `Chá Revelação: ${boy} ou ${girl}? (${input.parentsNames})`;
+    message = `✨🍼 *CONVITE: CHÁ REVELAÇÃO* 🍼✨
+
+Oi, família e amigos! Preparamos com muito amor e carinho a página oficial do nosso *Chá Revelação*! 🤍
+
+Será *${boy}* 💙 ou *${girl}* 💖?
+
+Na nossa página especial você pode:
+🎯 *Dar seu palpite no Bolão* (Será Menino ou Menina?)
+🎁 *Escolher fraldas e presentes* para nos abençoar (via Pix direto)
+💌 *Deixar uma mensagem linda* no nosso mural de carinho
+
+Toque no link abaixo para deixar seu palpite e conferir tudo:
+👇👇👇
+${url}
+
+Com todo carinho,
+*${input.parentsNames}* 🥰`;
+  }
+  // 4. CHÁ DE BEBÊ COM NOME DEFINIDO
+  else if (input.babyName || input.boyName || input.girlName) {
+    const name = input.babyName || input.boyName || input.girlName || '';
+    title = `Chá de Bebê de ${name} (${input.parentsNames})`;
+    message = `🍼👶 *CONVITE: CHÁ DE BEBÊ DO(A) ${name.toUpperCase()}* ✨🤍
+
+Oi, família e amigos queridos! Criamos com muito amor a página oficial do Chá de Bebê do nosso amor, *${name}*! 🍼
+
+Tudo foi preparado com carinho para estarmos pertinho de quem amamos:
+🎁 *Lista de fraldas e mimos* (prático, seguro e direto via Pix)
+💌 *Mural de carinho* para deixar seus recados e votos para o bebê
+🧸 *Celebrar juntos* a espera mais especial da nossa vida
+
+Toque no link abaixo para ver a página e deixar sua mensagem:
+👇👇👇
+${url}
+
+Com muito amor,
+*${input.parentsNames}* 🥰`;
+  }
+  // 5. CHÁ DE BEBÊ GERAL (PELOS NOMES DOS PAIS)
+  else {
     title = `Chá de Bebê de ${input.parentsNames}`;
-    message = `Oi! Preparamos a página do nosso Chá de Bebê com muito carinho (${input.parentsNames}). ✨\n\nPara participar, deixar um recado e ver nossa lista de fraldas, é só acessar aqui:\n${url}`;
+    message = `🍼✨ *CONVITE ESPECIAL: NOSSO CHÁ DE BEBÊ* ✨🤍
+
+Oi, família e amigos queridos! Preparamos com todo o amor do mundo a página oficial do nosso Chá de Bebê! 🍼
+
+Criamos um cantinho especial para você fazer parte desse momento:
+🎁 *Lista de fraldas e presentes* (prático, seguro e direto via Pix)
+💌 *Mural de carinho* para deixar sua mensagem para a nossa família
+🧸 *Celebrar juntos* a chegada do nosso maior presente
+
+Toque no link abaixo para conferir e participar:
+👇👇👇
+${url}
+
+Com muito carinho,
+*${input.parentsNames}* 🥰`;
   }
 
-  return { title, message, url };
+  const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
+
+  return { title, message, url, whatsappUrl };
 }
 
-export async function shareEvent(input: ShareDataInput): Promise<'SHARED' | 'COPIED' | 'CANCELLED'> {
+export async function shareEvent(
+  input: ShareDataInput
+): Promise<'SHARED' | 'COPIED' | 'CANCELLED'> {
   const { title, message } = buildSharePayload(input);
 
   if (typeof window !== 'undefined') {
@@ -50,7 +150,6 @@ export async function shareEvent(input: ShareDataInput): Promise<'SHARED' | 'COP
         await navigator.share({
           title,
           text: message,
-
         });
         return 'SHARED';
       } catch (err) {

@@ -2,11 +2,13 @@
  * ============================================================================
  * GERADOR DINÂMICO DE CARD OPEN GRAPH (app/opengraph-image.tsx)
  * ============================================================================
- * Gera a imagem de 1200x630 pixels utilizada nos compartilhamentos em redes sociais
- * e mensageiros como WhatsApp, Telegram, Facebook e Twitter.
+ * Gera a imagem oficial de 1200x630 pixels com a nova logo do Fralda Online,
+ * exibida nos compartilhamentos em redes sociais e mensageiros como WhatsApp,
+ * Telegram, Facebook e Twitter.
  */
 
 import { ImageResponse } from 'next/og';
+import { LOGO_DATA_URI } from '@/lib/logo-data';
 
 export const runtime = 'edge';
 export const alt = 'Fralda Online - Chá de Bebê, Fralda & Revelação com Pix';
@@ -29,137 +31,165 @@ export default async function Image() {
           justifyContent: 'center',
           backgroundColor: '#FAF7F2',
           backgroundImage:
-            'radial-gradient(circle at 50% 20%, rgba(197, 160, 89, 0.12), transparent 70%)',
+            'radial-gradient(circle at 50% 25%, rgba(197, 160, 89, 0.16), transparent 70%)',
           fontFamily: 'sans-serif',
           padding: '60px 40px',
+          position: 'relative',
         }}
       >
-        {/* Emblema Oficial Fralda Online */}
+        {/* Moldura sutil decorativa */}
+        <div
+          style={{
+            position: 'absolute',
+            top: '24px',
+            bottom: '24px',
+            left: '24px',
+            right: '24px',
+            border: '1px solid rgba(197, 160, 89, 0.28)',
+            borderRadius: '24px',
+          }}
+        />
+
+        {/* Emblema Oficial com a Nova Logo */}
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            width: '128px',
-            height: '128px',
-            borderRadius: '32px',
+            width: '150px',
+            height: '150px',
+            borderRadius: '38px',
             backgroundColor: '#FFFFFF',
-            border: '2px solid #E5E7EB',
-            boxShadow: '0 8px 30px rgba(28, 25, 23, 0.08)',
-            marginBottom: '32px',
+            border: '2px solid rgba(229, 231, 235, 0.9)',
+            boxShadow: '0 16px 45px rgba(28, 25, 23, 0.08)',
+            marginBottom: '24px',
             overflow: 'hidden',
-            padding: '10px',
+            padding: '12px',
           }}
         >
-          <svg
-            viewBox="0 0 500 500"
-            width="108"
-            height="108"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <defs>
-              <clipPath id="og-globe-clip">
-                <circle cx="0" cy="95" r="75" />
-              </clipPath>
-            </defs>
-
-            <g transform="translate(250, 250) rotate(45)">
-              <path
-                d="M -30,-45 C -45,-80 -55,-130 0,-155 C 55,-130 45,-80 30,-45 Z"
-                fill="#FFFFFF"
-                stroke="#111111"
-                strokeWidth="16"
-                strokeLinejoin="round"
-                strokeLinecap="round"
-              />
-              <path
-                d="M -12,-140 C -26,-125 -28,-105 -24,-90"
-                fill="none"
-                stroke="#111111"
-                strokeWidth="8"
-                strokeLinecap="round"
-              />
-              <rect
-                x="-95"
-                y="-45"
-                width="190"
-                height="46"
-                rx="23"
-                fill="#D1D5DB"
-                stroke="#111111"
-                strokeWidth="16"
-                strokeLinejoin="round"
-              />
-              <rect
-                x="-24"
-                y="0"
-                width="48"
-                height="28"
-                rx="6"
-                fill="#6B7280"
-                stroke="#111111"
-                strokeWidth="14"
-                strokeLinejoin="round"
-              />
-              <circle cx="0" cy="95" r="85" fill="none" stroke="#111111" strokeWidth="14" />
-              <circle cx="0" cy="95" r="75" fill="#FFFFFF" stroke="#111111" strokeWidth="14" />
-              <g clipPath="url(#og-globe-clip)" stroke="#111111" strokeWidth="10" fill="none">
-                <line x1="0" y1="20" x2="0" y2="170" />
-                <line x1="-75" y1="95" x2="75" y2="95" />
-                <line x1="-65" y1="65" x2="65" y2="65" />
-                <line x1="-65" y1="125" x2="65" y2="125" />
-                <ellipse cx="0" cy="95" rx="42" ry="75" />
-              </g>
-              <path
-                d="M -68,148 A 86 86 0 0 0 25,180"
-                fill="none"
-                stroke="#111111"
-                strokeWidth="12"
-                strokeLinecap="round"
-              />
-            </g>
-          </svg>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={LOGO_DATA_URI}
+            width="126"
+            height="126"
+            style={{ objectFit: 'contain' }}
+            alt="Fralda Online"
+          />
         </div>
 
         {/* Nome da Marca */}
         <div
           style={{
-            fontSize: '64px',
-            fontWeight: '600',
+            fontSize: '66px',
+            fontWeight: '700',
             color: '#1C1917',
             letterSpacing: '-0.03em',
-            marginBottom: '12px',
+            marginBottom: '10px',
+            lineHeight: 1,
           }}
         >
           Fralda Online
         </div>
 
-        {/* Subtítulo Tagline */}
+        {/* Subtítulo Tagline em Pill Dourada */}
         <div
           style={{
-            fontSize: '22px',
-            fontWeight: '600',
-            color: '#C5A059',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '17px',
+            fontWeight: '700',
+            color: '#9A7328',
+            backgroundColor: 'rgba(197, 160, 89, 0.14)',
+            border: '1px solid rgba(197, 160, 89, 0.3)',
+            borderRadius: '9999px',
+            padding: '6px 22px',
             textTransform: 'uppercase',
-            letterSpacing: '0.25em',
-            marginBottom: '24px',
+            letterSpacing: '0.22em',
+            marginBottom: '22px',
           }}
         >
-          Chá de Bebê, Fralda &amp; Revelação
+          Chá de Bebê • Fralda • Revelação
         </div>
 
-        {/* Descrição de Valor */}
+        {/* Descrição de Valor Afetuosa */}
         <div
           style={{
-            fontSize: '24px',
+            fontSize: '23px',
             color: '#57534E',
-            maxWidth: '800px',
+            maxWidth: '820px',
             textAlign: 'center',
-            lineHeight: 1.4,
+            lineHeight: 1.45,
+            marginBottom: '32px',
           }}
         >
-          A plataforma elegante para receber fraldas em dinheiro via Pix e engajar amigos e familiares com o bolão.
+          A plataforma elegante para receber presentes em dinheiro via Pix e engajar amigos e familiares com o bolão do bebê.
+        </div>
+
+        {/* Badges de Destaque */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '16px',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              backgroundColor: '#FFFFFF',
+              border: '1px solid #E7E5E4',
+              borderRadius: '12px',
+              padding: '10px 18px',
+              fontSize: '16px',
+              fontWeight: '600',
+              color: '#292524',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+            }}
+          >
+            <span>⚡</span>
+            <span>Pix Direto na Conta</span>
+          </div>
+
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              backgroundColor: '#FFFFFF',
+              border: '1px solid #E7E5E4',
+              borderRadius: '12px',
+              padding: '10px 18px',
+              fontSize: '16px',
+              fontWeight: '600',
+              color: '#292524',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+            }}
+          >
+            <span>🎉</span>
+            <span>Bolão Menino ou Menina</span>
+          </div>
+
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              backgroundColor: '#FFFFFF',
+              border: '1px solid #E7E5E4',
+              borderRadius: '12px',
+              padding: '10px 18px',
+              fontSize: '16px',
+              fontWeight: '600',
+              color: '#292524',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+            }}
+          >
+            <span>💌</span>
+            <span>Mural de Recados</span>
+          </div>
         </div>
       </div>
     ),

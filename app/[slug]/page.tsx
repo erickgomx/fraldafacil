@@ -6,8 +6,8 @@
  *
  * Funcionalidades:
  * - Geração dinâmica de metadados OpenGraph (`generateMetadata`) para que,
- *   ao colar o link no WhatsApp, apareça o card com a foto do casal, título do chá
- *   ou anúncio do sexo do bebê ("É Menino!" / "É Menina!").
+ *   ao colar o link no WhatsApp, apareça o card com a foto do casal ou a nova
+ *   logo oficial da plataforma, título do chá e status de revelação.
  * - Carregamento otimizado de presentes e livro de recados no Server Component.
  * - Suporta 404 instantâneo (`notFound()`) caso o slug não exista.
  */
@@ -45,20 +45,44 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title = `Chá de ${event.babyName} (${event.parentsNames}) - Fralda Online`;
   }
 
-  const ogImages = event.coverImageUrl ? [event.coverImageUrl] : ['/opengraph-image'];
+  const ogImages = event.coverImageUrl
+    ? [
+        {
+          url: event.coverImageUrl,
+          width: 1200,
+          height: 630,
+          alt: title,
+        },
+      ]
+    : [
+        {
+          url: '/opengraph-image',
+          width: 1200,
+          height: 630,
+          alt: title,
+        },
+      ];
+
+  const description =
+    event.storyMessage ||
+    'Acesse nossa página para ver a lista de presentes de fraldas via Pix e deixar seu recado de carinho!';
 
   return {
     title,
-    description: event.storyMessage || 'Contribua com fraldas e participe do bolão!',
+    description,
     openGraph: {
       title,
-      description: event.storyMessage || 'Contribua com fraldas e participe do bolão!',
+      description,
+      url: `/${event.slug}`,
+      siteName: 'Fralda Online',
+      locale: 'pt_BR',
+      type: 'website',
       images: ogImages,
     },
     twitter: {
       card: 'summary_large_image',
       title,
-      description: event.storyMessage || 'Contribua com fraldas e participe do bolão!',
+      description,
       images: ogImages,
     },
   };

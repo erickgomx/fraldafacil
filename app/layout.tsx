@@ -67,12 +67,28 @@ export const metadata: Metadata = {
     siteName: 'Fralda Online',
     locale: 'pt_BR',
     type: 'website',
+    images: [
+      {
+        url: '/opengraph-image',
+        width: 1200,
+        height: 630,
+        alt: 'Fralda Online — Chá de Bebê, Fralda & Revelação com Pix',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Fralda Online — Chá de Bebê, Fralda & Revelação com Pix',
     description:
       'A plataforma elegante para futuros pais receberem fraldas em dinheiro via Pix e engajarem a família com o bolão do bebê.',
+    images: [
+      {
+        url: '/opengraph-image',
+        width: 1200,
+        height: 630,
+        alt: 'Fralda Online — Chá de Bebê, Fralda & Revelação com Pix',
+      },
+    ],
   },
 };
 

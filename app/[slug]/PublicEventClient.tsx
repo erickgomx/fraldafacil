@@ -79,6 +79,7 @@ export default function PublicEventClient({
       boyName: event.boyName,
       girlName: event.girlName,
       eventType: event.eventType,
+      revealedGender: event.revealedGender,
     });
     if (res !== 'CANCELLED') {
       setCopiedLink(true);
