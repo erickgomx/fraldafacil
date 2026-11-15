@@ -5,6 +5,7 @@ import { approveOrder, rejectOrder } from '@/lib/orders';
 import { decryptSecret } from '@/lib/crypto';
 
 export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
 
 function verifyWebhookSignature(
   xSignature: string | null,

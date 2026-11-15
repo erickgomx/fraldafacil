@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import {
   X,
@@ -363,6 +363,73 @@ export default function PixCheckoutModal({
       setCardProcessing(false);
     }
   };
+
+  // Referência e props estabilizadas para evitar que o CardPayment Brick desmonte/recarregue a cada re-render
+  const cardSubmitRef = useRef(handleCardBrickSubmit);
+  cardSubmitRef.current = handleCardBrickSubmit;
+
+  const stableCardOnSubmit = useCallback(
+    (formData: ICardPaymentFormData<ICardPaymentBrickPayer>) => cardSubmitRef.current(formData),
+    []
+  );
+
+  const stableCardOnReady = useCallback(() => {
+    setCardBrickReady(true);
+  }, []);
+
+  const stableCardOnError = useCallback((brickError: unknown) => {
+    console.error('Erro no CardPayment Brick:', brickError);
+    setCardBrickReady(true);
+    setError('Falha ao carregar formulário de cartão. Tente novamente ou use Pix.');
+  }, []);
+
+  const cardInitialization = useMemo(() => {
+    const cleanCpf = cleanDigits(payerCpf);
+    const hasEmail = isIdentified && isValidEmail(payerEmail);
+    const hasCpf = isIdentified && cleanCpf.length === 11;
+
+    return {
+      amount: feeCalculation.chargeAmount,
+      ...(hasEmail || hasCpf
+        ? {
+            payer: {
+              ...(hasEmail ? { email: payerEmail.trim() } : {}),
+              ...(hasCpf
+                ? {
+                    identification: {
+                      type: 'CPF',
+                      number: cleanCpf,
+                    },
+                  }
+                : {}),
+            },
+          }
+        : {}),
+    };
+  }, [feeCalculation.chargeAmount, isIdentified, payerEmail, payerCpf]);
+
+  const cardCustomization = useMemo(
+    () => ({
+      paymentMethods: {
+        minInstallments: 1,
+        maxInstallments: 12,
+      },
+      visual: {
+        hideFormTitle: true,
+      },
+    }),
+    []
+  );
+
+  useEffect(() => {
+    if (step !== 'CARD_BRICK' || !hasPublicKey || cardBrickReady) return;
+    const timeout = setTimeout(() => {
+      setError(
+        'O formulário de cartão demorou para responder. Verifique se há bloqueador de anúncios ativo ou utilize o Pix.'
+      );
+    }, 15000);
+    return () => clearTimeout(timeout);
+  }, [step, hasPublicKey, cardBrickReady]);
 
   const handleManualCheck = () => {
     checkStatus(true);
@@ -821,48 +888,19 @@ export default function PixCheckoutModal({
                 )}
 
                 {!cardBrickReady && (
-                  <div className="flex flex-col items-center justify-center py-12 text-xs text-charcoal-500">
+                  <div className="absolute inset-0 z-10 bg-white flex flex-col items-center justify-center py-12 text-xs text-charcoal-500">
                     <Loader2 className="w-6 h-6 animate-spin text-charcoal-400 mb-2" />
                     <span>Carregando formulário seguro do Mercado Pago...</span>
                   </div>
                 )}
 
-                <div className={cardBrickReady ? 'block' : 'opacity-0 h-0 overflow-hidden'}>
+                <div className={cardBrickReady ? 'opacity-100' : 'opacity-0 pointer-events-none'}>
                   <CardPayment
-                    initialization={{
-                      amount: feeCalculation.chargeAmount,
-                      ...(isIdentified &&
-                      (isValidEmail(payerEmail) || cleanDigits(payerCpf).length === 11)
-                        ? {
-                            payer: {
-                              ...(isValidEmail(payerEmail) ? { email: payerEmail.trim() } : {}),
-                              ...(cleanDigits(payerCpf).length === 11
-                                ? {
-                                    identification: {
-                                      type: 'CPF',
-                                      number: cleanDigits(payerCpf),
-                                    },
-                                  }
-                                : {}),
-                            },
-                          }
-                        : {}),
-                    }}
-                    customization={{
-                      paymentMethods: {
-                        minInstallments: 1,
-                        maxInstallments: 12,
-                      },
-                      visual: {
-                        hideFormTitle: true,
-                      },
-                    }}
-                    onSubmit={handleCardBrickSubmit}
-                    onReady={() => setCardBrickReady(true)}
-                    onError={(brickError) => {
-                      console.error('Erro no CardPayment Brick:', brickError);
-                      setError('Falha ao carregar formulário de cartão. Tente novamente ou use Pix.');
-                    }}
+                    initialization={cardInitialization}
+                    customization={cardCustomization}
+                    onSubmit={stableCardOnSubmit}
+                    onReady={stableCardOnReady}
+                    onError={stableCardOnError}
                   />
                 </div>
               </div>

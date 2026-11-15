@@ -4,6 +4,7 @@ import { approveOrder, rejectOrder } from '@/lib/orders';
 import { decryptSecret } from '@/lib/crypto';
 
 export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
 
 // Cache em memória de curto prazo para evitar chamadas redundantes à API do Mercado Pago
 // durante polling automático frequente (máximo 1 chamada a cada 2.5s por pedido)
@@ -50,8 +51,8 @@ export async function GET(
 
     let currentStatus = order.status;
 
-    // Se ainda estiver PENDING e houver ID do Mercado Pago, consulta status ativo no MP
-    if (currentStatus === 'PENDING' && order.mpPaymentId) {
+    // Se ainda estiver PENDING, consulta status ativo no Mercado Pago (sem cache)
+    if (currentStatus === 'PENDING') {
       const now = Date.now();
       const lastCheck = lastMpCheckMap.get(order.id) || 0;
       const shouldCheckMp = isForced || now - lastCheck >= 2500;
@@ -69,21 +70,65 @@ export async function GET(
         );
         const uniqueTokens = Array.from(new Set(candidateTokens));
 
-        const cleanPaymentId = String(order.mpPaymentId).trim();
-        let paymentInfo: { status?: string } | null = null;
+        let cleanPaymentId = order.mpPaymentId ? String(order.mpPaymentId).trim() : null;
+        let paymentInfo: { id?: string | number; status?: string } | null = null;
 
-        for (const token of uniqueTokens) {
-          try {
-            const { MercadoPagoConfig, Payment } = await import('mercadopago');
-            const client = new MercadoPagoConfig({ accessToken: token });
-            const paymentApi = new Payment(client);
-            const res = await paymentApi.get({ id: cleanPaymentId });
-            if (res && res.status) {
-              paymentInfo = res;
-              break;
+        // 1. Consulta direta pelo mpPaymentId com cache: 'no-store' para evitar Data Cache do Next.js
+        if (cleanPaymentId) {
+          for (const token of uniqueTokens) {
+            try {
+              const mpRes = await fetch(
+                `https://api.mercadopago.com/v1/payments/${encodeURIComponent(cleanPaymentId)}`,
+                {
+                  method: 'GET',
+                  headers: { Authorization: `Bearer ${token}` },
+                  cache: 'no-store',
+                }
+              );
+              if (mpRes.ok) {
+                const data = (await mpRes.json()) as { id?: string | number; status?: string };
+                if (data && data.status) {
+                  paymentInfo = data;
+                  break;
+                }
+              }
+            } catch (err: unknown) {
+              console.warn('[Order Check] Falha ao consultar pagamento por ID no Mercado Pago:', err);
             }
-          } catch (err: unknown) {
-            console.warn(`[Order Check] Falha ao consultar status com token no Mercado Pago:`, err);
+          }
+        }
+
+        // 2. Fallback: busca por external_reference (= order.id) se não houver mpPaymentId ou falhar a consulta direta
+        if (!paymentInfo) {
+          for (const token of uniqueTokens) {
+            try {
+              const searchRes = await fetch(
+                `https://api.mercadopago.com/v1/payments/search?external_reference=${encodeURIComponent(order.id)}&sort=date_created&criteria=desc`,
+                {
+                  method: 'GET',
+                  headers: { Authorization: `Bearer ${token}` },
+                  cache: 'no-store',
+                }
+              );
+              if (searchRes.ok) {
+                const searchData = (await searchRes.json()) as {
+                  results?: Array<{ id?: string | number; status?: string }>;
+                };
+                if (searchData?.results && searchData.results.length > 0) {
+                  paymentInfo = searchData.results[0];
+                  if (paymentInfo.id && !cleanPaymentId) {
+                    cleanPaymentId = String(paymentInfo.id);
+                    await prisma.order.update({
+                      where: { id: order.id },
+                      data: { mpPaymentId: cleanPaymentId },
+                    });
+                  }
+                  break;
+                }
+              }
+            } catch (err: unknown) {
+              console.warn('[Order Check] Falha ao buscar pagamento por external_reference:', err);
+            }
           }
         }
 
