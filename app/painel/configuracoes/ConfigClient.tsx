@@ -11,7 +11,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import {
   Save,
   CheckCircle2,
@@ -21,6 +21,7 @@ import {
   CreditCard,
   QrCode,
   ArrowRight,
+  Loader2,
 } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
@@ -98,50 +99,99 @@ export default function ConfigClient({ event }: ConfigClientProps) {
     }
   }, [searchParams]);
 
+  const currentPayload = useMemo(
+    () => ({
+      id: event.id,
+      parentsNames,
+      babyName: noNameYet
+        ? null
+        : babyName.trim() || (boyName && girlName ? `${boyName.trim()} ou ${girlName.trim()}` : null),
+      boyName: noNameYet ? null : boyName.trim() || null,
+      girlName: noNameYet ? null : girlName.trim() || null,
+      eventDate: eventDate || undefined,
+      storyMessage,
+      pixKey,
+      feePayer,
+      ...(!isRaffleLocked && {
+        raffleEnabled,
+        rafflePrize: raffleEnabled ? rafflePrize : null,
+      }),
+    }),
+    [
+      event.id,
+      parentsNames,
+      noNameYet,
+      babyName,
+      boyName,
+      girlName,
+      eventDate,
+      storyMessage,
+      pixKey,
+      feePayer,
+      isRaffleLocked,
+      raffleEnabled,
+      rafflePrize,
+    ]
+  );
+
+  const serializedPayload = useMemo(() => JSON.stringify(currentPayload), [currentPayload]);
+  const lastSavedPayloadRef = useRef<string>(serializedPayload);
+  const hasUnsavedChanges = serializedPayload !== lastSavedPayloadRef.current;
+
+  const saveChanges = useCallback(
+    async (payloadToSave = currentPayload, serialized = serializedPayload) => {
+      if (!payloadToSave.parentsNames || !payloadToSave.parentsNames.trim()) {
+        setError('O nome dos pais é obrigatório.');
+        return;
+      }
+
+      setLoading(true);
+      setError('');
+
+      try {
+        const res = await fetch('/api/events', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: serialized,
+        });
+
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.error || 'Erro ao salvar alterações.');
+        }
+
+        lastSavedPayloadRef.current = serialized;
+        setSuccess(true);
+        setTimeout(() => setSuccess(false), 3000);
+        router.refresh();
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError('Ocorreu um erro.');
+        }
+      } finally {
+        setLoading(false);
+      }
+    },
+    [currentPayload, serializedPayload, router]
+  );
+
+  // Salvamento automático (debounced) sempre que houver alterações válidas
+  useEffect(() => {
+    if (!hasUnsavedChanges) return;
+    if (!currentPayload.parentsNames || !currentPayload.parentsNames.trim()) return;
+
+    const timer = setTimeout(() => {
+      void saveChanges(currentPayload, serializedPayload);
+    }, 700);
+
+    return () => clearTimeout(timer);
+  }, [hasUnsavedChanges, currentPayload, serializedPayload, saveChanges]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setError('');
-    setSuccess(false);
-
-    try {
-      const res = await fetch('/api/events', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: event.id,
-          parentsNames,
-          babyName: noNameYet ? null : (babyName.trim() || (boyName && girlName ? `${boyName.trim()} ou ${girlName.trim()}` : null)),
-          boyName: noNameYet ? null : (boyName.trim() || null),
-          girlName: noNameYet ? null : (girlName.trim() || null),
-          eventDate: eventDate || undefined,
-          storyMessage,
-          pixKey,
-          feePayer,
-          ...(!isRaffleLocked && {
-            raffleEnabled,
-            rafflePrize: raffleEnabled ? rafflePrize : null,
-          }),
-        }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Erro ao salvar alterações.');
-      }
-
-      setSuccess(true);
-      setTimeout(() => setSuccess(false), 3000);
-      router.refresh();
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError('Ocorreu um erro.');
-      }
-    } finally {
-      setLoading(false);
-    }
+    await saveChanges(currentPayload, serializedPayload);
   };
 
   const handleDisconnectMP = async () => {
@@ -168,13 +218,47 @@ export default function ConfigClient({ event }: ConfigClientProps) {
 
   return (
     <div className="max-w-2xl space-y-6">
-      <div className="pb-4 border-b border-warm-border">
-        <h1 className="font-serif text-2xl text-charcoal-900 font-medium">
-          Configurações do Chá
-        </h1>
-        <p className="text-xs text-charcoal-500 mt-1 font-sans">
-          Gerencie a conta recebedora do Mercado Pago, regras de taxas e informações da página pública.
-        </p>
+      <div className="sticky top-0 z-20 bg-cream-50/95 backdrop-blur-sm py-3 -mx-2 px-2 border-b border-warm-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h1 className="font-serif text-2xl text-charcoal-900 font-medium">
+            Configurações do Chá
+          </h1>
+          <p className="text-xs text-charcoal-500 mt-0.5 font-sans">
+            As alterações são salvas automaticamente ou pelo botão ao lado.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2.5 shrink-0">
+          {loading ? (
+            <span className="text-[11px] font-mono text-charcoal-500 flex items-center gap-1.5">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              Salvando...
+            </span>
+          ) : success ? (
+            <span className="text-[11px] font-mono text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full flex items-center gap-1">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              Salvo
+            </span>
+          ) : hasUnsavedChanges ? (
+            <span className="text-[11px] font-mono text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-full">
+              Alterações pendentes
+            </span>
+          ) : (
+            <span className="text-[11px] font-mono text-charcoal-400">
+              Tudo salvo
+            </span>
+          )}
+
+          <button
+            type="button"
+            onClick={() => void saveChanges()}
+            disabled={loading || !hasUnsavedChanges}
+            className="py-2 px-4 rounded-lg font-medium text-xs bg-charcoal-900 text-white hover:bg-charcoal-800 shadow-subtle transition flex items-center gap-1.5 disabled:opacity-50"
+          >
+            <Save className="w-3.5 h-3.5" />
+            <span>{loading ? 'Salvando...' : 'Salvar'}</span>
+          </button>
+        </div>
       </div>
 
       {oauthNotice && (
