@@ -397,6 +397,17 @@ html.dark section.bg-charcoal-900 a.bg-white\/10 {
   }
 }
 
+/* Garante que inputs nativos de data/hora não estourem a largura no iOS Safari */
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"] {
+  -webkit-appearance: none;
+  appearance: none;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
 /* Inputs, Textareas e Seletores */
 html.dark input,
 html.dark textarea,

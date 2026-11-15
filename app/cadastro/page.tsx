@@ -365,17 +365,17 @@ export default function RegisterPage() {
             </div>
 
             {/* Data Prevista */}
-            <div>
+            <div className="min-w-0">
               <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
                 Data do Evento (Opcional)
               </label>
-              <div className="relative">
-                <Calendar className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-charcoal-400" />
+              <div className="relative w-full min-w-0 overflow-hidden rounded-lg">
+                <Calendar className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-charcoal-400 pointer-events-none z-10" />
                 <input
                   type="date"
                   value={eventDate}
                   onChange={(e) => setEventDate(e.target.value)}
-                  className="w-full pl-9 pr-3.5 py-2.5 rounded-lg border border-warm-border bg-cream-50/50 text-charcoal-900 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-charcoal-900"
+                  className="block w-full min-w-0 max-w-full box-border appearance-none pl-9 pr-3.5 py-2.5 min-h-[42px] rounded-lg border border-warm-border bg-cream-50/50 text-charcoal-900 text-xs text-left focus:bg-white focus:outline-none focus:ring-1 focus:ring-charcoal-900"
                 />
               </div>
             </div>
