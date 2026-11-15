@@ -4,6 +4,7 @@ import prisma from '@/lib/prisma';
 import { approveOrder, rejectOrder } from '@/lib/orders';
 import { cardStatusMessage, createCardPayment, hasMercadoPagoToken } from '@/lib/mercadopago';
 import { calculatePaymentFees } from '@/lib/fees';
+import { isValidEmail } from '@/lib/validation';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,9 +34,17 @@ export async function POST(req: NextRequest) {
       idempotencyKey,
     } = body ?? {};
 
-    if (!eventId || !payerName?.trim() || !payerEmail?.trim()) {
+    if (!eventId) {
       return NextResponse.json(
-        { error: 'Por favor, preencha nome, e-mail e o valor do presente.' },
+        { error: 'Por favor, informe o evento e o valor do presente.' },
+        { status: 400 }
+      );
+    }
+
+    const trimmedEmail = payerEmail?.trim() || '';
+    if (trimmedEmail && !isValidEmail(trimmedEmail)) {
+      return NextResponse.json(
+        { error: 'Por favor, informe um endereço de e-mail válido.' },
         { status: 400 }
       );
     }
@@ -107,6 +116,13 @@ export async function POST(req: NextRequest) {
       .replace(/\D/g, '')
       .slice(0, 11);
 
+    const resolvedPayerName = payerName?.trim() || 'Convidado Anônimo';
+    const resolvedPayerEmail = (
+      trimmedEmail ||
+      card?.payer?.email?.trim() ||
+      'convidado@fralda.online'
+    ).toLowerCase();
+
     const order = await prisma.order.create({
       data: {
         eventId,
@@ -117,8 +133,8 @@ export async function POST(req: NextRequest) {
         platformFee: feeCalc.platformFee,
         gatewayFee: feeCalc.gatewayFee,
         feePayer: feeCalc.feePayer,
-        payerName: String(payerName).trim(),
-        payerEmail: String(payerEmail).trim().toLowerCase(),
+        payerName: resolvedPayerName,
+        payerEmail: resolvedPayerEmail,
         payerPhone: payerPhone?.trim() || null,
         payerCpf: cleanCpfDigits || null,
         payerMessage: payerMessage?.trim() || null,

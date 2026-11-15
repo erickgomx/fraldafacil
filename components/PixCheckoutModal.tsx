@@ -11,6 +11,8 @@ import {
   QrCode,
   Loader2,
   AlertCircle,
+  UserPlus,
+  ChevronUp,
 } from 'lucide-react';
 import { GiftItemData } from './DiaperCatalog';
 import { CardPayment, initMercadoPago } from '@mercadopago/sdk-react';
@@ -68,6 +70,7 @@ export default function PixCheckoutModal({
   const [customAmount, setCustomAmount] = useState<string>(
     selectedGift ? String(selectedGift.price) : '50'
   );
+  const [isIdentified, setIsIdentified] = useState(false);
   const [payerName, setPayerName] = useState('');
   const [payerEmail, setPayerEmail] = useState('');
   const [payerPhone, setPayerPhone] = useState('');
@@ -117,6 +120,7 @@ export default function PixCheckoutModal({
       setPollGuess(initialGuess);
     }
     setStep('FORM');
+    setIsIdentified(false);
     setError('');
     setCardBrickReady(false);
     setCardProcessing(false);
@@ -253,24 +257,20 @@ export default function PixCheckoutModal({
       return;
     }
 
-    if (!payerName.trim()) {
-      setError('Por favor, informe seu nome completo.');
-      return;
-    }
-
-    if (!isValidEmail(payerEmail)) {
+    const trimmedEmail = isIdentified ? payerEmail.trim() : '';
+    if (trimmedEmail && !isValidEmail(trimmedEmail)) {
       setError('Por favor, informe um endereço de e-mail válido.');
       return;
     }
 
-    const digitsCpf = cleanDigits(payerCpf);
-    if (!digitsCpf || !isValidCpf(digitsCpf)) {
-      setError('Por favor, informe um CPF válido para a identificação da transação (exigência BACEN/Mercado Pago).');
+    const digitsCpf = isIdentified ? cleanDigits(payerCpf) : '';
+    if (digitsCpf && !isValidCpf(digitsCpf)) {
+      setError('Por favor, informe um CPF válido.');
       return;
     }
 
     if (paymentMethod === 'CARD') {
-      // Se não houver chave pública configurada, permite fluxo demonstrativo simulado
+      // Avança para o Card Payment Brick do Mercado Pago
       setStep('CARD_BRICK');
       return;
     }
@@ -285,11 +285,11 @@ export default function PixCheckoutModal({
           eventId,
           giftItemId: selectedGift ? selectedGift.id : null,
           amount: finalNumericAmount,
-          payerName: payerName.trim(),
-          payerEmail: payerEmail.trim(),
-          payerPhone: payerPhone.trim() || null,
-          payerCpf: digitsCpf,
-          payerMessage: payerMessage.trim() || null,
+          payerName: isIdentified && payerName.trim() ? payerName.trim() : 'Convidado Anônimo',
+          payerEmail: trimmedEmail,
+          payerPhone: isIdentified && payerPhone.trim() ? payerPhone.trim() : null,
+          payerCpf: digitsCpf || null,
+          payerMessage: isIdentified && payerMessage.trim() ? payerMessage.trim() : null,
           pollGuess: pollGuess || null,
         }),
       });
@@ -328,11 +328,11 @@ export default function PixCheckoutModal({
           eventId,
           giftItemId: selectedGift ? selectedGift.id : null,
           amount: finalNumericAmount,
-          payerName: payerName.trim(),
-          payerEmail: payerEmail.trim(),
-          payerPhone: payerPhone.trim() || null,
-          payerCpf: cleanDigits(payerCpf),
-          payerMessage: payerMessage.trim() || null,
+          payerName: isIdentified && payerName.trim() ? payerName.trim() : 'Convidado Anônimo',
+          payerEmail: isIdentified && payerEmail.trim() ? payerEmail.trim() : '',
+          payerPhone: isIdentified && payerPhone.trim() ? payerPhone.trim() : null,
+          payerCpf: isIdentified ? cleanDigits(payerCpf) : '',
+          payerMessage: isIdentified && payerMessage.trim() ? payerMessage.trim() : null,
           pollGuess: pollGuess || null,
           card: formData,
         }),
@@ -526,126 +526,162 @@ export default function PixCheckoutModal({
                 </div>
               </div>
 
-              {/* Nome */}
-              <div>
-                <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
-                  Seu Nome *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={payerName}
-                  onChange={(e) => setPayerName(e.target.value)}
-                  placeholder="Ex: Tio Ricardo e Família"
-                  className="w-full px-3.5 py-2.5 rounded-lg border border-warm-border bg-cream-50/50 text-charcoal-900 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-charcoal-900"
-                />
-              </div>
-
-              {/* E-mail & CPF */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
-                    Seu E-mail *
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    value={payerEmail}
-                    onChange={(e) => setPayerEmail(e.target.value)}
-                    placeholder="seuemail@exemplo.com"
-                    className="w-full px-3.5 py-2.5 rounded-lg border border-warm-border bg-cream-50/50 text-charcoal-900 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-charcoal-900"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
-                    Seu CPF *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    maxLength={14}
-                    value={payerCpf}
-                    onChange={(e) => setPayerCpf(formatCpf(e.target.value))}
-                    placeholder="000.000.000-00"
-                    className="w-full px-3.5 py-2.5 rounded-lg border border-warm-border bg-cream-50/50 text-charcoal-900 text-xs font-mono focus:bg-white focus:outline-none focus:ring-1 focus:ring-charcoal-900"
-                  />
-                  <span className="text-[10px] text-charcoal-400 font-sans block mt-1">
-                    Exigido pelo Banco Central para liquidação do Pix
+              {/* Botão / Seção Opcional: Me identificar */}
+              {!isIdentified ? (
+                <button
+                  type="button"
+                  onClick={() => setIsIdentified(true)}
+                  className="w-full py-2.5 px-3.5 rounded-xl border border-dashed border-warm-border bg-cream-50/40 hover:bg-cream-100/70 text-charcoal-700 transition flex items-center justify-between gap-2 text-left"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-cream-100 text-charcoal-700 flex items-center justify-center shrink-0">
+                      <UserPlus className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <span className="block text-xs font-medium text-charcoal-900">
+                        Me identificar
+                      </span>
+                      <span className="block text-[10px] text-charcoal-500">
+                        Opcional — informe seu nome, recado ou palpite
+                      </span>
+                    </div>
+                  </div>
+                  <span className="text-[11px] font-mono uppercase text-charcoal-500 shrink-0">
+                    Opcional
                   </span>
+                </button>
+              ) : (
+                <div className="p-4 rounded-xl border border-warm-border bg-cream-50/40 space-y-4">
+                  <div className="flex items-center justify-between border-b border-warm-border/60 pb-2">
+                    <span className="text-[11px] font-mono uppercase text-charcoal-600 font-medium">
+                      Identificação (Opcional)
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setIsIdentified(false)}
+                      className="text-[11px] text-charcoal-500 hover:text-charcoal-800 flex items-center gap-1"
+                    >
+                      <ChevronUp className="w-3.5 h-3.5" />
+                      <span>Ocultar</span>
+                    </button>
+                  </div>
+
+                  {/* Nome */}
+                  <div>
+                    <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
+                      Seu Nome
+                    </label>
+                    <input
+                      type="text"
+                      value={payerName}
+                      onChange={(e) => setPayerName(e.target.value)}
+                      placeholder="Ex: Tio Ricardo e Família"
+                      className="w-full px-3.5 py-2.5 rounded-lg border border-warm-border bg-white text-charcoal-900 text-xs focus:outline-none focus:ring-1 focus:ring-charcoal-900"
+                    />
+                  </div>
+
+                  {/* E-mail & CPF */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
+                        Seu E-mail
+                      </label>
+                      <input
+                        type="email"
+                        value={payerEmail}
+                        onChange={(e) => setPayerEmail(e.target.value)}
+                        placeholder="seuemail@exemplo.com"
+                        className="w-full px-3.5 py-2.5 rounded-lg border border-warm-border bg-white text-charcoal-900 text-xs focus:outline-none focus:ring-1 focus:ring-charcoal-900"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
+                        Seu CPF
+                      </label>
+                      <input
+                        type="text"
+                        maxLength={14}
+                        value={payerCpf}
+                        onChange={(e) => setPayerCpf(formatCpf(e.target.value))}
+                        placeholder="000.000.000-00"
+                        className="w-full px-3.5 py-2.5 rounded-lg border border-warm-border bg-white text-charcoal-900 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-charcoal-900"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Telefone / WhatsApp */}
+                  <div>
+                    <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
+                      WhatsApp / Telefone
+                    </label>
+                    <input
+                      type="tel"
+                      maxLength={15}
+                      value={payerPhone}
+                      onChange={(e) => setPayerPhone(formatPhone(e.target.value))}
+                      placeholder="(11) 99999-9999"
+                      className="w-full px-3.5 py-2.5 rounded-lg border border-warm-border bg-white text-charcoal-900 text-xs focus:outline-none focus:ring-1 focus:ring-charcoal-900"
+                    />
+                  </div>
+
+                  {/* Palpite no Bolão */}
+                  <div>
+                    <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1.5">
+                      Registrar palpite no bolão com este presente:
+                    </label>
+                    <div className="grid grid-cols-3 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setPollGuess('BOY')}
+                        className={`py-2 px-2 text-xs font-medium rounded-lg border transition ${
+                          pollGuess === 'BOY'
+                            ? 'border-dusty-blue bg-dusty-blue-light text-dusty-blue'
+                            : 'border-warm-border bg-white text-charcoal-600 hover:bg-stone-50'
+                        }`}
+                      >
+                        Menino
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPollGuess('GIRL')}
+                        className={`py-2 px-2 text-xs font-medium rounded-lg border transition ${
+                          pollGuess === 'GIRL'
+                            ? 'border-dusty-rose bg-dusty-rose-light text-dusty-rose'
+                            : 'border-warm-border bg-white text-charcoal-600 hover:bg-stone-50'
+                        }`}
+                      >
+                        Menina
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPollGuess('')}
+                        className={`py-2 px-2 text-xs font-medium rounded-lg border transition ${
+                          pollGuess === ''
+                            ? 'border-charcoal-900 bg-charcoal-900 text-white'
+                            : 'border-warm-border bg-white text-charcoal-400 hover:bg-stone-50'
+                        }`}
+                      >
+                        Sem palpite
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Mensagem no Mural */}
+                  <div>
+                    <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
+                      Mensagem para os Pais (Aparece no Mural)
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={payerMessage}
+                      onChange={(e) => setPayerMessage(e.target.value)}
+                      placeholder="Escreva aqui uma mensagem carinhosa para os pais lerem..."
+                      className="w-full px-3.5 py-2.5 rounded-lg border border-warm-border bg-white text-charcoal-900 text-xs focus:outline-none focus:ring-1 focus:ring-charcoal-900 resize-none"
+                    />
+                  </div>
                 </div>
-              </div>
-
-              {/* Telefone / WhatsApp */}
-              <div>
-                <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
-                  WhatsApp / Telefone (Opcional)
-                </label>
-                <input
-                  type="tel"
-                  maxLength={15}
-                  value={payerPhone}
-                  onChange={(e) => setPayerPhone(formatPhone(e.target.value))}
-                  placeholder="(11) 99999-9999"
-                  className="w-full px-3.5 py-2.5 rounded-lg border border-warm-border bg-cream-50/50 text-charcoal-900 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-charcoal-900"
-                />
-              </div>
-
-              {/* Palpite no Bolão */}
-              <div>
-                <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1.5">
-                  Registrar palpite no bolão com este presente:
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setPollGuess('BOY')}
-                    className={`py-2 px-2 text-xs font-medium rounded-lg border transition ${
-                      pollGuess === 'BOY'
-                        ? 'border-dusty-blue bg-dusty-blue-light text-dusty-blue'
-                        : 'border-warm-border bg-white text-charcoal-600 hover:bg-stone-50'
-                    }`}
-                  >
-                    Menino
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPollGuess('GIRL')}
-                    className={`py-2 px-2 text-xs font-medium rounded-lg border transition ${
-                      pollGuess === 'GIRL'
-                        ? 'border-dusty-rose bg-dusty-rose-light text-dusty-rose'
-                        : 'border-warm-border bg-white text-charcoal-600 hover:bg-stone-50'
-                    }`}
-                  >
-                    Menina
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPollGuess('')}
-                    className={`py-2 px-2 text-xs font-medium rounded-lg border transition ${
-                      pollGuess === ''
-                        ? 'border-charcoal-900 bg-charcoal-900 text-white'
-                        : 'border-warm-border bg-white text-charcoal-400 hover:bg-stone-50'
-                    }`}
-                  >
-                    Sem palpite
-                  </button>
-                </div>
-              </div>
-
-              {/* Mensagem no Mural */}
-              <div>
-                <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
-                  Mensagem para os Pais (Aparece no Mural)
-                </label>
-                <textarea
-                  rows={3}
-                  value={payerMessage}
-                  onChange={(e) => setPayerMessage(e.target.value)}
-                  placeholder="Escreva aqui uma mensagem carinhosa para os pais lerem..."
-                  className="w-full px-3.5 py-2.5 rounded-lg border border-warm-border bg-cream-50/50 text-charcoal-900 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-charcoal-900 resize-none"
-                />
-              </div>
+              )}
 
               <button
                 type="submit"
@@ -795,17 +831,22 @@ export default function PixCheckoutModal({
                   <CardPayment
                     initialization={{
                       amount: feeCalculation.chargeAmount,
-                      payer: {
-                        email: payerEmail,
-                        ...(cleanDigits(payerCpf)
-                          ? {
-                              identification: {
-                                type: 'CPF',
-                                number: cleanDigits(payerCpf),
-                              },
-                            }
-                          : {}),
-                      },
+                      ...(isIdentified &&
+                      (isValidEmail(payerEmail) || cleanDigits(payerCpf).length === 11)
+                        ? {
+                            payer: {
+                              ...(isValidEmail(payerEmail) ? { email: payerEmail.trim() } : {}),
+                              ...(cleanDigits(payerCpf).length === 11
+                                ? {
+                                    identification: {
+                                      type: 'CPF',
+                                      number: cleanDigits(payerCpf),
+                                    },
+                                  }
+                                : {}),
+                            },
+                          }
+                        : {}),
                     }}
                     customization={{
                       paymentMethods: {
@@ -878,7 +919,9 @@ export default function PixCheckoutModal({
             </h3>
 
             <p className="text-xs sm:text-sm text-charcoal-600 max-w-sm mx-auto mb-6 leading-relaxed font-sans">
-              Muito obrigado pelo carinho com a família! Sua mensagem já está disponível no mural de recados.
+              {isIdentified && payerMessage.trim()
+                ? 'Muito obrigado pelo carinho com a família! Sua mensagem já está disponível no mural de recados.'
+                : 'Muito obrigado pelo carinho e pelo presente para a família!'}
             </p>
 
             {raffleTicketNumber !== null && (

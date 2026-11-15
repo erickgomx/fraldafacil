@@ -21,28 +21,32 @@ export async function POST(req: NextRequest) {
       pollGuess,
     } = body;
 
-    if (!eventId || !amount || !payerName?.trim() || !payerEmail?.trim()) {
+    if (!eventId || !amount) {
       return NextResponse.json(
-        { error: 'Por favor, preencha nome, e-mail e o valor do presente.' },
+        { error: 'Por favor, informe o evento e o valor do presente.' },
         { status: 400 }
       );
     }
 
-    if (!isValidEmail(payerEmail)) {
+    const trimmedEmail = payerEmail?.trim() || '';
+    if (trimmedEmail && !isValidEmail(trimmedEmail)) {
       return NextResponse.json(
         { error: 'Por favor, informe um endereço de e-mail válido.' },
         { status: 400 }
       );
     }
 
-    // Validação de CPF (Obrigatório pelo Banco Central e Mercado Pago para emissão de Pix)
+    // CPF opcional: valida apenas se o convidado optar por informar
     const digitsCpf = cleanDigits(payerCpf);
-    if (!digitsCpf || !isValidCpf(digitsCpf)) {
+    if (digitsCpf && !isValidCpf(digitsCpf)) {
       return NextResponse.json(
-        { error: 'Por favor, informe um CPF válido para a emissão segura do Pix.' },
+        { error: 'Por favor, informe um CPF válido.' },
         { status: 400 }
       );
     }
+
+    const resolvedPayerName = payerName?.trim() || 'Convidado Anônimo';
+    const resolvedPayerEmail = (trimmedEmail || 'convidado@fralda.online').toLowerCase();
 
     const numAmount = Number(amount);
     if (isNaN(numAmount) || numAmount < 1) {
@@ -97,10 +101,10 @@ export async function POST(req: NextRequest) {
         platformFee: feeCalc.platformFee,
         gatewayFee: feeCalc.gatewayFee,
         feePayer: feeCalc.feePayer,
-        payerName: payerName.trim(),
-        payerEmail: payerEmail.trim().toLowerCase(),
+        payerName: resolvedPayerName,
+        payerEmail: resolvedPayerEmail,
         payerPhone: payerPhone?.trim() || null,
-        payerCpf: digitsCpf,
+        payerCpf: digitsCpf || null,
         payerMessage: payerMessage?.trim() || null,
         pollGuess: pollGuess === 'BOY' || pollGuess === 'GIRL' ? pollGuess : null,
         paymentMethod: 'PIX',
@@ -115,7 +119,7 @@ export async function POST(req: NextRequest) {
       description: `${giftTitle} - ${event.parentsNames}`,
       payerEmail: order.payerEmail,
       payerName: order.payerName,
-      payerCpf: digitsCpf,
+      payerCpf: digitsCpf || null,
       sellerAccessToken: event.mpAccessToken || null,
       applicationFee: feeCalc.platformFee,
     });
