@@ -103,24 +103,32 @@ export default function PixCheckoutModal({
       spread: 60,
       origin: { y: 0.6 },
     });
-    if (onPaymentSuccess) {
+  }, []);
+
+  const handleClose = useCallback(() => {
+    if (step === 'SUCCESS' && onPaymentSuccess) {
       onPaymentSuccess();
     }
-  }, [onPaymentSuccess]);
+    onClose();
+  }, [step, onPaymentSuccess, onClose]);
 
   useEffect(() => {
     ensureMercadoPagoInitialized();
   }, []);
 
+  const wasOpenRef = useRef(false);
   useEffect(() => {
+    const justOpened = isOpen && !wasOpenRef.current;
+    wasOpenRef.current = isOpen;
+
+    if (!justOpened) return;
+
     if (selectedGift) {
       setCustomAmount(String(selectedGift.price));
     } else {
       setCustomAmount('50');
     }
-    if (initialGuess) {
-      setPollGuess(initialGuess);
-    }
+    setPollGuess(initialGuess || '');
     setStep('FORM');
     setIsIdentified(false);
     setError('');
@@ -447,7 +455,7 @@ export default function PixCheckoutModal({
       <div className="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-elevated border border-warm-border relative">
         {/* Botão Fechar */}
         <button
-          onClick={onClose}
+          onClick={handleClose}
           className="absolute top-4 right-4 z-10 w-8 h-8 rounded-lg bg-cream-100 hover:bg-cream-200 text-charcoal-600 flex items-center justify-center transition"
           aria-label="Fechar"
         >
@@ -961,21 +969,24 @@ export default function PixCheckoutModal({
             </p>
 
             {raffleTicketNumber !== null && (
-              <div className="mb-6 mx-auto max-w-xs rounded-xl bg-cream-50 border border-warm-border p-4">
+              <div className="mb-6 mx-auto max-w-xs rounded-xl bg-cream-50 border-2 border-terracotta/40 p-4 shadow-subtle">
                 <span className="text-[10px] font-mono uppercase tracking-widest text-terracotta block mb-1">
                   Seu Número da Sorte
                 </span>
-                <strong className="font-serif text-2xl font-semibold text-charcoal-900 tabular-nums">
+                <strong className="font-serif text-3xl font-semibold text-charcoal-900 tabular-nums block my-1">
                   Nº #{String(raffleTicketNumber).padStart(3, '0')}
                 </strong>
-                <p className="text-[11px] text-charcoal-500 mt-1 font-sans">
+                <p className="text-[11px] text-charcoal-600 mt-1 font-sans">
                   Você já está concorrendo ao sorteio do chá!
                 </p>
+                <div className="mt-3 pt-2.5 border-t border-warm-border/70 text-[11px] font-medium text-terracotta font-sans">
+                  Guarde este número ou tire um print desta tela para acompanhar o sorteio.
+                </div>
               </div>
             )}
 
             <button
-              onClick={onClose}
+              onClick={handleClose}
               className="py-2.5 px-6 rounded-lg font-medium text-xs bg-charcoal-900 text-white hover:bg-charcoal-800 transition shadow-subtle"
             >
               Voltar à página do Chá
