@@ -18,6 +18,8 @@ import {
   Check,
   Share2,
   MessageCircle,
+  Ticket,
+  Trophy,
 } from 'lucide-react';
 import Link from 'next/link';
 import { shareEvent, buildSharePayload } from '@/lib/share';
@@ -35,6 +37,11 @@ interface DashboardClientProps {
     pixKey: string | null;
     mpConnected?: boolean;
     feePayer?: 'GUEST' | 'PARENTS';
+    raffleEnabled?: boolean;
+    rafflePrize?: string | null;
+    raffleWinnerName?: string | null;
+    raffleWinnerTicket?: number | null;
+    raffleDrawnAt?: string | null;
   };
   metrics: {
     totalGross: number;
@@ -46,12 +53,14 @@ interface DashboardClientProps {
     totalVotes: number;
     boyPercent: number;
     girlPercent: number;
+    raffleParticipantsCount?: number;
   };
   recentOrders: Array<{
     id: string;
     amount: number;
     payerName: string;
     pollGuess: string | null;
+    raffleTicketNumber?: number | null;
     createdAt: string;
     payerMessage: string | null;
   }>;
@@ -65,6 +74,54 @@ export default function DashboardClient({
   const [revealed, setRevealed] = useState<string | null>(event.revealedGender);
   const [loadingGender, setLoadingGender] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+
+  const [raffleWinner, setRaffleWinner] = useState<{
+    name: string;
+    ticketNumber: number;
+    drawnAt: string;
+  } | null>(
+    event.raffleDrawnAt && event.raffleWinnerName && event.raffleWinnerTicket
+      ? {
+          name: event.raffleWinnerName,
+          ticketNumber: event.raffleWinnerTicket,
+          drawnAt: event.raffleDrawnAt,
+        }
+      : null
+  );
+  const [confirmDraw, setConfirmDraw] = useState(false);
+  const [drawingRaffle, setDrawingRaffle] = useState(false);
+  const [raffleError, setRaffleError] = useState('');
+
+  const handleDrawRaffle = async () => {
+    setDrawingRaffle(true);
+    setRaffleError('');
+    try {
+      const res = await fetch('/api/events/raffle/draw', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ eventId: event.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Não foi possível realizar o sorteio.');
+      }
+      setRaffleWinner({
+        name: data.winner.name,
+        ticketNumber: data.winner.ticketNumber,
+        drawnAt: data.winner.drawnAt,
+      });
+      setConfirmDraw(false);
+      confetti({
+        particleCount: 110,
+        spread: 85,
+        colors: ['#C2765B', '#4A6B82', '#B86B77', '#FAF8F5'],
+      });
+    } catch (err: unknown) {
+      setRaffleError(err instanceof Error ? err.message : 'Erro ao sortear.');
+    } finally {
+      setDrawingRaffle(false);
+    }
+  };
 
   const handleRevealGender = async (gender: 'BOY' | 'GIRL' | null) => {
     setLoadingGender(true);
@@ -355,6 +412,87 @@ export default function DashboardClient({
         </div>
       </div>
 
+      {/* SORTEIO DO CHÁ (QUANDO ATIVADO PELOS PAIS) */}
+      {event.raffleEnabled && (
+        <div className="bg-white rounded-xl p-6 sm:p-8 border border-warm-border shadow-subtle">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <span className="text-[10px] font-mono uppercase tracking-widest text-terracotta block mb-1">
+                Sorteio entre Presenteadores
+              </span>
+              <h2 className="font-serif text-lg font-normal text-charcoal-900 flex items-center gap-2">
+                <Ticket className="w-4 h-4 text-terracotta" />
+                <span>{event.rafflePrize ? `Prêmio: ${event.rafflePrize}` : 'Sorteio do Chá'}</span>
+              </h2>
+              <p className="text-xs text-charcoal-500 mt-1 font-sans">
+                {raffleWinner
+                  ? 'Sorteio realizado. O resultado é definitivo e já aparece na página pública.'
+                  : `${metrics.raffleParticipantsCount ?? 0} participante(s) com Número da Sorte confirmado.`}
+              </p>
+            </div>
+
+            {!raffleWinner && (
+              <div className="shrink-0">
+                {!confirmDraw ? (
+                  <button
+                    type="button"
+                    disabled={!metrics.raffleParticipantsCount}
+                    onClick={() => setConfirmDraw(true)}
+                    className="py-2.5 px-4 rounded-lg text-xs font-semibold bg-charcoal-900 text-white hover:bg-charcoal-800 disabled:opacity-40 disabled:cursor-not-allowed transition shadow-subtle"
+                  >
+                    Realizar Sorteio
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      disabled={drawingRaffle}
+                      onClick={handleDrawRaffle}
+                      className="py-2.5 px-4 rounded-lg text-xs font-semibold bg-terracotta text-white hover:opacity-90 disabled:opacity-50 transition shadow-subtle"
+                    >
+                      {drawingRaffle ? 'Sorteando...' : 'Confirmar (Definitivo)'}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={drawingRaffle}
+                      onClick={() => setConfirmDraw(false)}
+                      className="py-2.5 px-3 rounded-lg text-xs text-charcoal-500 bg-cream-100 hover:bg-cream-200 border border-warm-border transition"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {raffleError && (
+            <p className="mt-3 text-xs text-rose-600 font-sans">{raffleError}</p>
+          )}
+
+          {raffleWinner && (
+            <div className="mt-4 p-4 rounded-xl bg-cream-50 border border-warm-border flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-terracotta/10 text-terracotta flex items-center justify-center shrink-0">
+                  <Trophy className="w-5 h-5" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-charcoal-500 block">
+                    Ganhador(a) Oficial
+                  </span>
+                  <strong className="font-serif text-base font-medium text-charcoal-900">
+                    {raffleWinner.name}
+                  </strong>
+                </div>
+              </div>
+              <span className="px-3 py-1.5 rounded-lg bg-charcoal-900 text-white font-mono text-xs font-semibold tabular-nums">
+                Nº #{String(raffleWinner.ticketNumber).padStart(3, '0')}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ÚLTIMAS CONTRIBUIÇÕES */}
       <div className="bg-white rounded-xl p-6 sm:p-8 border border-warm-border shadow-subtle">
         <h2 className="font-serif text-lg font-normal text-charcoal-900 mb-4">
@@ -374,6 +512,11 @@ export default function DashboardClient({
                     <strong className="text-xs font-medium text-charcoal-900">
                       {order.payerName}
                     </strong>
+                    {order.raffleTicketNumber !== null && order.raffleTicketNumber !== undefined && (
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cream-100 border border-warm-border text-charcoal-700">
+                        Nº #{String(order.raffleTicketNumber).padStart(3, '0')}
+                      </span>
+                    )}
                     {order.pollGuess && (
                       <span
                         className={`text-[10px] font-mono px-2 py-0.2 rounded border ${

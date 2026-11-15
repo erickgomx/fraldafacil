@@ -75,6 +75,7 @@ export default function RegisterPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [noNameYet, setNoNameYet] = useState(false);
   const [babyName, setBabyName] = useState('');
   const [boyName, setBoyName] = useState('');
@@ -122,6 +123,17 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (password.length < 6) {
+      setError('A senha deve conter no mínimo 6 caracteres.');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError('As senhas digitadas não coincidem.');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -132,6 +144,7 @@ export default function RegisterPage() {
           name,
           email,
           password,
+          confirmPassword,
           slug,
           noNameYet,
           babyName: noNameYet ? null : babyName,
@@ -368,7 +381,7 @@ export default function RegisterPage() {
             </div>
 
             {/* Credenciais de Acesso */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+            <div className="space-y-3 pt-1">
               <div>
                 <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
                   E-mail *
@@ -386,20 +399,48 @@ export default function RegisterPage() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
-                  Senha *
-                </label>
-                <div className="relative">
-                  <Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-charcoal-400" />
-                  <input
-                    type="password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Mínimo 6 dígitos"
-                    className="w-full pl-9 pr-3.5 py-2.5 rounded-lg border border-warm-border bg-cream-50/50 text-charcoal-900 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-charcoal-900"
-                  />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
+                    Senha *
+                  </label>
+                  <div className="relative">
+                    <Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-charcoal-400" />
+                    <input
+                      type="password"
+                      required
+                      minLength={6}
+                      autoComplete="new-password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Mínimo 6 dígitos"
+                      className="w-full pl-9 pr-3.5 py-2.5 rounded-lg border border-warm-border bg-cream-50/50 text-charcoal-900 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-charcoal-900"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
+                    Confirmar Senha *
+                  </label>
+                  <div className="relative">
+                    <Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-charcoal-400" />
+                    <input
+                      type="password"
+                      required
+                      minLength={6}
+                      autoComplete="new-password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Repita a senha"
+                      className="w-full pl-9 pr-3.5 py-2.5 rounded-lg border border-warm-border bg-cream-50/50 text-charcoal-900 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-charcoal-900"
+                    />
+                  </div>
+                  {confirmPassword.length > 0 && password !== confirmPassword && (
+                    <p className="text-[11px] text-dusty-rose mt-1 font-sans">
+                      As senhas não coincidem.
+                    </p>
+                  )}
                 </div>
               </div>
             </div>

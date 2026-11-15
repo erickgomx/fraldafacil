@@ -37,6 +37,9 @@ export default async function ConfiguracoesPage() {
         mpConnected: event.mpConnected,
         mpUserId: event.mpUserId,
         feePayer: (event.feePayer as 'GUEST' | 'PARENTS') || 'GUEST',
+        raffleEnabled: event.raffleEnabled,
+        rafflePrize: event.rafflePrize,
+        raffleDrawnAt: event.raffleDrawnAt ? event.raffleDrawnAt.toISOString() : null,
       }}
     />
   );

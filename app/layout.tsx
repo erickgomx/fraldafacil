@@ -4,15 +4,15 @@
  * ============================================================================
  * Estrutura base de todas as páginas da plataforma Fralda Online:
  * - Carregamento otimizado de tipografia do Google Fonts:
- *   - Cormorant Garamond (`--font-serif`): Títulos com elegância editorial, leveza e alta-costura.
- *   - DM Sans (`--font-sans`): Interface minimalista, suave, legível e contemporânea.
+ *   - Fraunces (`--font-serif`): Serifa moderna, arredondada, encorpada e acolhedora.
+ *   - DM Sans (`--font-sans`): Interface minimalista, limpa, firme e altamente legível.
  * - Metadados de SEO padrão, OpenGraph para cards no WhatsApp e Twitter, favicons.
  * - Script inline anti-flicker de tema (garante que o Dark Mode ou Light Mode seja
  *   aplicado antes da primeira renderização da página, evitando tela piscando).
  */
 
 import type { Metadata, Viewport } from 'next';
-import { Cormorant_Garamond, DM_Sans } from 'next/font/google';
+import { Fraunces, DM_Sans } from 'next/font/google';
 import './globals.css';
 
 // Configuração de Viewport para escala consistente e prevenção de zoom acidental em dispositivos móveis
@@ -22,19 +22,19 @@ export const viewport: Viewport = {
   maximumScale: 1,
 };
 
-// Fonte Serifada Editorial de alta-costura para títulos delicados e sofisticados
-const serif = Cormorant_Garamond({
+// Fonte Serifada Contemporânea, arredondada e encorpada (sem traços finos ou esticados)
+const serif = Fraunces({
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
+  weight: ['500', '600', '700'],
   style: ['normal', 'italic'],
   variable: '--font-serif',
   display: 'swap',
 });
 
-// Fonte Sans-Serif minimalista e suave para textos corridos, rótulos e botões
+// Fonte Sans-Serif moderna, limpa e equilibrada para textos de interface e botões
 const sans = DM_Sans({
   subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700'],
+  weight: ['400', '500', '600', '700'],
   style: ['normal', 'italic'],
   variable: '--font-sans',
   display: 'swap',

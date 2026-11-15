@@ -99,6 +99,15 @@ export async function GET(
       }
     }
 
+    let raffleTicketNumber = order.raffleTicketNumber;
+    if (currentStatus === 'APPROVED' && raffleTicketNumber === null) {
+      const refreshed = await prisma.order.findUnique({
+        where: { id: order.id },
+        select: { raffleTicketNumber: true },
+      });
+      raffleTicketNumber = refreshed?.raffleTicketNumber ?? null;
+    }
+
     return NextResponse.json(
       {
         id: order.id,
@@ -108,6 +117,7 @@ export async function GET(
         pollGuess: order.pollGuess,
         giftTitle: order.giftItem?.title || 'Presente em Dinheiro',
         guestMessage: order.guestMessage,
+        raffleTicketNumber,
       },
       {
         headers: {

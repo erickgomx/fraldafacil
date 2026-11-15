@@ -135,6 +135,11 @@ export default async function PublicEventPage({ params }: Props) {
         revealedGender: event.revealedGender,
         feePayer: (event.feePayer as 'GUEST' | 'PARENTS') || 'GUEST',
         mpConnected: event.mpConnected,
+        raffleEnabled: event.raffleEnabled,
+        rafflePrize: event.rafflePrize,
+        raffleWinnerName: event.raffleWinnerName,
+        raffleWinnerTicket: event.raffleWinnerTicket,
+        raffleDrawnAt: event.raffleDrawnAt ? event.raffleDrawnAt.toISOString() : null,
       }}
       initialItems={event.items}
       initialMessages={event.guestMessages.map((m) => ({

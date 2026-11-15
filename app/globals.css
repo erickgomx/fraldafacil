@@ -38,33 +38,31 @@ body {
 }
 
 /* =========================================================
-   TIPOGRAFIA EDITORIAL & MINIMALISTA (Cormorant Garamond + DM Sans)
+   TIPOGRAFIA CONTEMPORÂNEA & ENCORPADA (Fraunces + DM Sans)
    ========================================================= */
 h1, h2, h3, h4 {
   text-wrap: balance;
-  letter-spacing: -0.015em;
+  letter-spacing: -0.02em;
 }
 
 p {
   text-wrap: pretty;
 }
 
-/* Harmonização óptica da Cormorant Garamond (serifa de alta-costura):
-   Ajusta pesos e proporções para manter leveza, nitidez e sofisticação */
+/* Harmonização da Fraunces (serifa moderna, arredondada e com corpo firme):
+   Mantém curvas suaves ("SOFT" 100) e peso consistente sem traços finos */
 .font-serif {
-  font-feature-settings: "kern" 1, "liga" 1, "dlig" 1;
+  font-feature-settings: "kern" 1, "liga" 1;
+  font-variation-settings: "SOFT" 100, "WONK" 0;
   font-weight: 500;
-  letter-spacing: -0.012em;
+  letter-spacing: -0.02em;
 }
 
 .font-serif.font-normal {
   font-weight: 500;
 }
 
-.font-serif.font-medium {
-  font-weight: 600;
-}
-
+.font-serif.font-medium,
 .font-serif.font-semibold,
 .font-serif.font-bold {
   font-weight: 600;
@@ -72,94 +70,14 @@ p {
 
 .font-serif.italic,
 .font-serif .italic {
-  font-weight: 400;
-  letter-spacing: 0em;
-}
-
-/* Compensação óptica de x-height da Cormorant Garamond em tamanhos menores e médios */
-.font-serif.text-sm {
-  font-size: 1.02rem;
-  line-height: 1.35;
-}
-
-.font-serif.text-base {
-  font-size: 1.15rem;
-  line-height: 1.35;
-}
-
-.font-serif.text-lg {
-  font-size: 1.28rem;
-  line-height: 1.3;
-}
-
-.font-serif.text-xl {
-  font-size: 1.42rem;
-  line-height: 1.26;
-}
-
-.font-serif.text-2xl {
-  font-size: 1.72rem;
-  line-height: 1.2;
-}
-
-.font-serif.text-3xl {
-  font-size: 2.15rem;
-  line-height: 1.14;
-}
-
-.font-serif.text-4xl {
-  font-size: 2.6rem;
-  line-height: 1.1;
-}
-
-@media (min-width: 640px) {
-  .font-serif.sm\:text-lg {
-    font-size: 1.28rem;
-    line-height: 1.3;
-  }
-
-  .font-serif.sm\:text-xl {
-    font-size: 1.45rem;
-    line-height: 1.25;
-  }
-
-  .font-serif.sm\:text-2xl {
-    font-size: 1.75rem;
-    line-height: 1.2;
-  }
-
-  .font-serif.sm\:text-3xl {
-    font-size: 2.15rem;
-    line-height: 1.15;
-  }
-
-  .font-serif.sm\:text-4xl {
-    font-size: 2.65rem;
-    line-height: 1.12;
-  }
-
-  .font-serif.sm\:text-5xl {
-    font-size: 3.35rem;
-    line-height: 1.08;
-  }
-
-  .font-serif.sm\:text-6xl {
-    font-size: 4rem;
-    line-height: 1.05;
-  }
+  font-weight: 500;
 }
 
 /* Substitui o aspecto técnico/terminal de font-mono por DM Sans tabular refinada */
 .font-mono {
   font-family: var(--font-sans), "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-variant-numeric: tabular-nums;
-  letter-spacing: 0.03em;
-}
-
-/* Suaviza negritos exagerados em micro-rótulos, selos e botões para manter minimalismo */
-.uppercase.font-semibold,
-.uppercase.font-bold {
-  font-weight: 500;
+  letter-spacing: 0.02em;
 }
 
 /* Números tabulares para valores e cronômetros */

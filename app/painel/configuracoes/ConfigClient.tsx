@@ -37,6 +37,9 @@ interface ConfigClientProps {
     mpConnected?: boolean;
     mpUserId?: string | null;
     feePayer?: 'GUEST' | 'PARENTS';
+    raffleEnabled?: boolean;
+    rafflePrize?: string | null;
+    raffleDrawnAt?: string | null;
   };
 }
 
@@ -53,6 +56,9 @@ export default function ConfigClient({ event }: ConfigClientProps) {
   const [pixKey, setPixKey] = useState(event.pixKey || '');
   const [feePayer, setFeePayer] = useState<'GUEST' | 'PARENTS'>(event.feePayer || 'GUEST');
   const [mpConnected, setMpConnected] = useState(Boolean(event.mpConnected));
+  const [raffleEnabled, setRaffleEnabled] = useState(Boolean(event.raffleEnabled));
+  const [rafflePrize, setRafflePrize] = useState(event.rafflePrize || '');
+  const isRaffleLocked = Boolean(event.raffleDrawnAt);
 
   const [loading, setLoading] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
@@ -112,6 +118,10 @@ export default function ConfigClient({ event }: ConfigClientProps) {
           storyMessage,
           pixKey,
           feePayer,
+          ...(!isRaffleLocked && {
+            raffleEnabled,
+            rafflePrize: raffleEnabled ? rafflePrize : null,
+          }),
         }),
       });
 
@@ -404,6 +414,60 @@ export default function ConfigClient({ event }: ConfigClientProps) {
             </span>
           </button>
         </div>
+      </div>
+
+      {/* BLOCO 2B: SORTEIO OPCIONAL ENTRE PRESENTEADORES */}
+      <div className="bg-white p-6 rounded-2xl border border-warm-border shadow-subtle space-y-4">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <span className="text-[10px] font-mono uppercase tracking-widest text-charcoal-500 block mb-1">
+              Engajamento Opcional
+            </span>
+            <h2 className="font-serif text-lg text-charcoal-900 font-medium">
+              Sorteio entre Presenteadores (Chá Rifa)
+            </h2>
+            <p className="text-xs text-charcoal-500 mt-1 font-sans leading-relaxed">
+              Quando ativado, todo convidado que enviar um presente confirmado ganha automaticamente <strong>1 Número da Sorte</strong>. O sorteio é feito por você no painel e o resultado é definitivo.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            disabled={isRaffleLocked}
+            onClick={() => setRaffleEnabled((prev) => !prev)}
+            className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
+              isRaffleLocked ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'
+            } ${raffleEnabled ? 'bg-charcoal-900' : 'bg-stone-200'}`}
+            aria-label="Ativar ou desativar sorteio"
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                raffleEnabled ? 'translate-x-6' : 'translate-x-1'
+              }`}
+            />
+          </button>
+        </div>
+
+        {raffleEnabled && (
+          <div className="pt-2 border-t border-warm-border/60 space-y-2">
+            <label className="block text-[11px] font-mono uppercase text-charcoal-500">
+              Qual será o prêmio sorteado?
+            </label>
+            <input
+              type="text"
+              disabled={isRaffleLocked}
+              value={rafflePrize}
+              onChange={(e) => setRafflePrize(e.target.value)}
+              placeholder="Ex: R$ 200 no Pix, Cafeteira ou Cesta Especial"
+              className="w-full px-3.5 py-2.5 rounded-lg border border-warm-border bg-cream-50/50 text-charcoal-900 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-charcoal-900 disabled:opacity-60"
+            />
+            {isRaffleLocked && (
+              <p className="text-[11px] text-amber-700 font-sans">
+                O sorteio deste evento já foi realizado e seu resultado é definitivo.
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
       {/* BLOCO 3: INFORMAÇÕES DA PÁGINA DO CHÁ */}

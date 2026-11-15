@@ -17,7 +17,7 @@ import DiaperCatalog, { GiftItemData } from '@/components/DiaperCatalog';
 import GuestbookWall, { GuestMessageData } from '@/components/GuestbookWall';
 import PixCheckoutModal from '@/components/PixCheckoutModal';
 import { useRouter } from 'next/navigation';
-import { Share2, Check } from 'lucide-react';
+import { Share2, Check, Ticket, Trophy } from 'lucide-react';
 import Link from 'next/link';
 import BrandLogo from '@/components/BrandLogo';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -39,6 +39,11 @@ interface PublicEventClientProps {
     revealedGender: string | null;
     feePayer?: 'GUEST' | 'PARENTS';
     mpConnected?: boolean;
+    raffleEnabled?: boolean;
+    rafflePrize?: string | null;
+    raffleWinnerName?: string | null;
+    raffleWinnerTicket?: number | null;
+    raffleDrawnAt?: string | null;
   };
   initialItems: GiftItemData[];
   initialMessages: GuestMessageData[];
@@ -144,6 +149,60 @@ export default function PublicEventClient({
           initialGirlVotes={initialGirlVotes}
           onOpenPixModalWithGuess={handleOpenWithGuessOnly}
         />
+      )}
+
+      {/* Banner Minimalista do Sorteio (quando ativado pelos pais) */}
+      {event.raffleEnabled && (
+        <section className="max-w-3xl mx-auto px-6 mt-8">
+          {event.raffleDrawnAt && event.raffleWinnerName && event.raffleWinnerTicket ? (
+            <div className="rounded-2xl bg-white border border-warm-border shadow-subtle p-5 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
+              <div className="flex items-center gap-3.5">
+                <div className="w-10 h-10 rounded-xl bg-terracotta/10 text-terracotta flex items-center justify-center shrink-0">
+                  <Trophy className="w-5 h-5" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-mono uppercase tracking-widest text-terracotta block">
+                    Sorteio Realizado
+                  </span>
+                  <p className="font-serif text-lg text-charcoal-900 font-medium">
+                    Parabéns a {event.raffleWinnerName}!
+                  </p>
+                  {event.rafflePrize && (
+                    <p className="text-xs text-charcoal-500 font-sans">
+                      Prêmio: {event.rafflePrize}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <span className="px-3.5 py-1.5 rounded-lg bg-charcoal-900 text-white font-mono text-xs font-semibold tabular-nums shrink-0">
+                Nº #{String(event.raffleWinnerTicket).padStart(3, '0')}
+              </span>
+            </div>
+          ) : (
+            <div className="rounded-2xl bg-white/90 border border-warm-border shadow-subtle p-5 flex items-center gap-3.5">
+              <div className="w-10 h-10 rounded-xl bg-cream-100 border border-warm-border text-terracotta flex items-center justify-center shrink-0">
+                <Ticket className="w-5 h-5" />
+              </div>
+              <div className="text-left">
+                <span className="text-[10px] font-mono uppercase tracking-widest text-terracotta block">
+                  Mimo Premiado
+                </span>
+                <p className="text-xs sm:text-sm text-charcoal-700 font-sans leading-relaxed">
+                  Ao enviar qualquer presente, você recebe automaticamente{' '}
+                  <strong className="font-semibold text-charcoal-900">1 Número da Sorte</strong>
+                  {event.rafflePrize ? (
+                    <>
+                      {' '}
+                      para concorrer a <strong className="font-semibold text-charcoal-900">{event.rafflePrize}</strong>.
+                    </>
+                  ) : (
+                    ' para participar do sorteio do chá.'
+                  )}
+                </p>
+              </div>
+            </div>
+          )}
+        </section>
       )}
 
       {/* Catálogo de Presentes */}

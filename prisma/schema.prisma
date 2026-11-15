@@ -55,6 +55,14 @@ model Event {
   mpPublicKey     String?        // Public key do seller (se fornecida)
   mpConnected     Boolean        @default(false) // Se os pais conectaram a conta MP
   feePayer        String         @default("GUEST") // "GUEST" (repassa p/ convidado) | "PARENTS" (pais assumem)
+
+  // Sorteio opcional entre presenteadores (1 presente aprovado = 1 número da sorte)
+  raffleEnabled       Boolean    @default(false)
+  rafflePrize         String?
+  raffleWinnerOrderId String?
+  raffleWinnerName    String?
+  raffleWinnerTicket  Int?
+  raffleDrawnAt       DateTime?
   
   items           GiftItem[]
   orders          Order[]
@@ -107,9 +115,12 @@ model Order {
   platformFee    Float?        // Comissão de 4,99% da plataforma retida no split
   gatewayFee     Float?        // Taxa estimada do MP (0,99% Pix ou 3,99% Cartão)
   feePayer       String        @default("GUEST") // "GUEST" ou "PARENTS"
+  raffleTicketNumber Int?      // Número da sorte atribuído automaticamente na aprovação (se sorteio ativo)
   guestMessage   GuestMessage?
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
+
+  @@unique([eventId, raffleTicketNumber])
 }
 
 model GuestMessage {

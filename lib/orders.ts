@@ -53,6 +53,27 @@ export async function approveOrder(orderId: string): Promise<boolean> {
       });
     }
 
+    // Atribui 1 Número da Sorte sequencial caso o sorteio esteja ativo e ainda não sorteado
+    if (order.raffleTicketNumber === null) {
+      const event = await tx.event.findUnique({
+        where: { id: order.eventId },
+        select: { raffleEnabled: true, raffleDrawnAt: true },
+      });
+
+      if (event?.raffleEnabled && !event.raffleDrawnAt) {
+        const agg = await tx.order.aggregate({
+          where: { eventId: order.eventId, raffleTicketNumber: { not: null } },
+          _max: { raffleTicketNumber: true },
+        });
+        const nextTicket = (agg._max.raffleTicketNumber ?? 0) + 1;
+
+        await tx.order.update({
+          where: { id: order.id },
+          data: { raffleTicketNumber: nextTicket },
+        });
+      }
+    }
+
     return true;
   });
 }

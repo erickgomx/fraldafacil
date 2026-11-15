@@ -55,6 +55,7 @@ export default async function PainelPage() {
   const totalVotes = boyVotes + girlVotes;
   const boyPercent = totalVotes > 0 ? Math.round((boyVotes / totalVotes) * 100) : 50;
   const girlPercent = totalVotes > 0 ? 100 - boyPercent : 50;
+  const raffleParticipantsCount = approvedOrders.filter((o) => o.raffleTicketNumber !== null).length;
 
   return (
     <DashboardClient
@@ -70,6 +71,11 @@ export default async function PainelPage() {
         pixKey: event.pixKey,
         mpConnected: event.mpConnected,
         feePayer: (event.feePayer as 'GUEST' | 'PARENTS') || 'GUEST',
+        raffleEnabled: event.raffleEnabled,
+        rafflePrize: event.rafflePrize,
+        raffleWinnerName: event.raffleWinnerName,
+        raffleWinnerTicket: event.raffleWinnerTicket,
+        raffleDrawnAt: event.raffleDrawnAt ? event.raffleDrawnAt.toISOString() : null,
       }}
       metrics={{
         totalGross,
@@ -81,12 +87,14 @@ export default async function PainelPage() {
         totalVotes,
         boyPercent,
         girlPercent,
+        raffleParticipantsCount,
       }}
       recentOrders={approvedOrders.slice(0, 5).map((o) => ({
         id: o.id,
         amount: o.amount,
         payerName: o.payerName,
         pollGuess: o.pollGuess,
+        raffleTicketNumber: o.raffleTicketNumber,
         createdAt: o.createdAt.toISOString(),
         payerMessage: o.payerMessage,
       }))}

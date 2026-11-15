@@ -177,8 +177,14 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    let raffleTicketNumber: number | null = null;
     if (result.status === 'approved') {
       await approveOrder(order.id);
+      const updatedOrder = await prisma.order.findUnique({
+        where: { id: order.id },
+        select: { raffleTicketNumber: true },
+      });
+      raffleTicketNumber = updatedOrder?.raffleTicketNumber ?? null;
     } else if (result.status === 'rejected' || result.status === 'cancelled') {
       await rejectOrder(order.id);
     }
@@ -189,6 +195,7 @@ export async function POST(req: NextRequest) {
       status: result.status,
       statusDetail: result.statusDetail,
       message: cardStatusMessage(result.status, result.statusDetail),
+      raffleTicketNumber,
     });
   } catch (error) {
     console.error('Erro ao processar pagamento com cartão:', error);

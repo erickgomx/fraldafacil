@@ -87,6 +87,7 @@ export default function PixCheckoutModal({
   // Estados específicos para Cartão de Crédito
   const [cardBrickReady, setCardBrickReady] = useState(false);
   const [cardProcessing, setCardProcessing] = useState(false);
+  const [raffleTicketNumber, setRaffleTicketNumber] = useState<number | null>(null);
 
   const hasPublicKey = Boolean(MP_PUBLIC_KEY && MP_PUBLIC_KEY.trim() !== '');
 
@@ -119,6 +120,7 @@ export default function PixCheckoutModal({
     setError('');
     setCardBrickReady(false);
     setCardProcessing(false);
+    setRaffleTicketNumber(null);
   }, [selectedGift, initialGuess, isOpen]);
 
   // Função unificada de checagem do status do pedido (suporta polling, reconexão de rede e checagem manual)
@@ -161,6 +163,9 @@ export default function PixCheckoutModal({
         const data = await res.json();
 
         if (data.status === 'APPROVED') {
+          if (typeof data.raffleTicketNumber === 'number') {
+            setRaffleTicketNumber(data.raffleTicketNumber);
+          }
           handleSuccess();
         } else if (data.status === 'REJECTED') {
           if (isManual) {
@@ -340,6 +345,9 @@ export default function PixCheckoutModal({
       }
 
       if (data.status === 'approved') {
+        if (typeof data.raffleTicketNumber === 'number') {
+          setRaffleTicketNumber(data.raffleTicketNumber);
+        }
         handleSuccess();
       } else if (data.status === 'in_process' || data.status === 'pending') {
         setOrderId(data.orderId);
@@ -872,6 +880,20 @@ export default function PixCheckoutModal({
             <p className="text-xs sm:text-sm text-charcoal-600 max-w-sm mx-auto mb-6 leading-relaxed font-sans">
               Muito obrigado pelo carinho com a família! Sua mensagem já está disponível no mural de recados.
             </p>
+
+            {raffleTicketNumber !== null && (
+              <div className="mb-6 mx-auto max-w-xs rounded-xl bg-cream-50 border border-warm-border p-4">
+                <span className="text-[10px] font-mono uppercase tracking-widest text-terracotta block mb-1">
+                  Seu Número da Sorte
+                </span>
+                <strong className="font-serif text-2xl font-semibold text-charcoal-900 tabular-nums">
+                  Nº #{String(raffleTicketNumber).padStart(3, '0')}
+                </strong>
+                <p className="text-[11px] text-charcoal-500 mt-1 font-sans">
+                  Você já está concorrendo ao sorteio do chá!
+                </p>
+              </div>
+            )}
 
             <button
               onClick={onClose}

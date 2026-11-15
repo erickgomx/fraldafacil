@@ -22,6 +22,7 @@ export async function POST(req: NextRequest) {
       name,
       email,
       password,
+      confirmPassword,
       slug: rawSlug,
       eventType = 'REVELACAO',
       noNameYet = false,
@@ -41,6 +42,13 @@ export async function POST(req: NextRequest) {
     if (password.length < 6) {
       return NextResponse.json(
         { error: 'A senha deve conter no mínimo 6 caracteres.' },
+        { status: 400 }
+      );
+    }
+
+    if (confirmPassword !== undefined && password !== confirmPassword) {
+      return NextResponse.json(
+        { error: 'As senhas digitadas não coincidem.' },
         { status: 400 }
       );
     }

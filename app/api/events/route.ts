@@ -24,6 +24,8 @@ export async function PUT(req: NextRequest) {
       pixKey,
       revealedGender,
       feePayer,
+      raffleEnabled,
+      rafflePrize,
     } = body;
 
     if (!id) {
@@ -64,6 +66,14 @@ export async function PUT(req: NextRequest) {
       validThemeColor = /^#[0-9A-Fa-f]{3,8}$/.test(cleanColor) ? cleanColor : '#38BDF8';
     }
 
+    // Protege integridade de sorteio já realizado (resultado definitivo)
+    if (existing.raffleDrawnAt && (raffleEnabled !== undefined || rafflePrize !== undefined)) {
+      return NextResponse.json(
+        { error: 'O sorteio já foi realizado e seu resultado é definitivo.' },
+        { status: 400 }
+      );
+    }
+
     const updated = await prisma.event.update({
       where: { id },
       data: {
@@ -77,6 +87,10 @@ export async function PUT(req: NextRequest) {
         ...(pixKey !== undefined && { pixKey: pixKey ? String(pixKey).trim().slice(0, 120) : null }),
         ...(validRevealedGender !== undefined && { revealedGender: validRevealedGender }),
         ...(feePayer !== undefined && { feePayer: feePayer === 'PARENTS' ? 'PARENTS' : 'GUEST' }),
+        ...(raffleEnabled !== undefined && { raffleEnabled: Boolean(raffleEnabled) }),
+        ...(rafflePrize !== undefined && {
+          rafflePrize: rafflePrize ? String(rafflePrize).trim().slice(0, 160) : null,
+        }),
       },
     });
 
