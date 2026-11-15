@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import prisma from '@/lib/prisma';
+import { ALLOWED_GIFT_IMAGE_URLS, DEFAULT_GIFT_IMAGE_URL } from '@/lib/gift-gallery';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,19 +28,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Evento não encontrado' }, { status: 404 });
     }
 
-    // Validação estrita de URL de imagem contra injeção de esquemas (javascript:, data:) e SSRF
-    const defaultImage = 'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=500&auto=format&fit=crop&q=80';
-    let validImageUrl = defaultImage;
-    if (imageUrl && typeof imageUrl === 'string') {
-      const trimmed = imageUrl.trim();
-      try {
-        const parsedUrl = new URL(trimmed);
-        if (parsedUrl.protocol === 'https:' || parsedUrl.protocol === 'http:') {
-          validImageUrl = trimmed.slice(0, 500);
-        }
-      } catch {
-        // URL malformada rejeitada, aplica fallback seguro
+    // Aceita apenas imagens da galeria pré-definida para evitar links arbitrários e sobrecarga no banco
+    let validImageUrl = DEFAULT_GIFT_IMAGE_URL;
+    if (imageUrl !== undefined && imageUrl !== null && imageUrl !== '') {
+      if (typeof imageUrl !== 'string' || !ALLOWED_GIFT_IMAGE_URLS.has(imageUrl.trim())) {
+        return NextResponse.json(
+          { error: 'Selecione uma imagem válida da galeria pré-definida.' },
+          { status: 400 }
+        );
       }
+      validImageUrl = imageUrl.trim();
     }
 
     const gift = await prisma.giftItem.create({

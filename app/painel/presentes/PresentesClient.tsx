@@ -11,7 +11,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, Trash2, X } from 'lucide-react';
+import { Check, Plus, Trash2, X } from 'lucide-react';
+import { DEFAULT_GIFT_IMAGE_URL, GIFT_GALLERY_OPTIONS } from '@/lib/gift-gallery';
 
 export interface AdminGiftItem {
   id: string;
@@ -37,7 +38,9 @@ export default function PresentesClient({ eventId, initialGifts }: PresentesClie
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('50');
   const [category, setCategory] = useState<'fraldas' | 'higiene' | 'brincadeiras'>('fraldas');
-  const [imageUrl, setImageUrl] = useState('');
+  const [imageUrl, setImageUrl] = useState(DEFAULT_GIFT_IMAGE_URL);
+  const [hasPickedImage, setHasPickedImage] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const handleToggleActive = async (giftId: string, currentActive: boolean) => {
     try {
@@ -76,9 +79,28 @@ export default function PresentesClient({ eventId, initialGifts }: PresentesClie
     }
   };
 
+  const handleCategoryChange = (nextCategory: 'fraldas' | 'higiene' | 'brincadeiras') => {
+    setCategory(nextCategory);
+    if (!hasPickedImage) {
+      const match = GIFT_GALLERY_OPTIONS.find((opt) => opt.category === nextCategory);
+      if (match) setImageUrl(match.imageUrl);
+    }
+  };
+
+  const resetForm = () => {
+    setTitle('');
+    setDescription('');
+    setPrice('50');
+    setCategory('fraldas');
+    setImageUrl(DEFAULT_GIFT_IMAGE_URL);
+    setHasPickedImage(false);
+    setFormError(null);
+  };
+
   const handleCreateGift = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setFormError(null);
 
     try {
       const res = await fetch('/api/events/gifts', {
@@ -90,7 +112,7 @@ export default function PresentesClient({ eventId, initialGifts }: PresentesClie
           description,
           price: parseFloat(price),
           category,
-          imageUrl: imageUrl || undefined,
+          imageUrl,
         }),
       });
 
@@ -98,17 +120,20 @@ export default function PresentesClient({ eventId, initialGifts }: PresentesClie
       if (res.ok && data.gift) {
         setGifts((prev) => [...prev, data.gift]);
         setIsAddModalOpen(false);
-        setTitle('');
-        setDescription('');
-        setPrice('50');
-        setImageUrl('');
+        resetForm();
+      } else {
+        setFormError(data.error || 'Não foi possível salvar o presente.');
       }
     } catch (err) {
       console.error('Erro ao criar presente:', err);
+      setFormError('Erro de conexão ao salvar o presente.');
     } finally {
       setLoading(false);
     }
   };
+
+  const selectedGalleryOption =
+    GIFT_GALLERY_OPTIONS.find((opt) => opt.imageUrl === imageUrl) ?? GIFT_GALLERY_OPTIONS[0];
 
   return (
     <div className="space-y-6">
@@ -183,9 +208,13 @@ export default function PresentesClient({ eventId, initialGifts }: PresentesClie
       {/* Modal de Adição */}
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-charcoal-900/40 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-xl p-6 sm:p-8 max-w-md w-full shadow-card border border-warm-border relative">
+          <div className="bg-white rounded-xl p-6 sm:p-8 max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-card border border-warm-border relative">
             <button
-              onClick={() => setIsAddModalOpen(false)}
+              type="button"
+              onClick={() => {
+                setIsAddModalOpen(false);
+                resetForm();
+              }}
               className="absolute top-4 right-4 w-7 h-7 rounded-lg bg-cream-100 text-charcoal-500 flex items-center justify-center hover:bg-cream-200 transition"
             >
               <X className="w-4 h-4" />
@@ -193,8 +222,14 @@ export default function PresentesClient({ eventId, initialGifts }: PresentesClie
 
             <h2 className="font-serif text-xl font-normal text-charcoal-900 mb-1">Cadastrar Presente</h2>
             <p className="text-xs text-charcoal-500 mb-5 font-sans">
-              Insira o título, categoria e valor sugerido para o mimo
+              Insira o título, categoria, valor sugerido e escolha uma foto da galeria
             </p>
+
+            {formError && (
+              <div className="mb-4 px-3 py-2 rounded-lg bg-dusty-rose/10 border border-dusty-rose/30 text-xs text-dusty-rose font-sans">
+                {formError}
+              </div>
+            )}
 
             <form onSubmit={handleCreateGift} className="space-y-4">
               <div>
@@ -248,7 +283,7 @@ export default function PresentesClient({ eventId, initialGifts }: PresentesClie
                   <select
                     value={category}
                     onChange={(e) =>
-                      setCategory(e.target.value as 'fraldas' | 'higiene' | 'brincadeiras')
+                      handleCategoryChange(e.target.value as 'fraldas' | 'higiene' | 'brincadeiras')
                     }
                     className="w-full px-3.5 py-2 rounded-lg border border-warm-border text-xs text-charcoal-900 focus:outline-none focus:ring-1 focus:ring-charcoal-900 bg-white"
                   >
@@ -260,16 +295,60 @@ export default function PresentesClient({ eventId, initialGifts }: PresentesClie
               </div>
 
               <div>
-                <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
-                  URL da Imagem (Opcional)
-                </label>
-                <input
-                  type="url"
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                  placeholder="https://images.unsplash.com/..."
-                  className="w-full px-3.5 py-2 rounded-lg border border-warm-border text-xs text-charcoal-900 font-mono focus:outline-none focus:ring-1 focus:ring-charcoal-900"
-                />
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-[11px] font-mono uppercase text-charcoal-500">
+                    Foto do Presente (Galeria) *
+                  </label>
+                  <span className="text-[11px] text-charcoal-500 font-sans">
+                    {selectedGalleryOption.label}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {GIFT_GALLERY_OPTIONS.map((option) => {
+                    const isSelected = imageUrl === option.imageUrl;
+                    return (
+                      <button
+                        key={option.id}
+                        type="button"
+                        onClick={() => {
+                          setImageUrl(option.imageUrl);
+                          setHasPickedImage(true);
+                        }}
+                        title={option.occasion}
+                        className={`group relative rounded-lg overflow-hidden border text-left transition ${
+                          isSelected
+                            ? 'border-charcoal-900 ring-2 ring-charcoal-900/20'
+                            : 'border-warm-border hover:border-charcoal-400'
+                        }`}
+                      >
+                        <div className="relative h-16 w-full bg-cream-100 overflow-hidden">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={option.imageUrl}
+                            alt={option.label}
+                            loading="lazy"
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                          />
+                          {isSelected && (
+                            <span className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-charcoal-900 text-white flex items-center justify-center shadow-sm">
+                              <Check className="w-3 h-3" />
+                            </span>
+                          )}
+                        </div>
+                        <div className="px-2 py-1.5 bg-white">
+                          <span className="block text-[11px] font-medium text-charcoal-800 truncate">
+                            {option.label}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <p className="text-[11px] text-charcoal-400 mt-1.5 font-sans">
+                  Ocasião: {selectedGalleryOption.occasion}
+                </p>
               </div>
 
               <button
