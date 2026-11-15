@@ -43,7 +43,7 @@ const MP_PUBLIC_KEY = process.env.NEXT_PUBLIC_MERCADO_PAGO_PUBLIC_KEY || '';
 let mpInitialized = false;
 
 function ensureMercadoPagoInitialized() {
-  if (!mpInitialized && MP_PUBLIC_KEY && MP_PUBLIC_KEY.trim() !== '') {
+  if (typeof window !== 'undefined' && !mpInitialized && MP_PUBLIC_KEY && MP_PUBLIC_KEY.trim() !== '') {
     try {
       initMercadoPago(MP_PUBLIC_KEY, { locale: 'pt-BR' });
       mpInitialized = true;
@@ -52,6 +52,8 @@ function ensureMercadoPagoInitialized() {
     }
   }
 }
+
+ensureMercadoPagoInitialized();
 
 export default function PixCheckoutModal({
   isOpen,
@@ -390,21 +392,17 @@ export default function PixCheckoutModal({
 
     return {
       amount: feeCalculation.chargeAmount,
-      ...(hasEmail || hasCpf
-        ? {
-            payer: {
-              ...(hasEmail ? { email: payerEmail.trim() } : {}),
-              ...(hasCpf
-                ? {
-                    identification: {
-                      type: 'CPF',
-                      number: cleanCpf,
-                    },
-                  }
-                : {}),
-            },
-          }
-        : {}),
+      payer: {
+        email: hasEmail ? payerEmail.trim() : 'convidado@fralda.online',
+        ...(hasCpf
+          ? {
+              identification: {
+                type: 'CPF',
+                number: cleanCpf,
+              },
+            }
+          : {}),
+      },
     };
   }, [feeCalculation.chargeAmount, isIdentified, payerEmail, payerCpf]);
 
