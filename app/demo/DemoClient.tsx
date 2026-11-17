@@ -176,9 +176,10 @@ export default function DemoClient() {
       {/* HERO */}
       <BabyHero
         parentsNames="Mariana & Rafael"
-        babyName="Leonardo"
+        boyName="Leonardo"
+        girlName="Helena"
         eventDate={demoDate}
-        storyMessage="Estamos muito felizes e ansiosos pela chegada do nosso primeiro filho. Criamos este espaço para compartilhar essa alegria com quem amamos."
+        storyMessage="Estamos muito felizes e ansiosos pela chegada do nosso primeiro bebê. Criamos este espaço para compartilhar essa alegria com quem amamos."
         coverImageUrl="https://images.unsplash.com/photo-1544126592-807ade215a0b?w=800&auto=format&fit=crop&q=80"
         themeColor="#4A6B82"
         revealedGender={revealedGender}
@@ -214,11 +215,17 @@ export default function DemoClient() {
         selectedGift={selectedGift}
         initialGuess={modalGuess}
         onPaymentSuccess={() => {
+          const babyGreeting =
+            revealedGender === 'GIRL'
+              ? 'a Helena'
+              : revealedGender === 'BOY'
+              ? 'o Leonardo'
+              : 'esse bebê tão esperado';
           setMessages((prev) => [
             {
               id: `msg-${Date.now()}`,
               name: 'Você (Convidado)',
-              message: 'Parabéns Mariana e Rafael! Muita saúde para o Leonardo!',
+              message: `Parabéns Mariana e Rafael! Muita saúde para ${babyGreeting}!`,
               createdAt: new Date(),
               order: {
                 pollGuess: modalGuess || 'BOY',
