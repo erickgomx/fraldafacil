@@ -28,6 +28,7 @@ export default function MercadoPagoLogo({
         alt="Mercado Pago"
         width={dimensions.width}
         height={dimensions.height}
+        quality={70}
         className="w-auto h-auto object-contain select-none no-outline !outline-none !border-none"
         style={{ outline: 'none', border: 'none', boxShadow: 'none' }}
       />

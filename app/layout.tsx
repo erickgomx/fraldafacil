@@ -15,11 +15,10 @@ import type { Metadata, Viewport } from 'next';
 import { Fraunces, DM_Sans } from 'next/font/google';
 import './globals.css';
 
-// Configuração de Viewport para escala consistente e prevenção de zoom acidental em dispositivos móveis
+// Configuração de Viewport acessível (permite zoom de pinça em dispositivos móveis)
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
 };
 
 // Fonte Serifada Contemporânea, arredondada e encorpada (sem traços finos ou esticados)

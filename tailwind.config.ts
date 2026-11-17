@@ -44,7 +44,7 @@ const config: Config = {
           rose: "#B86B77",
           "rose-light": "#F8ECED",
         },
-        terracotta: "#C2765B",
+        terracotta: "#A8563C",
         warm: {
           border: "#E7E2DA",
           muted: "#78716C",

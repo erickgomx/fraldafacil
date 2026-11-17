@@ -12,57 +12,22 @@
  * - Call to Action (CTA) Final de Conversão.
  */
 
-'use client';
-
-import { useState } from 'react';
 import Link from 'next/link';
-import { motion, Variants } from 'framer-motion';
 import {
   ArrowRight,
   Check,
-  Sparkles,
-  Heart,
   QrCode,
   Share2,
   ShieldCheck,
   Gift,
   MessageSquareHeart,
-  ChevronDown,
   X,
 } from 'lucide-react';
 import BrandLogo from '@/components/BrandLogo';
 import ThemeToggle from '@/components/ThemeToggle';
 import MercadoPagoLogo from '@/components/MercadoPagoLogo';
-
-const fadeUp: Variants = {
-  hidden: { opacity: 0, y: 28 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.65, ease: [0.22, 1, 0.36, 1] },
-  },
-};
-
-const staggerContainer: Variants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.12,
-      delayChildren: 0.05,
-    },
-  },
-};
-
-const scaleIn: Variants = {
-  hidden: { opacity: 0, scale: 0.96, y: 20 },
-  visible: {
-    opacity: 1,
-    scale: 1,
-    y: 0,
-    transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] },
-  },
-};
+import HeroPreviewCard from '@/components/HeroPreviewCard';
+import FaqAccordion from '@/components/FaqAccordion';
 
 const FAQS = [
   {
@@ -84,26 +49,6 @@ const FAQS = [
 ];
 
 export default function HomePage() {
-  // Estado interativo da prévia no Hero para compreensão imediata
-  const [previewVote, setPreviewVote] = useState<'BOY' | 'GIRL'>('BOY');
-  const [boyCount, setBoyCount] = useState(38);
-  const [girlCount, setGirlCount] = useState(26);
-  const [openFaq, setOpenFaq] = useState<number | null>(0);
-
-  const totalVotes = boyCount + girlCount;
-  const boyPercent = Math.round((boyCount / totalVotes) * 100);
-  const girlPercent = 100 - boyPercent;
-
-  const handleVotePreview = (choice: 'BOY' | 'GIRL') => {
-    if (choice === previewVote) return;
-    setPreviewVote(choice);
-    if (choice === 'BOY') {
-      setBoyCount((c) => c + 1);
-    } else {
-      setGirlCount((c) => c + 1);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-cream-50 text-charcoal-900 overflow-x-hidden">
       {/* Topo / Navegação */}
@@ -114,7 +59,7 @@ export default function HomePage() {
             <BrandLogo size="md" className="hidden sm:inline-flex" />
           </Link>
 
-          <nav className="flex items-center gap-2 sm:gap-4 shrink-0">
+          <nav className="flex items-center gap-2 sm:gap-4 shrink-0" aria-label="Navegação principal">
             <Link
               href="/demo"
               className="hidden md:inline-flex text-xs sm:text-sm font-medium text-charcoal-600 hover:text-charcoal-900 px-3 py-2 transition whitespace-nowrap"
@@ -132,711 +77,446 @@ export default function HomePage() {
               className="text-xs sm:text-sm font-semibold px-4 sm:px-5 py-2.5 rounded-xl bg-charcoal-900 text-white hover:bg-charcoal-800 transition shadow-subtle whitespace-nowrap shrink-0 flex items-center gap-1.5"
             >
               <span>Criar meu Chá</span>
-              <ArrowRight className="w-3.5 h-3.5 text-stone-300 hidden sm:inline" />
+              <ArrowRight className="w-3.5 h-3.5 text-stone-300 hidden sm:inline" aria-hidden="true" />
             </Link>
             <ThemeToggle />
           </nav>
         </div>
       </header>
 
-      {/* HERO SECTION — Alto Impacto Visual + Minimalismo Editorial */}
-      <section className="relative pt-10 sm:pt-16 pb-20 sm:pb-28 px-4 sm:px-6 border-b border-warm-border/60 overflow-hidden">
-        {/* Luzes de fundo sutis e orgânicas */}
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 w-[680px] h-[360px] rounded-full bg-gradient-to-tr from-dusty-rose-light/70 via-cream-200/50 to-dusty-blue-light/70 dark:from-dusty-rose/10 dark:via-transparent dark:to-dusty-blue/10 blur-3xl opacity-80 dark:opacity-30"
-        />
+      <main>
+        {/* HERO SECTION — Alto Impacto Visual + Minimalismo Editorial */}
+        <section className="relative pt-10 sm:pt-16 pb-20 sm:pb-28 px-4 sm:px-6 border-b border-warm-border/60 overflow-hidden">
+          {/* Luzes de fundo sutis e orgânicas */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 w-[680px] h-[360px] rounded-full bg-gradient-to-tr from-dusty-rose-light/70 via-cream-200/50 to-dusty-blue-light/70 dark:from-dusty-rose/10 dark:via-transparent dark:to-dusty-blue/10 blur-3xl opacity-80 dark:opacity-30"
+          />
 
-        <div className="relative max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-10 items-center">
-          {/* Coluna Esquerda: Mensagem Direta e Clara */}
-          <motion.div
-            initial="hidden"
-            animate="visible"
-            variants={staggerContainer}
-            className="lg:col-span-7 text-center lg:text-left"
-          >
-            <motion.h1
-              variants={fadeUp}
-              className="font-serif text-3xl sm:text-5xl lg:text-[3.35rem] text-charcoal-900 font-medium tracking-[-0.025em] leading-[1.12] mb-6"
-            >
-              Ganhe fraldas dos convidados.{' '}
-              <span className="italic text-terracotta">Receba o valor no Pix.</span>
-            </motion.h1>
+          <div className="relative max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-10 items-center">
+            {/* Coluna Esquerda: Mensagem Direta e Clara */}
+            <div className="lg:col-span-7 text-center lg:text-left">
+              <h1 className="font-serif text-3xl sm:text-5xl lg:text-[3.35rem] text-charcoal-900 font-medium tracking-[-0.025em] leading-[1.12] mb-6">
+                Ganhe fraldas dos convidados.{' '}
+                <span className="italic text-terracotta">Receba o valor no Pix.</span>
+              </h1>
 
-            <motion.p
-              variants={fadeUp}
-              className="text-base sm:text-lg text-charcoal-600 font-sans max-w-xl mx-auto lg:mx-0 leading-relaxed mb-8"
-            >
-              Crie uma página linda em 2 minutos e compartilhe no WhatsApp. Seus convidados escolhem pacotes de fraldas na vitrine e você recebe o dinheiro para comprar o tamanho certo quando o bebê precisar.
-            </motion.p>
+              <p className="text-base sm:text-lg text-charcoal-600 font-sans max-w-xl mx-auto lg:mx-0 leading-relaxed mb-8">
+                Crie uma página linda em 2 minutos e compartilhe no WhatsApp. Seus convidados escolhem pacotes de fraldas na vitrine e você recebe o dinheiro para comprar o tamanho certo quando o bebê precisar.
+              </p>
 
-            {/* Botões de Ação */}
-            <motion.div
-              variants={fadeUp}
-              className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3.5"
-            >
-              <Link
-                href="/cadastro"
-                className="w-full sm:w-auto px-7 py-4 rounded-xl text-sm sm:text-base font-semibold bg-charcoal-900 text-white hover:bg-charcoal-800 transition shadow-elevated flex items-center justify-center gap-2.5 group"
-              >
-                <span>Criar Página do meu Bebê</span>
-                <ArrowRight className="w-4 h-4 text-stone-300 group-hover:translate-x-1 transition-transform" />
-              </Link>
-
-              <Link
-                href="/demo"
-                className="w-full sm:w-auto px-6 py-4 rounded-xl text-sm sm:text-base font-medium bg-white text-charcoal-800 border border-warm-border hover:bg-cream-100 transition shadow-subtle flex items-center justify-center gap-2"
-              >
-                <span>Ver Página de Exemplo</span>
-              </Link>
-            </motion.div>
-
-            {/* Pílulas de compreensão rápida */}
-            <motion.div
-              variants={fadeUp}
-              className="mt-10 pt-7 border-t border-warm-border/60 grid grid-cols-1 sm:grid-cols-3 gap-3 text-left max-w-lg mx-auto lg:mx-0"
-            >
-              <div className="flex items-center gap-2.5 text-xs text-charcoal-600">
-                <span className="w-5 h-5 rounded-full bg-cream-200/80 text-charcoal-800 flex items-center justify-center shrink-0">
-                  <Check className="w-3 h-3" />
-                </span>
-                <span>Sem estoque parado em casa</span>
-              </div>
-              <div className="flex items-center gap-2.5 text-xs text-charcoal-600">
-                <span className="w-5 h-5 rounded-full bg-cream-200/80 text-charcoal-800 flex items-center justify-center shrink-0">
-                  <Check className="w-3 h-3" />
-                </span>
-                <span>Convidado não baixa app</span>
-              </div>
-              <div className="flex items-center gap-2.5 text-xs text-charcoal-600">
-                <span className="w-5 h-5 rounded-full bg-cream-200/80 text-charcoal-800 flex items-center justify-center shrink-0">
-                  <Check className="w-3 h-3" />
-                </span>
-                <span>Saque direto para seu Pix</span>
-              </div>
-            </motion.div>
-          </motion.div>
-
-          {/* Coluna Direita: Prévia Visual Interativa (Mostra o produto funcionando na hora) */}
-          <motion.div
-            initial="hidden"
-            animate="visible"
-            variants={scaleIn}
-            className="lg:col-span-5 relative"
-          >
-            {/* Card Principal Simulando a Página do Bebê */}
-            <div className="relative mx-auto max-w-md rounded-2xl bg-white border border-warm-border shadow-lift p-5 sm:p-6">
-              {/* Barra superior de navegador minimalista */}
-              <div className="flex items-center justify-between pb-4 mb-5 border-b border-warm-border/60">
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-stone-300" />
-                  <span className="w-2.5 h-2.5 rounded-full bg-stone-300" />
-                  <span className="w-2.5 h-2.5 rounded-full bg-stone-300" />
-                </div>
-                <div className="px-3 py-1 rounded-full bg-cream-100 border border-warm-border/70 text-[11px] font-mono text-charcoal-600">
-                  fralda.online/mari-e-rafa
-                </div>
-                <span className="text-[10px] font-mono uppercase tracking-wider text-terracotta font-semibold">
-                  Ao vivo
-                </span>
-              </div>
-
-              {/* Cabeçalho do Chá na Prévia */}
-              <div className="flex items-center gap-3.5 mb-5">
-                <div className="w-12 h-12 rounded-xl bg-cream-100 border border-warm-border flex items-center justify-center shrink-0 font-serif text-lg text-charcoal-800">
-                  M&amp;R
-                </div>
-                <div>
-                  <span className="text-[11px] font-mono uppercase tracking-wider text-charcoal-400 block">
-                    Chá de Bebê &amp; Revelação
-                  </span>
-                  <h3 className="font-serif text-lg text-charcoal-900 leading-snug">
-                    Mariana &amp; Rafael
-                  </h3>
-                </div>
-              </div>
-
-              {/* Mini Bolão Interativo (Experimente clicar) */}
-              <div className="rounded-xl bg-cream-50 border border-warm-border/80 p-4 mb-4">
-                <div className="flex items-center justify-between text-xs mb-2.5">
-                  <span className="font-medium text-charcoal-800 flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-terracotta" />
-                    Bolão do Bebê (experimente votar)
-                  </span>
-                  <span className="font-mono text-[11px] text-charcoal-500 tabular-nums">
-                    {totalVotes} palpites
-                  </span>
-                </div>
-
-                {/* Barra de Proporção */}
-                <div className="h-2.5 w-full rounded-full overflow-hidden flex bg-cream-200 mb-3">
-                  <div
-                    style={{ width: `${boyPercent}%` }}
-                    className="bg-dusty-blue transition-all duration-500"
-                  />
-                  <div
-                    style={{ width: `${girlPercent}%` }}
-                    className="bg-dusty-rose transition-all duration-500"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleVotePreview('BOY')}
-                    className={`py-2 px-3 rounded-lg text-xs font-medium border transition flex items-center justify-between ${
-                      previewVote === 'BOY'
-                        ? 'bg-dusty-blue text-white border-dusty-blue shadow-subtle'
-                        : 'bg-white text-charcoal-700 border-warm-border hover:bg-dusty-blue-light/50'
-                    }`}
-                  >
-                    <span>💙 Team Menino</span>
-                    <span className="font-mono tabular-nums">{boyPercent}%</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleVotePreview('GIRL')}
-                    className={`py-2 px-3 rounded-lg text-xs font-medium border transition flex items-center justify-between ${
-                      previewVote === 'GIRL'
-                        ? 'bg-dusty-rose text-white border-dusty-rose shadow-subtle'
-                        : 'bg-white text-charcoal-700 border-warm-border hover:bg-dusty-rose-light/50'
-                    }`}
-                  >
-                    <span>🩷 Team Menina</span>
-                    <span className="font-mono tabular-nums">{girlPercent}%</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Mini Vitrine de Presente → Vira Pix */}
-              <div className="rounded-xl bg-white border border-warm-border p-3.5 flex items-center justify-between gap-3 mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-cream-100 border border-warm-border flex items-center justify-center text-base shrink-0">
-                    🧷
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold text-charcoal-900">
-                      Pacote Mega Fraldas Tam. M
-                    </p>
-                    <p className="text-[11px] text-charcoal-500">
-                      Convidado presenteia via Pix
-                    </p>
-                  </div>
-                </div>
-                <div className="text-right shrink-0">
-                  <span className="block text-xs font-mono font-semibold text-charcoal-900 tabular-nums">
-                    R$ 85,00
-                  </span>
-                  <span className="inline-block text-[10px] font-medium text-terracotta">
-                    Presentear →
-                  </span>
-                </div>
-              </div>
-
-              {/* Notificação de Pix Recebido (compreensão instantânea do benefício) */}
-              <div className="rounded-xl bg-charcoal-900 text-white p-3.5 flex items-center justify-between gap-3 shadow-card border border-transparent dark:border-[#332D28] dark:!bg-[#1A1715]">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-8 h-8 rounded-lg bg-white/10 dark:bg-white/15 flex items-center justify-center shrink-0">
-                    <Heart className="w-4 h-4 text-[#E3A088]" />
-                  </div>
-                  <div className="truncate">
-                    <p className="text-xs font-medium text-white truncate dark:!text-[#FAF8F5]">
-                      Tia Camila enviou 1 pacote + recado
-                    </p>
-                    <p className="text-[11px] text-stone-300 truncate dark:!text-[#D6CEC3]">
-                      &ldquo;Que venha com muita saúde!&rdquo;
-                    </p>
-                  </div>
-                </div>
-                <span className="shrink-0 px-2.5 py-1 rounded-md bg-emerald-500/20 border border-emerald-400/30 text-emerald-200 font-mono text-xs font-semibold tabular-nums">
-                  + R$ 85 no Pix
-                </span>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* SEÇÃO DE CONTRASTE VISUAL — Por que fazer online? (Fácil compreensão) */}
-      <section className="py-20 sm:py-24 px-4 sm:px-6 bg-white border-b border-warm-border/60">
-        <div className="max-w-5xl mx-auto">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: '-80px' }}
-            variants={fadeUp}
-            className="text-center max-w-2xl mx-auto mb-14"
-          >
-            <span className="text-xs font-mono uppercase tracking-widest text-terracotta font-semibold block mb-2.5">
-              Simples de entender
-            </span>
-            <h2 className="font-serif text-3xl sm:text-4xl text-charcoal-900 font-normal tracking-tight mb-4">
-              Por que trocar as pilhas de pacotes pelo Chá Online?
-            </h2>
-            <p className="text-sm sm:text-base text-charcoal-600 font-sans">
-              No chá tradicional, você ganha dezenas de pacotes do mesmo tamanho que o bebê perde em poucas semanas. Aqui, o carinho vira praticidade.
-            </p>
-          </motion.div>
-
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: '-60px' }}
-            variants={staggerContainer}
-            className="grid grid-cols-1 md:grid-cols-2 gap-6"
-          >
-            {/* Card: Chá Tradicional */}
-            <motion.div
-              variants={fadeUp}
-              className="rounded-2xl bg-cream-50/70 dark:bg-[#161412] border border-warm-border dark:border-[#2A2521] p-7 sm:p-8"
-            >
-              <span className="inline-block text-xs font-mono uppercase tracking-wider text-charcoal-500 dark:text-stone-400 mb-4">
-                Chá de Fraldas Comum
-              </span>
-              <h3 className="font-serif text-xl text-charcoal-800 dark:text-stone-200 mb-5">
-                O que costuma acontecer
-              </h3>
-              <ul className="space-y-3.5 text-sm text-charcoal-600 dark:text-stone-400">
-                <li className="flex items-start gap-3">
-                  <span className="w-5 h-5 rounded-full bg-stone-200 dark:bg-stone-800 text-charcoal-600 dark:text-stone-400 flex items-center justify-center shrink-0 mt-0.5">
-                    <X className="w-3 h-3" />
-                  </span>
-                  <span>Muitos pacotes tamanho P repetidos que o bebê perde rápido</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="w-5 h-5 rounded-full bg-stone-200 dark:bg-stone-800 text-charcoal-600 dark:text-stone-400 flex items-center justify-center shrink-0 mt-0.5">
-                    <X className="w-3 h-3" />
-                  </span>
-                  <span>Marcas variadas que podem causar alergia na pele do bebê</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="w-5 h-5 rounded-full bg-stone-200 dark:bg-stone-800 text-charcoal-600 dark:text-stone-400 flex items-center justify-center shrink-0 mt-0.5">
-                    <X className="w-3 h-3" />
-                  </span>
-                  <span>Parentes que moram longe não conseguem participar</span>
-                </li>
-              </ul>
-            </motion.div>
-
-            {/* Card: Com Fralda Online */}
-            <motion.div
-              variants={fadeUp}
-              className="rounded-2xl bg-cream-100/70 dark:bg-[#201C19] border-2 border-charcoal-900 dark:border-stone-400/80 p-7 sm:p-8 shadow-card relative"
-            >
-              <span className="inline-block text-xs font-mono uppercase tracking-wider text-terracotta dark:text-[#E8957D] font-semibold mb-4">
-                Com Fralda Online
-              </span>
-              <h3 className="font-serif text-xl text-charcoal-900 dark:text-[#FAF8F5] mb-5">
-                Liberdade para os pais, carinho para o bebê
-              </h3>
-              <ul className="space-y-3.5 text-sm text-charcoal-800 dark:text-[#F0ECE4]">
-                <li className="flex items-start gap-3">
-                  <span className="w-5 h-5 rounded-full bg-charcoal-900 dark:bg-emerald-500/20 dark:border dark:border-emerald-400/40 text-white dark:text-emerald-300 flex items-center justify-center shrink-0 mt-0.5">
-                    <Check className="w-3 h-3" />
-                  </span>
-                  <span>Você recebe o valor em dinheiro no Pix e compra quando precisar</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="w-5 h-5 rounded-full bg-charcoal-900 dark:bg-emerald-500/20 dark:border dark:border-emerald-400/40 text-white dark:text-emerald-300 flex items-center justify-center shrink-0 mt-0.5">
-                    <Check className="w-3 h-3" />
-                  </span>
-                  <span>Vitrine pronta com valores reais para o convidado escolher com gosto</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="w-5 h-5 rounded-full bg-charcoal-900 dark:bg-emerald-500/20 dark:border dark:border-emerald-400/40 text-white dark:text-emerald-300 flex items-center justify-center shrink-0 mt-0.5">
-                    <Check className="w-3 h-3" />
-                  </span>
-                  <span>Bolão interativo e mural de recados para unir toda a família</span>
-                </li>
-              </ul>
-            </motion.div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* COMO FUNCIONA EM 3 PASSOS — Entrada Animada ao Rolar */}
-      <section className="py-20 sm:py-24 px-4 sm:px-6 bg-cream-50 border-b border-warm-border/60">
-        <div className="max-w-5xl mx-auto">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: '-80px' }}
-            variants={fadeUp}
-            className="text-center max-w-xl mx-auto mb-16"
-          >
-            <span className="text-xs font-mono uppercase tracking-widest text-charcoal-500 block mb-2">
-              Passo a Passo
-            </span>
-            <h2 className="font-serif text-3xl sm:text-4xl text-charcoal-900 font-normal tracking-tight">
-              Pronto em 3 passos simples.
-            </h2>
-          </motion.div>
-
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: '-60px' }}
-            variants={staggerContainer}
-            className="grid grid-cols-1 md:grid-cols-3 gap-6"
-          >
-            {/* Passo 1 */}
-            <motion.div
-              variants={fadeUp}
-              className="bg-white rounded-2xl p-7 border border-warm-border shadow-subtle flex flex-col justify-between"
-            >
-              <div>
-                <div className="flex items-center justify-between mb-6">
-                  <span className="w-10 h-10 rounded-xl bg-cream-100 border border-warm-border flex items-center justify-center text-charcoal-900">
-                    <Gift className="w-5 h-5" />
-                  </span>
-                  <span className="font-mono text-xs text-charcoal-400">PASSO 01</span>
-                </div>
-                <h3 className="font-serif text-xl text-charcoal-900 mb-2.5">
-                  Crie sua página em 2 minutos
-                </h3>
-                <p className="text-sm text-charcoal-600 leading-relaxed">
-                  Coloque o nome dos pais, a data prevista e escolha o link exclusivo do seu bebê. A lista de fraldas já vem pronta para usar.
-                </p>
-              </div>
-              <div className="mt-6 pt-4 border-t border-warm-border/60 text-xs font-mono text-charcoal-500">
-                10 itens essenciais já configurados
-              </div>
-            </motion.div>
-
-            {/* Passo 2 */}
-            <motion.div
-              variants={fadeUp}
-              className="bg-white rounded-2xl p-7 border border-warm-border shadow-subtle flex flex-col justify-between"
-            >
-              <div>
-                <div className="flex items-center justify-between mb-6">
-                  <span className="w-10 h-10 rounded-xl bg-cream-100 border border-warm-border flex items-center justify-center text-charcoal-900">
-                    <Share2 className="w-5 h-5" />
-                  </span>
-                  <span className="font-mono text-xs text-charcoal-400">PASSO 02</span>
-                </div>
-                <h3 className="font-serif text-xl text-charcoal-900 mb-2.5">
-                  Envie o link no WhatsApp
-                </h3>
-                <p className="text-sm text-charcoal-600 leading-relaxed">
-                  Seus amigos e familiares abrem direto pelo celular, votam no bolão, escolhem um pacote de fraldas e deixam uma mensagem.
-                </p>
-              </div>
-              <div className="mt-6 pt-4 border-t border-warm-border/60 text-xs font-mono text-dusty-blue font-medium">
-                Sem precisar baixar aplicativo
-              </div>
-            </motion.div>
-
-            {/* Passo 3 */}
-            <motion.div
-              variants={fadeUp}
-              className="bg-white rounded-2xl p-7 border border-warm-border shadow-subtle flex flex-col justify-between"
-            >
-              <div>
-                <div className="flex items-center justify-between mb-6">
-                  <span className="w-10 h-10 rounded-xl bg-cream-100 border border-warm-border flex items-center justify-center text-charcoal-900">
-                    <QrCode className="w-5 h-5" />
-                  </span>
-                  <span className="font-mono text-xs text-charcoal-400">PASSO 03</span>
-                </div>
-                <h3 className="font-serif text-xl text-charcoal-900 mb-2.5">
-                  Receba direto no seu Mercado Pago
-                </h3>
-                <p className="text-sm text-charcoal-600 leading-relaxed">
-                  Por segurança jurídica e bancária, o valor dos presentes cai diretamente na sua conta do Mercado Pago. Caso não tenha, você cria a sua gratuitamente em 2 minutos.
-                </p>
-              </div>
-              <div className="mt-6 pt-4 border-t border-warm-border/60 flex items-center justify-between text-xs font-mono">
-                <span className="text-terracotta font-medium">Intermediação Oficial</span>
-                <MercadoPagoLogo size="xs" />
-              </div>
-            </motion.div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* INTERMEDIAÇÃO FINANCEIRA & SEGURANÇA BANCÁRIA — Minimalista & Confiável */}
-      <section className="py-16 sm:py-20 px-4 sm:px-6 bg-[#FAF7F2] dark:bg-[#151311] border-b border-warm-border/60">
-        <div className="max-w-4xl mx-auto">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: '-60px' }}
-            variants={fadeUp}
-            className="rounded-3xl bg-white dark:bg-[#1C1917] border border-warm-border dark:border-[#2D2824] p-7 sm:p-10 shadow-subtle relative overflow-hidden"
-          >
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-5 pb-6 border-b border-warm-border/60">
-              <div>
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cream-100 dark:bg-stone-800/80 border border-warm-border dark:border-stone-700 text-xs text-charcoal-700 dark:text-stone-300 mb-3">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                  <span className="font-mono uppercase tracking-wider text-[11px]">Segurança &amp; Transparência</span>
-                </div>
-                <h2 className="font-serif text-2xl sm:text-3xl text-charcoal-900 dark:text-stone-100 font-normal">
-                  Intermediação oficial via Mercado Pago
-                </h2>
-              </div>
-              <div className="shrink-0 flex items-center gap-3">
-                <span className="text-[11px] font-mono uppercase tracking-wider text-charcoal-400 dark:text-stone-500">
-                  Processador Oficial
-                </span>
-                <MercadoPagoLogo size="md" />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6">
-              <div className="space-y-2">
-                <h3 className="font-serif text-lg text-charcoal-900 dark:text-stone-200 flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-terracotta" />
-                  Sem custódia da plataforma
-                </h3>
-                <p className="text-sm text-charcoal-600 dark:text-stone-400 leading-relaxed font-sans">
-                  O Fralda Online não retém o dinheiro do seu chá. Usamos a infraestrutura do Mercado Pago para que o valor de cada presente caia direto na sua conta, com total transparência e proteção antifraude.
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <h3 className="font-serif text-lg text-charcoal-900 dark:text-stone-200 flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-terracotta" />
-                  Por que é necessário criar conta no Mercado Pago?
-                </h3>
-                <p className="text-sm text-charcoal-600 dark:text-stone-400 leading-relaxed font-sans">
-                  Por exigência de segurança bancária e regulamentação fiscal, os pais precisam vincular ou criar uma conta gratuita no Mercado Pago. O cadastro leva apenas 2 minutos e garante que o dinheiro fique sempre sob seu controle.
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-6 pt-5 border-t border-warm-border/50 flex flex-wrap items-center justify-between gap-3 text-xs text-charcoal-500 dark:text-stone-400">
-              <span className="flex items-center gap-1.5">
-                <Check className="w-3.5 h-3.5 text-emerald-600" />
-                Conexão simples em 1 clique no painel
-              </span>
-              <span className="flex items-center gap-1.5">
-                <Check className="w-3.5 h-3.5 text-emerald-600" />
-                Convidado não precisa ter conta no Mercado Pago
-              </span>
-              <span className="flex items-center gap-1.5">
-                <Check className="w-3.5 h-3.5 text-emerald-600" />
-                Saques e transferências imediatas via Pix
-              </span>
-            </div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* PILARES VISUAIS DO PRODUTO — Bento Grid Minimalista */}
-      <section className="py-20 sm:py-24 px-4 sm:px-6 bg-white border-b border-warm-border/60">
-        <div className="max-w-5xl mx-auto">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: '-80px' }}
-            variants={fadeUp}
-            className="max-w-2xl mb-14"
-          >
-            <span className="text-xs font-mono uppercase tracking-widest text-charcoal-500 block mb-2">
-              O que está incluído
-            </span>
-            <h2 className="font-serif text-3xl sm:text-4xl text-charcoal-900 font-normal tracking-tight">
-              Uma experiência encantadora para quem envia e prática para quem recebe.
-            </h2>
-          </motion.div>
-
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: '-60px' }}
-            variants={staggerContainer}
-            className="grid grid-cols-1 md:grid-cols-12 gap-6"
-          >
-            {/* Card 1: Vitrine (7 colunas) */}
-            <motion.div
-              variants={fadeUp}
-              className="md:col-span-7 rounded-2xl bg-cream-50 border border-warm-border p-7 sm:p-8 flex flex-col justify-between"
-            >
-              <div>
-                <span className="text-xs font-mono text-charcoal-400 block mb-3">01 · VITRINE DE PRESENTES</span>
-                <h3 className="font-serif text-2xl text-charcoal-900 mb-3">
-                  Catálogo de fraldas e mimos pronto para usar
-                </h3>
-                <p className="text-sm text-charcoal-600 leading-relaxed mb-6">
-                  Sua página já nasce com pacotes de fraldas RN, P, M, G, lenços umedecidos e itens de cuidado com preços sugeridos. Você pode editar valores ou criar novos itens como preferir.
-                </p>
-              </div>
-
-              {/* Mini demonstração visual dos itens */}
-              <div className="grid grid-cols-3 gap-2.5 pt-2">
-                <div className="bg-white rounded-xl p-3 border border-warm-border text-center">
-                  <span className="block text-xs font-medium text-charcoal-800">Fralda Tam. P</span>
-                  <span className="block text-xs font-mono text-terracotta font-semibold mt-0.5">R$ 55</span>
-                </div>
-                <div className="bg-white rounded-xl p-3 border border-warm-border text-center">
-                  <span className="block text-xs font-medium text-charcoal-800">Fralda Tam. M</span>
-                  <span className="block text-xs font-mono text-terracotta font-semibold mt-0.5">R$ 85</span>
-                </div>
-                <div className="bg-white rounded-xl p-3 border border-warm-border text-center">
-                  <span className="block text-xs font-medium text-charcoal-800">Kit Banho</span>
-                  <span className="block text-xs font-mono text-terracotta font-semibold mt-0.5">R$ 120</span>
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Card 2: Bolão do Sexo (5 colunas) */}
-            <motion.div
-              variants={fadeUp}
-              className="md:col-span-5 rounded-2xl bg-cream-50 border border-warm-border p-7 sm:p-8 flex flex-col justify-between"
-            >
-              <div>
-                <span className="text-xs font-mono text-charcoal-400 block mb-3">02 · INTERATIVIDADE</span>
-                <h3 className="font-serif text-2xl text-charcoal-900 mb-3">
-                  Bolão Menino ou Menina
-                </h3>
-                <p className="text-sm text-charcoal-600 leading-relaxed mb-6">
-                  Perfeito para Chá Revelação. Os convidados dão seu palpite e acompanham o placar da família em tempo real.
-                </p>
-              </div>
-
-              <div className="bg-white rounded-xl p-4 border border-warm-border">
-                <div className="flex justify-between text-xs font-medium mb-2">
-                  <span className="text-dusty-blue">Menino · 58%</span>
-                  <span className="text-dusty-rose">42% · Menina</span>
-                </div>
-                <div className="h-2 rounded-full overflow-hidden flex bg-cream-100">
-                  <div className="w-[58%] bg-dusty-blue" />
-                  <div className="w-[42%] bg-dusty-rose" />
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Card 3: Mural de Recados + Segurança (12 colunas) */}
-            <motion.div
-              variants={fadeUp}
-              className="md:col-span-12 rounded-2xl bg-cream-50 border border-warm-border p-7 sm:p-8 grid grid-cols-1 md:grid-cols-12 gap-6 items-center"
-            >
-              <div className="md:col-span-7">
-                <span className="text-xs font-mono text-charcoal-400 block mb-3">03 · RECORDAÇÃO PARA SEMPRE</span>
-                <h3 className="font-serif text-2xl text-charcoal-900 mb-3">
-                  Mural de mensagens carinhosas da família
-                </h3>
-                <p className="text-sm text-charcoal-600 leading-relaxed">
-                  Cada presente confirmado publica automaticamente o recado do convidado no mural da página. Uma lembrança afetuosa de quem esteve presente desde o início.
-                </p>
-              </div>
-
-              <div className="md:col-span-5 bg-white rounded-xl p-5 border border-warm-border shadow-subtle">
-                <div className="flex items-center gap-2 text-xs font-medium text-charcoal-900 mb-2">
-                  <MessageSquareHeart className="w-4 h-4 text-terracotta" />
-                  <span>Vovó Cida</span>
-                  <span className="ml-auto text-[11px] font-mono text-charcoal-400">+ Mimo enviado</span>
-                </div>
-                <p className="text-xs text-charcoal-600 italic leading-relaxed">
-                  &ldquo;O coração da vovó já transborda de alegria! Que venha com muita saúde para iluminar nossa família.&rdquo;
-                </p>
-              </div>
-            </motion.div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* DÚVIDAS FREQUENTES — Rápido e Esclarecedor */}
-      <section className="py-20 sm:py-24 px-4 sm:px-6 bg-cream-50 border-b border-warm-border/60">
-        <div className="max-w-3xl mx-auto">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: '-80px' }}
-            variants={fadeUp}
-            className="text-center mb-12"
-          >
-            <span className="text-xs font-mono uppercase tracking-widest text-charcoal-500 block mb-2">
-              Tire suas dúvidas
-            </span>
-            <h2 className="font-serif text-3xl sm:text-4xl text-charcoal-900 font-normal tracking-tight">
-              Perguntas frequentes
-            </h2>
-          </motion.div>
-
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: '-60px' }}
-            variants={staggerContainer}
-            className="space-y-3"
-          >
-            {FAQS.map((item, idx) => {
-              const isOpen = openFaq === idx;
-              return (
-                <motion.div
-                  key={idx}
-                  variants={fadeUp}
-                  className="rounded-xl bg-white border border-warm-border overflow-hidden transition"
+              {/* Botões de Ação */}
+              <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3.5">
+                <Link
+                  href="/cadastro"
+                  className="w-full sm:w-auto px-7 py-4 rounded-xl text-sm sm:text-base font-semibold bg-charcoal-900 text-white hover:bg-charcoal-800 transition shadow-elevated flex items-center justify-center gap-2.5 group"
                 >
-                  <button
-                    type="button"
-                    onClick={() => setOpenFaq(isOpen ? null : idx)}
-                    className="w-full px-6 py-4 text-left flex items-center justify-between gap-4 hover:bg-cream-50/60 transition"
-                  >
-                    <span className="font-serif text-base sm:text-lg text-charcoal-900">
-                      {item.q}
+                  <span>Criar Página do meu Bebê</span>
+                  <ArrowRight className="w-4 h-4 text-stone-300 group-hover:translate-x-1 transition-transform" aria-hidden="true" />
+                </Link>
+
+                <Link
+                  href="/demo"
+                  className="w-full sm:w-auto px-6 py-4 rounded-xl text-sm sm:text-base font-medium bg-white text-charcoal-800 border border-warm-border hover:bg-cream-100 transition shadow-subtle flex items-center justify-center gap-2"
+                >
+                  <span>Ver Página de Exemplo</span>
+                </Link>
+              </div>
+
+              {/* Pílulas de compreensão rápida */}
+              <div className="mt-10 pt-7 border-t border-warm-border/60 grid grid-cols-1 sm:grid-cols-3 gap-3 text-left max-w-lg mx-auto lg:mx-0">
+                <div className="flex items-center gap-2.5 text-xs text-charcoal-600">
+                  <span className="w-5 h-5 rounded-full bg-cream-200/80 text-charcoal-800 flex items-center justify-center shrink-0">
+                    <Check className="w-3 h-3" aria-hidden="true" />
+                  </span>
+                  <span>Sem estoque parado em casa</span>
+                </div>
+                <div className="flex items-center gap-2.5 text-xs text-charcoal-600">
+                  <span className="w-5 h-5 rounded-full bg-cream-200/80 text-charcoal-800 flex items-center justify-center shrink-0">
+                    <Check className="w-3 h-3" aria-hidden="true" />
+                  </span>
+                  <span>Convidado não baixa app</span>
+                </div>
+                <div className="flex items-center gap-2.5 text-xs text-charcoal-600">
+                  <span className="w-5 h-5 rounded-full bg-cream-200/80 text-charcoal-800 flex items-center justify-center shrink-0">
+                    <Check className="w-3 h-3" aria-hidden="true" />
+                  </span>
+                  <span>Saque direto para seu Pix</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Coluna Direita: Prévia Visual Interativa */}
+            <HeroPreviewCard />
+          </div>
+        </section>
+
+        {/* SEÇÃO DE CONTRASTE VISUAL — Por que fazer online? (Fácil compreensão) */}
+        <section className="py-20 sm:py-24 px-4 sm:px-6 bg-white border-b border-warm-border/60">
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center max-w-2xl mx-auto mb-14">
+              <span className="text-xs font-mono uppercase tracking-widest text-terracotta font-semibold block mb-2.5">
+                Simples de entender
+              </span>
+              <h2 className="font-serif text-3xl sm:text-4xl text-charcoal-900 font-normal tracking-tight mb-4">
+                Por que trocar as pilhas de pacotes pelo Chá Online?
+              </h2>
+              <p className="text-sm sm:text-base text-charcoal-600 font-sans">
+                No chá tradicional, você ganha dezenas de pacotes do mesmo tamanho que o bebê perde em poucas semanas. Aqui, o carinho vira praticidade.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Card: Chá Tradicional */}
+              <div className="rounded-2xl bg-cream-50/70 dark:bg-[#161412] border border-warm-border dark:border-[#2A2521] p-7 sm:p-8">
+                <span className="inline-block text-xs font-mono uppercase tracking-wider text-charcoal-600 dark:text-stone-400 mb-4">
+                  Chá de Fraldas Comum
+                </span>
+                <h3 className="font-serif text-xl text-charcoal-800 dark:text-stone-200 mb-5">
+                  O que costuma acontecer
+                </h3>
+                <ul className="space-y-3.5 text-sm text-charcoal-600 dark:text-stone-400">
+                  <li className="flex items-start gap-3">
+                    <span className="w-5 h-5 rounded-full bg-stone-200 dark:bg-stone-800 text-charcoal-600 dark:text-stone-400 flex items-center justify-center shrink-0 mt-0.5">
+                      <X className="w-3 h-3" aria-hidden="true" />
                     </span>
-                    <ChevronDown
-                      className={`w-4 h-4 text-charcoal-500 shrink-0 transition-transform duration-200 ${
-                        isOpen ? 'rotate-180' : ''
-                      }`}
-                    />
-                  </button>
-                  {isOpen && (
-                    <div className="px-6 pb-5 text-sm text-charcoal-600 leading-relaxed border-t border-warm-border/40 pt-3">
-                      {item.a}
-                    </div>
-                  )}
-                </motion.div>
-              );
-            })}
-          </motion.div>
-        </div>
-      </section>
+                    <span>Muitos pacotes tamanho P repetidos que o bebê perde rápido</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="w-5 h-5 rounded-full bg-stone-200 dark:bg-stone-800 text-charcoal-600 dark:text-stone-400 flex items-center justify-center shrink-0 mt-0.5">
+                      <X className="w-3 h-3" aria-hidden="true" />
+                    </span>
+                    <span>Marcas variadas que podem causar alergia na pele do bebê</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="w-5 h-5 rounded-full bg-stone-200 dark:bg-stone-800 text-charcoal-600 dark:text-stone-400 flex items-center justify-center shrink-0 mt-0.5">
+                      <X className="w-3 h-3" aria-hidden="true" />
+                    </span>
+                    <span>Parentes que moram longe não conseguem participar</span>
+                  </li>
+                </ul>
+              </div>
 
-      {/* CTA FINAL DE DESTAQUE */}
-      <section className="py-20 px-4 sm:px-6 bg-white dark:bg-[#12100E]">
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: '-60px' }}
-          variants={scaleIn}
-          className="max-w-4xl mx-auto rounded-3xl bg-charcoal-900 text-white p-8 sm:p-14 text-center shadow-lift relative overflow-hidden dark:!bg-[#1A1715] dark:border dark:border-[#332D28]"
-        >
-          <div className="relative z-10 max-w-xl mx-auto">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 dark:bg-white/15 text-stone-200 dark:!text-[#E8E2D8] text-xs font-mono mb-6">
-              <ShieldCheck className="w-3.5 h-3.5 text-[#E3A088]" />
-              Criação gratuita · Pronto em 2 minutos
-            </span>
-
-            <h2 className="font-serif text-3xl sm:text-5xl text-white dark:!text-[#FAF8F5] font-normal tracking-tight mb-4">
-              Prepare a chegada do seu bebê com tranquilidade.
-            </h2>
-
-            <p className="text-sm sm:text-base text-stone-300 dark:!text-[#D6CEC3] font-sans leading-relaxed mb-8">
-              Crie agora a página do seu Chá de Bebê ou Revelação, personalize do seu jeito e compartilhe com quem você ama.
-            </p>
-
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-              <Link
-                href="/cadastro"
-                className="w-full sm:w-auto px-7 py-4 rounded-xl text-sm sm:text-base font-semibold bg-cream-50 text-charcoal-900 hover:bg-white transition flex items-center justify-center gap-2 dark:!bg-[#FAF8F5] dark:!text-[#1C1917]"
-              >
-                <span className="dark:!text-[#1C1917]">Criar Página do meu Chá</span>
-                <ArrowRight className="w-4 h-4 text-charcoal-900 dark:!text-[#1C1917]" />
-              </Link>
-              <Link
-                href="/demo"
-                className="w-full sm:w-auto px-6 py-4 rounded-xl text-sm sm:text-base font-medium bg-white/10 text-white hover:bg-white/15 border border-white/15 transition flex items-center justify-center dark:!text-[#FAF8F5] dark:border-white/20"
-              >
-                Testar Demonstração
-              </Link>
+              {/* Card: Com Fralda Online */}
+              <div className="rounded-2xl bg-cream-100/70 dark:bg-[#201C19] border-2 border-charcoal-900 dark:border-stone-400/80 p-7 sm:p-8 shadow-card relative">
+                <span className="inline-block text-xs font-mono uppercase tracking-wider text-terracotta dark:text-[#E8957D] font-semibold mb-4">
+                  Com Fralda Online
+                </span>
+                <h3 className="font-serif text-xl text-charcoal-900 dark:text-[#FAF8F5] mb-5">
+                  Liberdade para os pais, carinho para o bebê
+                </h3>
+                <ul className="space-y-3.5 text-sm text-charcoal-800 dark:text-[#F0ECE4]">
+                  <li className="flex items-start gap-3">
+                    <span className="w-5 h-5 rounded-full bg-charcoal-900 dark:bg-emerald-500/20 dark:border dark:border-emerald-400/40 text-white dark:text-emerald-300 flex items-center justify-center shrink-0 mt-0.5">
+                      <Check className="w-3 h-3" aria-hidden="true" />
+                    </span>
+                    <span>Você recebe o valor em dinheiro no Pix e compra quando precisar</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="w-5 h-5 rounded-full bg-charcoal-900 dark:bg-emerald-500/20 dark:border dark:border-emerald-400/40 text-white dark:text-emerald-300 flex items-center justify-center shrink-0 mt-0.5">
+                      <Check className="w-3 h-3" aria-hidden="true" />
+                    </span>
+                    <span>Vitrine pronta com valores reais para o convidado escolher com gosto</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="w-5 h-5 rounded-full bg-charcoal-900 dark:bg-emerald-500/20 dark:border dark:border-emerald-400/40 text-white dark:text-emerald-300 flex items-center justify-center shrink-0 mt-0.5">
+                      <Check className="w-3 h-3" aria-hidden="true" />
+                    </span>
+                    <span>Bolão interativo e mural de recados para unir toda a família</span>
+                  </li>
+                </ul>
+              </div>
             </div>
           </div>
-        </motion.div>
-      </section>
+        </section>
+
+        {/* COMO FUNCIONA EM 3 PASSOS */}
+        <section className="py-20 sm:py-24 px-4 sm:px-6 bg-cream-50 border-b border-warm-border/60">
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center max-w-xl mx-auto mb-16">
+              <span className="text-xs font-mono uppercase tracking-widest text-charcoal-600 block mb-2">
+                Passo a Passo
+              </span>
+              <h2 className="font-serif text-3xl sm:text-4xl text-charcoal-900 font-normal tracking-tight">
+                Pronto em 3 passos simples.
+              </h2>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Passo 1 */}
+              <div className="bg-white rounded-2xl p-7 border border-warm-border shadow-subtle flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-6">
+                    <span className="w-10 h-10 rounded-xl bg-cream-100 border border-warm-border flex items-center justify-center text-charcoal-900">
+                      <Gift className="w-5 h-5" aria-hidden="true" />
+                    </span>
+                    <span className="font-mono text-xs text-charcoal-600">PASSO 01</span>
+                  </div>
+                  <h3 className="font-serif text-xl text-charcoal-900 mb-2.5">
+                    Crie sua página em 2 minutos
+                  </h3>
+                  <p className="text-sm text-charcoal-600 leading-relaxed">
+                    Coloque o nome dos pais, a data prevista e escolha o link exclusivo do seu bebê. A lista de fraldas já vem pronta para usar.
+                  </p>
+                </div>
+                <div className="mt-6 pt-4 border-t border-warm-border/60 text-xs font-mono text-charcoal-600">
+                  10 itens essenciais já configurados
+                </div>
+              </div>
+
+              {/* Passo 2 */}
+              <div className="bg-white rounded-2xl p-7 border border-warm-border shadow-subtle flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-6">
+                    <span className="w-10 h-10 rounded-xl bg-cream-100 border border-warm-border flex items-center justify-center text-charcoal-900">
+                      <Share2 className="w-5 h-5" aria-hidden="true" />
+                    </span>
+                    <span className="font-mono text-xs text-charcoal-600">PASSO 02</span>
+                  </div>
+                  <h3 className="font-serif text-xl text-charcoal-900 mb-2.5">
+                    Envie o link no WhatsApp
+                  </h3>
+                  <p className="text-sm text-charcoal-600 leading-relaxed">
+                    Seus amigos e familiares abrem direto pelo celular, votam no bolão, escolhem um pacote de fraldas e deixam uma mensagem.
+                  </p>
+                </div>
+                <div className="mt-6 pt-4 border-t border-warm-border/60 text-xs font-mono text-dusty-blue font-medium">
+                  Sem precisar baixar aplicativo
+                </div>
+              </div>
+
+              {/* Passo 3 */}
+              <div className="bg-white rounded-2xl p-7 border border-warm-border shadow-subtle flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-6">
+                    <span className="w-10 h-10 rounded-xl bg-cream-100 border border-warm-border flex items-center justify-center text-charcoal-900">
+                      <QrCode className="w-5 h-5" aria-hidden="true" />
+                    </span>
+                    <span className="font-mono text-xs text-charcoal-600">PASSO 03</span>
+                  </div>
+                  <h3 className="font-serif text-xl text-charcoal-900 mb-2.5">
+                    Receba direto no seu Mercado Pago
+                  </h3>
+                  <p className="text-sm text-charcoal-600 leading-relaxed">
+                    Por segurança jurídica e bancária, o valor dos presentes cai diretamente na sua conta do Mercado Pago. Caso não tenha, você cria a sua gratuitamente em 2 minutos.
+                  </p>
+                </div>
+                <div className="mt-6 pt-4 border-t border-warm-border/60 flex items-center justify-between text-xs font-mono">
+                  <span className="text-terracotta font-medium">Intermediação Oficial</span>
+                  <MercadoPagoLogo size="xs" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* INTERMEDIAÇÃO FINANCEIRA & SEGURANÇA BANCÁRIA — Minimalista & Confiável */}
+        <section className="py-16 sm:py-20 px-4 sm:px-6 bg-[#FAF7F2] dark:bg-[#151311] border-b border-warm-border/60">
+          <div className="max-w-4xl mx-auto">
+            <div className="rounded-3xl bg-white dark:bg-[#1C1917] border border-warm-border dark:border-[#2D2824] p-7 sm:p-10 shadow-subtle relative overflow-hidden">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-5 pb-6 border-b border-warm-border/60">
+                <div>
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cream-100 dark:bg-stone-800/80 border border-warm-border dark:border-stone-700 text-xs text-charcoal-700 dark:text-stone-300 mb-3">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
+                    <span className="font-mono uppercase tracking-wider text-[11px]">Segurança &amp; Transparência</span>
+                  </div>
+                  <h2 className="font-serif text-2xl sm:text-3xl text-charcoal-900 dark:text-stone-100 font-normal">
+                    Intermediação oficial via Mercado Pago
+                  </h2>
+                </div>
+                <div className="shrink-0 flex items-center gap-3">
+                  <span className="text-[11px] font-mono uppercase tracking-wider text-charcoal-600 dark:text-stone-400">
+                    Processador Oficial
+                  </span>
+                  <MercadoPagoLogo size="md" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6">
+                <div className="space-y-2">
+                  <h3 className="font-serif text-lg text-charcoal-900 dark:text-stone-200 flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-terracotta" aria-hidden="true" />
+                    Sem custódia da plataforma
+                  </h3>
+                  <p className="text-sm text-charcoal-600 dark:text-stone-400 leading-relaxed font-sans">
+                    O Fralda Online não retém o dinheiro do seu chá. Usamos a infraestrutura do Mercado Pago para que o valor de cada presente caia direto na sua conta, com total transparência e proteção antifraude.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <h3 className="font-serif text-lg text-charcoal-900 dark:text-stone-200 flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-terracotta" aria-hidden="true" />
+                    Por que é necessário criar conta no Mercado Pago?
+                  </h3>
+                  <p className="text-sm text-charcoal-600 dark:text-stone-400 leading-relaxed font-sans">
+                    Por exigência de segurança bancária e regulamentação fiscal, os pais precisam vincular ou criar uma conta gratuita no Mercado Pago. O cadastro leva apenas 2 minutos e garante que o dinheiro fique sempre sob seu controle.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-6 pt-5 border-t border-warm-border/50 flex flex-wrap items-center justify-between gap-3 text-xs text-charcoal-600 dark:text-stone-400">
+                <span className="flex items-center gap-1.5">
+                  <Check className="w-3.5 h-3.5 text-emerald-600" aria-hidden="true" />
+                  Conexão simples em 1 clique no painel
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <Check className="w-3.5 h-3.5 text-emerald-600" aria-hidden="true" />
+                  Convidado não precisa ter conta no Mercado Pago
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <Check className="w-3.5 h-3.5 text-emerald-600" aria-hidden="true" />
+                  Saques e transferências imediatas via Pix
+                </span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* PILARES VISUAIS DO PRODUTO — Bento Grid Minimalista */}
+        <section className="py-20 sm:py-24 px-4 sm:px-6 bg-white border-b border-warm-border/60">
+          <div className="max-w-5xl mx-auto">
+            <div className="max-w-2xl mb-14">
+              <span className="text-xs font-mono uppercase tracking-widest text-charcoal-600 block mb-2">
+                O que está incluído
+              </span>
+              <h2 className="font-serif text-3xl sm:text-4xl text-charcoal-900 font-normal tracking-tight">
+                Uma experiência encantadora para quem envia e prática para quem recebe.
+              </h2>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+              {/* Card 1: Vitrine (7 colunas) */}
+              <div className="md:col-span-7 rounded-2xl bg-cream-50 border border-warm-border p-7 sm:p-8 flex flex-col justify-between">
+                <div>
+                  <span className="text-xs font-mono text-charcoal-600 block mb-3">01 · VITRINE DE PRESENTES</span>
+                  <h3 className="font-serif text-2xl text-charcoal-900 mb-3">
+                    Catálogo de fraldas e mimos pronto para usar
+                  </h3>
+                  <p className="text-sm text-charcoal-600 leading-relaxed mb-6">
+                    Sua página já nasce com pacotes de fraldas RN, P, M, G, lenços umedecidos e itens de cuidado com preços sugeridos. Você pode editar valores ou criar novos itens como preferir.
+                  </p>
+                </div>
+
+                {/* Mini demonstração visual dos itens */}
+                <div className="grid grid-cols-3 gap-2.5 pt-2">
+                  <div className="bg-white rounded-xl p-3 border border-warm-border text-center">
+                    <span className="block text-xs font-medium text-charcoal-800">Fralda Tam. P</span>
+                    <span className="block text-xs font-mono text-terracotta font-semibold mt-0.5">R$ 55</span>
+                  </div>
+                  <div className="bg-white rounded-xl p-3 border border-warm-border text-center">
+                    <span className="block text-xs font-medium text-charcoal-800">Fralda Tam. M</span>
+                    <span className="block text-xs font-mono text-terracotta font-semibold mt-0.5">R$ 85</span>
+                  </div>
+                  <div className="bg-white rounded-xl p-3 border border-warm-border text-center">
+                    <span className="block text-xs font-medium text-charcoal-800">Kit Banho</span>
+                    <span className="block text-xs font-mono text-terracotta font-semibold mt-0.5">R$ 120</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 2: Bolão do Sexo (5 colunas) */}
+              <div className="md:col-span-5 rounded-2xl bg-cream-50 border border-warm-border p-7 sm:p-8 flex flex-col justify-between">
+                <div>
+                  <span className="text-xs font-mono text-charcoal-600 block mb-3">02 · INTERATIVIDADE</span>
+                  <h3 className="font-serif text-2xl text-charcoal-900 mb-3">
+                    Bolão Menino ou Menina
+                  </h3>
+                  <p className="text-sm text-charcoal-600 leading-relaxed mb-6">
+                    Perfeito para Chá Revelação. Os convidados dão seu palpite e acompanham o placar da família em tempo real.
+                  </p>
+                </div>
+
+                <div className="bg-white rounded-xl p-4 border border-warm-border">
+                  <div className="flex justify-between text-xs font-medium mb-2">
+                    <span className="text-dusty-blue">Menino · 58%</span>
+                    <span className="text-dusty-rose">42% · Menina</span>
+                  </div>
+                  <div className="h-2 rounded-full overflow-hidden flex bg-cream-100">
+                    <div className="w-[58%] bg-dusty-blue" />
+                    <div className="w-[42%] bg-dusty-rose" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 3: Mural de Recados + Segurança (12 colunas) */}
+              <div className="md:col-span-12 rounded-2xl bg-cream-50 border border-warm-border p-7 sm:p-8 grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+                <div className="md:col-span-7">
+                  <span className="text-xs font-mono text-charcoal-600 block mb-3">03 · RECORDAÇÃO PARA SEMPRE</span>
+                  <h3 className="font-serif text-2xl text-charcoal-900 mb-3">
+                    Mural de mensagens carinhosas da família
+                  </h3>
+                  <p className="text-sm text-charcoal-600 leading-relaxed">
+                    Cada presente confirmado publica automaticamente o recado do convidado no mural da página. Uma lembrança afetuosa de quem esteve presente desde o início.
+                  </p>
+                </div>
+
+                <div className="md:col-span-5 bg-white rounded-xl p-5 border border-warm-border shadow-subtle">
+                  <div className="flex items-center gap-2 text-xs font-medium text-charcoal-900 mb-2">
+                    <MessageSquareHeart className="w-4 h-4 text-terracotta" aria-hidden="true" />
+                    <span>Vovó Cida</span>
+                    <span className="ml-auto text-[11px] font-mono text-charcoal-600">+ Mimo enviado</span>
+                  </div>
+                  <p className="text-xs text-charcoal-600 italic leading-relaxed">
+                    &ldquo;O coração da vovó já transborda de alegria! Que venha com muita saúde para iluminar nossa família.&rdquo;
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* DÚVIDAS FREQUENTES — Rápido e Esclarecedor */}
+        <section className="py-20 sm:py-24 px-4 sm:px-6 bg-cream-50 border-b border-warm-border/60">
+          <div className="max-w-3xl mx-auto">
+            <div className="text-center mb-12">
+              <span className="text-xs font-mono uppercase tracking-widest text-charcoal-600 block mb-2">
+                Tire suas dúvidas
+              </span>
+              <h2 className="font-serif text-3xl sm:text-4xl text-charcoal-900 font-normal tracking-tight">
+                Perguntas frequentes
+              </h2>
+            </div>
+
+            <FaqAccordion items={FAQS} />
+          </div>
+        </section>
+
+        {/* CTA FINAL DE DESTAQUE */}
+        <section className="py-20 px-4 sm:px-6 bg-white dark:bg-[#12100E]">
+          <div className="max-w-4xl mx-auto rounded-3xl bg-charcoal-900 text-white p-8 sm:p-14 text-center shadow-lift relative overflow-hidden dark:!bg-[#1A1715] dark:border dark:border-[#332D28]">
+            <div className="relative z-10 max-w-xl mx-auto">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 dark:bg-white/15 text-stone-200 dark:!text-[#E8E2D8] text-xs font-mono mb-6">
+                <ShieldCheck className="w-3.5 h-3.5 text-[#E3A088]" aria-hidden="true" />
+                Criação gratuita · Pronto em 2 minutos
+              </span>
+
+              <h2 className="font-serif text-3xl sm:text-5xl text-white dark:!text-[#FAF8F5] font-normal tracking-tight mb-4">
+                Prepare a chegada do seu bebê com tranquilidade.
+              </h2>
+
+              <p className="text-sm sm:text-base text-stone-300 dark:!text-[#D6CEC3] font-sans leading-relaxed mb-8">
+                Crie agora a página do seu Chá de Bebê ou Revelação, personalize do seu jeito e compartilhe com quem você ama.
+              </p>
+
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                <Link
+                  href="/cadastro"
+                  className="w-full sm:w-auto px-7 py-4 rounded-xl text-sm sm:text-base font-semibold bg-cream-50 text-charcoal-900 hover:bg-white transition flex items-center justify-center gap-2 dark:!bg-[#FAF8F5] dark:!text-[#1C1917]"
+                >
+                  <span className="dark:!text-[#1C1917]">Criar Página do meu Chá</span>
+                  <ArrowRight className="w-4 h-4 text-charcoal-900 dark:!text-[#1C1917]" aria-hidden="true" />
+                </Link>
+                <Link
+                  href="/demo"
+                  className="w-full sm:w-auto px-6 py-4 rounded-xl text-sm sm:text-base font-medium bg-white/10 text-white hover:bg-white/15 border border-white/15 transition flex items-center justify-center dark:!text-[#FAF8F5] dark:border-white/20"
+                >
+                  Testar Demonstração
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
 
       {/* Rodapé Editorial */}
       <footer className="py-12 px-6 border-t border-warm-border bg-[#F7F3EC] text-charcoal-600 text-xs font-sans">
@@ -845,24 +525,24 @@ export default function HomePage() {
             <span className="font-serif font-semibold text-sm tracking-[-0.02em] text-charcoal-900 dark:text-[#FAF8F5]">
               Fralda <span className="text-terracotta dark:text-[#E3A088]">Online</span>
             </span>
-            <span className="text-charcoal-400">·</span>
+            <span className="text-charcoal-600" aria-hidden="true">·</span>
             <span>A plataforma independente para Chás de Bebê &amp; Revelação</span>
-            <span className="text-charcoal-300 hidden sm:inline">·</span>
-            <span className="inline-flex items-center gap-1.5 text-charcoal-500">
+            <span className="text-charcoal-600 hidden sm:inline" aria-hidden="true">·</span>
+            <span className="inline-flex items-center gap-1.5 text-charcoal-600">
               <span>Pagamentos via</span>
               <MercadoPagoLogo size="xs" />
             </span>
           </div>
 
-          <div className="flex items-center gap-3 text-charcoal-500 text-xs">
+          <div className="flex items-center gap-3 text-charcoal-600 text-xs">
             <Link href="/termos" className="hover:text-charcoal-900 transition-colors">
               Termos de Uso
             </Link>
-            <span className="text-charcoal-300">·</span>
+            <span className="text-charcoal-600" aria-hidden="true">·</span>
             <Link href="/privacidade" className="hover:text-charcoal-900 transition-colors">
               Privacidade (LGPD)
             </Link>
-            <span className="text-charcoal-300">·</span>
+            <span className="text-charcoal-600" aria-hidden="true">·</span>
             <span>© {new Date().getFullYear()}</span>
           </div>
         </div>
