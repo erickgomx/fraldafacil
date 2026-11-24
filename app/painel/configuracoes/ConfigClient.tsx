@@ -1,14 +1,3 @@
-/**
- * ============================================================================
- * CLIENTE DO FORMULÁRIO DE CONFIGURAÇÕES (ConfigClient)
- * ============================================================================
- * Formulário completo de gerenciamento:
- * - Edição de nomes dos pais e do bebê.
- * - Integração oficial com Mercado Pago via OAuth (botão "Conectar minha conta").
- * - Seletor de quem absorve as taxas (Convidado ou Pais).
- * - Chave Pix para recebimento de transferências diretas.
- */
-
 'use client';
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
@@ -28,8 +17,11 @@ import {
   HelpCircle,
 } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useI18n } from '@/components/LanguageProvider';
+import { painelDict } from '@/lib/i18n/dictionaries/painel';
+import { commonDict } from '@/lib/i18n/dictionaries/common';
 
-async function compressCoverImage(file: File): Promise<File> {
+async function compressCoverImage(file: File, readErrorMsg: string): Promise<File> {
   const MAX_DIMENSION = 1400;
   const QUALITY = 0.82;
 
@@ -42,7 +34,7 @@ async function compressCoverImage(file: File): Promise<File> {
     const img = await new Promise<HTMLImageElement>((resolve, reject) => {
       const el = new Image();
       el.onload = () => resolve(el);
-      el.onerror = () => reject(new Error('Não foi possível ler a imagem selecionada.'));
+      el.onerror = () => reject(new Error(readErrorMsg));
       el.src = objectUrl;
     });
 
@@ -73,7 +65,6 @@ async function compressCoverImage(file: File): Promise<File> {
 
     if (!blob) return file;
 
-    // Se a imagem original já estiver menor e dentro do limite, preserva a menor versão
     if (file.size <= 3 * 1024 * 1024 && blob.size > file.size && scale === 1) {
       return file;
     }
@@ -109,6 +100,11 @@ interface ConfigClientProps {
 export default function ConfigClient({ event }: ConfigClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { locale, t } = useI18n();
+  const dict = painelDict[locale].config;
+  const eventTypesShort = commonDict[locale].eventTypes.short;
+  const orJoiner = locale === 'en' ? 'or' : locale === 'es' ? 'o' : 'ou';
+
   const initialEventType = (
     event.eventType === 'FRALDA' || event.eventType === 'AMBOS' ? event.eventType : 'REVELACAO'
   ) as 'REVELACAO' | 'FRALDA' | 'AMBOS';
@@ -127,14 +123,12 @@ export default function ConfigClient({ event }: ConfigClientProps) {
   const [rafflePrize, setRafflePrize] = useState(event.rafflePrize || '');
   const isRaffleLocked = Boolean(event.raffleDrawnAt);
 
-  // Foto de capa (persistida separadamente via /api/events/cover)
   const [coverImageUrl, setCoverImageUrl] = useState<string | null>(event.coverImageUrl || null);
   const [uploadingCover, setUploadingCover] = useState(false);
   const [removingCover, setRemovingCover] = useState(false);
   const [coverNotice, setCoverNotice] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const coverInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Encerramento de conta LGPD
   const [showDeleteAccount, setShowDeleteAccount] = useState(false);
   const [deletePassword, setDeletePassword] = useState('');
   const [deletingAccount, setDeletingAccount] = useState(false);
@@ -154,29 +148,20 @@ export default function ConfigClient({ event }: ConfigClientProps) {
     if (searchParams.get('oauth_success') === 'true') {
       setOauthNotice({
         type: 'success',
-        message:
-          'Sua conta do Mercado Pago foi conectada com sucesso! Agora você já pode receber presentes via Pix e Cartão com split automático diretamente na sua conta.',
+        message: dict.oauthMessages.success,
       });
       setMpConnected(true);
     } else if (searchParams.get('error')) {
-      const err = searchParams.get('error');
-      const messages: Record<string, string> = {
-        oauth_rejected:
-          'A autorização foi cancelada ou recusada no Mercado Pago. Clique novamente para autorizar.',
-        token_exchange:
-          'Não foi possível validar as credenciais do Mercado Pago. Verifique as chaves MERCADO_PAGO_CLIENT_ID e MERCADO_PAGO_CLIENT_SECRET na Vercel.',
-        invalid_or_expired_state:
-          'A sessão de conexão expirou por segurança. Inicie a conexão novamente.',
-        unauthorized_session: 'Sessão inválida ao vincular a conta do Mercado Pago.',
-        oauth_not_configured:
-          'Credenciais do Mercado Pago não configuradas. Configure MERCADO_PAGO_CLIENT_ID e MERCADO_PAGO_CLIENT_SECRET nas variáveis de ambiente.',
-      };
+      const err = searchParams.get('error') || '';
+      const message =
+        dict.oauthMessages[err as keyof typeof dict.oauthMessages] ||
+        dict.oauthMessages.fallback;
       setOauthNotice({
         type: 'error',
-        message: messages[err!] || 'Ocorreu um erro ao conectar sua conta do Mercado Pago.',
+        message,
       });
     }
-  }, [searchParams]);
+  }, [searchParams, dict]);
 
   const currentPayload = useMemo(
     () => ({
@@ -185,7 +170,8 @@ export default function ConfigClient({ event }: ConfigClientProps) {
       parentsNames,
       babyName: noNameYet
         ? null
-        : babyName.trim() || (boyName && girlName ? `${boyName.trim()} ou ${girlName.trim()}` : null),
+        : babyName.trim() ||
+          (boyName && girlName ? `${boyName.trim()} ${orJoiner} ${girlName.trim()}` : null),
       boyName: noNameYet ? null : boyName.trim() || null,
       girlName: noNameYet ? null : girlName.trim() || null,
       eventDate: eventDate || undefined,
@@ -205,6 +191,7 @@ export default function ConfigClient({ event }: ConfigClientProps) {
       babyName,
       boyName,
       girlName,
+      orJoiner,
       eventDate,
       storyMessage,
       pixKey,
@@ -222,7 +209,7 @@ export default function ConfigClient({ event }: ConfigClientProps) {
   const saveChanges = useCallback(
     async (payloadToSave = currentPayload, serialized = serializedPayload) => {
       if (!payloadToSave.parentsNames || !payloadToSave.parentsNames.trim()) {
-        setError('O nome dos pais é obrigatório.');
+        setError(dict.parentsRequiredError);
         return;
       }
 
@@ -238,7 +225,7 @@ export default function ConfigClient({ event }: ConfigClientProps) {
 
         if (!res.ok) {
           const data = await res.json();
-          throw new Error(data.error || 'Erro ao salvar alterações.');
+          throw new Error(data.error || dict.saveErrorFallback);
         }
 
         lastSavedPayloadRef.current = serialized;
@@ -249,16 +236,22 @@ export default function ConfigClient({ event }: ConfigClientProps) {
         if (err instanceof Error) {
           setError(err.message);
         } else {
-          setError('Ocorreu um erro.');
+          setError(dict.genericError);
         }
       } finally {
         setLoading(false);
       }
     },
-    [currentPayload, serializedPayload, router]
+    [
+      currentPayload,
+      serializedPayload,
+      router,
+      dict.parentsRequiredError,
+      dict.saveErrorFallback,
+      dict.genericError,
+    ]
   );
 
-  // Salvamento automático (debounced) sempre que houver alterações válidas
   useEffect(() => {
     if (!hasUnsavedChanges) return;
     if (!currentPayload.parentsNames || !currentPayload.parentsNames.trim()) return;
@@ -276,7 +269,7 @@ export default function ConfigClient({ event }: ConfigClientProps) {
   };
 
   const handleDisconnectMP = async () => {
-    if (!confirm('Deseja realmente desconectar sua conta do Mercado Pago? Sua página não poderá receber presentes até ser reconectada.')) {
+    if (!confirm(dict.confirmDisconnectMP)) {
       return;
     }
     setDisconnecting(true);
@@ -305,9 +298,9 @@ export default function ConfigClient({ event }: ConfigClientProps) {
     setCoverNotice(null);
     setUploadingCover(true);
     try {
-      const processed = await compressCoverImage(file);
+      const processed = await compressCoverImage(file, dict.imageReadError);
       if (processed.size > 3 * 1024 * 1024) {
-        throw new Error('A imagem ficou acima de 3 MB mesmo após compressão. Escolha outra foto.');
+        throw new Error(dict.coverMaxSizeError);
       }
 
       const formData = new FormData();
@@ -321,19 +314,19 @@ export default function ConfigClient({ event }: ConfigClientProps) {
 
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        throw new Error(data.error || 'Não foi possível enviar a foto de capa.');
+        throw new Error(data.error || dict.coverUploadErrorFallback);
       }
 
       setCoverImageUrl(data.coverImageUrl || null);
       setCoverNotice({
         type: 'success',
-        message: 'Foto de capa atualizada com sucesso!',
+        message: dict.coverUploadSuccess,
       });
       router.refresh();
     } catch (err: unknown) {
       setCoverNotice({
         type: 'error',
-        message: err instanceof Error ? err.message : 'Erro ao enviar a foto de capa.',
+        message: err instanceof Error ? err.message : dict.coverUploadGenericError,
       });
     } finally {
       setUploadingCover(false);
@@ -342,7 +335,7 @@ export default function ConfigClient({ event }: ConfigClientProps) {
 
   const handleRemoveCover = async () => {
     if (!coverImageUrl) return;
-    if (!confirm('Remover a foto de capa atual da página do chá?')) return;
+    if (!confirm(dict.confirmRemoveCover)) return;
 
     setRemovingCover(true);
     setCoverNotice(null);
@@ -352,19 +345,19 @@ export default function ConfigClient({ event }: ConfigClientProps) {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        throw new Error(data.error || 'Não foi possível remover a foto de capa.');
+        throw new Error(data.error || dict.coverRemoveErrorFallback);
       }
 
       setCoverImageUrl(null);
       setCoverNotice({
         type: 'success',
-        message: 'Foto de capa removida.',
+        message: dict.coverRemovedSuccess,
       });
       router.refresh();
     } catch (err: unknown) {
       setCoverNotice({
         type: 'error',
-        message: err instanceof Error ? err.message : 'Erro ao remover foto.',
+        message: err instanceof Error ? err.message : dict.coverRemoveGenericError,
       });
     } finally {
       setRemovingCover(false);
@@ -374,7 +367,7 @@ export default function ConfigClient({ event }: ConfigClientProps) {
   const handleDeleteAccount = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!deletePassword) {
-      setDeleteError('Informe sua senha atual para confirmar.');
+      setDeleteError(dict.deleteAccountPasswordRequired);
       return;
     }
 
@@ -388,12 +381,12 @@ export default function ConfigClient({ event }: ConfigClientProps) {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        throw new Error(data.error || 'Não foi possível excluir a conta.');
+        throw new Error(data.error || dict.deleteAccountErrorFallback);
       }
 
       window.location.href = '/';
     } catch (err: unknown) {
-      setDeleteError(err instanceof Error ? err.message : 'Erro ao encerrar conta.');
+      setDeleteError(err instanceof Error ? err.message : dict.deleteAccountGenericError);
     } finally {
       setDeletingAccount(false);
     }
@@ -404,10 +397,10 @@ export default function ConfigClient({ event }: ConfigClientProps) {
       <div className="sticky top-0 z-20 bg-cream-50/95 backdrop-blur-sm py-3 -mx-2 px-2 border-b border-warm-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="font-serif text-2xl text-charcoal-900 font-medium">
-            Configurações do Chá
+            {dict.pageTitle}
           </h1>
           <p className="text-xs text-charcoal-500 mt-0.5 font-sans">
-            As alterações são salvas automaticamente ou pelo botão ao lado.
+            {dict.pageSubtitle}
           </p>
         </div>
 
@@ -415,20 +408,20 @@ export default function ConfigClient({ event }: ConfigClientProps) {
           {loading ? (
             <span className="text-[11px] font-mono text-charcoal-500 flex items-center gap-1.5">
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              Salvando...
+              {dict.savingStatus}
             </span>
           ) : success ? (
             <span className="text-[11px] font-mono text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full flex items-center gap-1">
               <CheckCircle2 className="w-3.5 h-3.5" />
-              Salvo
+              {dict.savedStatus}
             </span>
           ) : hasUnsavedChanges ? (
             <span className="text-[11px] font-mono text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-full">
-              Alterações pendentes
+              {dict.pendingChangesStatus}
             </span>
           ) : (
             <span className="text-[11px] font-mono text-charcoal-400">
-              Tudo salvo
+              {dict.allSavedStatus}
             </span>
           )}
 
@@ -439,7 +432,7 @@ export default function ConfigClient({ event }: ConfigClientProps) {
             className="py-2 px-4 rounded-lg font-medium text-xs bg-charcoal-900 text-white hover:bg-charcoal-800 shadow-subtle transition flex items-center gap-1.5 disabled:opacity-50"
           >
             <Save className="w-3.5 h-3.5" />
-            <span>{loading ? 'Salvando...' : 'Salvar'}</span>
+            <span>{loading ? dict.savingStatus : dict.saveButton}</span>
           </button>
         </div>
       </div>
@@ -461,7 +454,7 @@ export default function ConfigClient({ event }: ConfigClientProps) {
           )}
           <div className="flex-1">
             <span className="font-medium block mb-0.5">
-              {oauthNotice.type === 'success' ? 'Vinculação Concluída' : 'Aviso do Sistema'}
+              {oauthNotice.type === 'success' ? dict.oauthSuccessTitle : dict.oauthWarningTitle}
             </span>
             <span className="leading-relaxed">{oauthNotice.message}</span>
           </div>
@@ -471,7 +464,7 @@ export default function ConfigClient({ event }: ConfigClientProps) {
       {success && (
         <div className="p-3 rounded-lg bg-emerald-50 text-emerald-800 text-xs font-sans border border-emerald-200 flex items-center gap-2">
           <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-          <span>Configurações salvas com sucesso!</span>
+          <span>{dict.savedToast}</span>
         </div>
       )}
 
@@ -482,30 +475,30 @@ export default function ConfigClient({ event }: ConfigClientProps) {
         </div>
       )}
 
-      {/* BLOCO 1: CONEXÃO MERCADO PAGO OBRIGATÓRIA (SPLIT NATIVO) */}
+      {/* BLOCO 1: MERCADO PAGO */}
       <div className="bg-white p-6 rounded-2xl border border-warm-border shadow-subtle space-y-4">
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 rounded bg-cream-100 text-charcoal-600 border border-warm-border">
-                Split Oficial
+                {dict.mpSection.badge}
               </span>
               {mpConnected ? (
                 <span className="text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1 font-semibold">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                  Conta Conectada
+                  {dict.mpSection.connectedBadge}
                 </span>
               ) : (
                 <span className="text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200 font-semibold">
-                  Pendente de Conexão
+                  {dict.mpSection.pendingBadge}
                 </span>
               )}
             </div>
             <h2 className="font-serif text-lg text-charcoal-900 font-medium">
-              Conta do Mercado Pago dos Pais
+              {dict.mpSection.title}
             </h2>
             <p className="text-xs text-charcoal-500 mt-1 font-sans leading-relaxed">
-              Obrigatório para que o dinheiro dos presentes caia diretamente na sua conta bancária sem intermediação de terceiros, com total segurança jurídica e fiscal.
+              {dict.mpSection.subtitle}
             </p>
           </div>
         </div>
@@ -518,7 +511,7 @@ export default function ConfigClient({ event }: ConfigClientProps) {
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-semibold text-charcoal-900">
-                      Pronto para receber presentes!
+                      {dict.mpSection.readyTitle}
                     </span>
                     {event.mpUserId && (
                       <span className="text-[10px] font-mono text-charcoal-400 bg-white px-2 py-0.5 rounded border border-warm-border">
@@ -527,7 +520,7 @@ export default function ConfigClient({ event }: ConfigClientProps) {
                     )}
                   </div>
                   <span className="text-[11px] text-charcoal-500 block mt-1 leading-relaxed">
-                    O dinheiro líquido dos presentes é creditado automaticamente na sua conta Mercado Pago. Você pode transferir para qualquer banco via Pix gratuitamente pelo app do Mercado Pago.
+                    {dict.mpSection.readyDescription}
                   </span>
                 </div>
               </div>
@@ -539,7 +532,9 @@ export default function ConfigClient({ event }: ConfigClientProps) {
                 className="py-1.5 px-3 rounded-lg text-xs font-medium text-dusty-rose bg-white hover:bg-dusty-rose-light border border-dusty-rose/30 transition flex items-center gap-1.5 shrink-0 self-start sm:self-center"
               >
                 <Unlink className="w-3.5 h-3.5" />
-                <span>{disconnecting ? 'Desconectando...' : 'Desconectar conta'}</span>
+                <span>
+                  {disconnecting ? dict.mpSection.disconnecting : dict.mpSection.disconnectButton}
+                </span>
               </button>
             </div>
 
@@ -549,8 +544,12 @@ export default function ConfigClient({ event }: ConfigClientProps) {
                   <QrCode className="w-4 h-4" />
                 </div>
                 <div>
-                  <span className="text-xs font-medium text-charcoal-900 block">Pix Instantâneo</span>
-                  <span className="text-[10px] text-charcoal-500 block">Crédito imediato no seu saldo</span>
+                  <span className="text-xs font-medium text-charcoal-900 block">
+                    {dict.mpSection.pixCardTitle}
+                  </span>
+                  <span className="text-[10px] text-charcoal-500 block">
+                    {dict.mpSection.pixCardSubtitle}
+                  </span>
                 </div>
               </div>
 
@@ -559,45 +558,30 @@ export default function ConfigClient({ event }: ConfigClientProps) {
                   <CreditCard className="w-4 h-4" />
                 </div>
                 <div>
-                  <span className="text-xs font-medium text-charcoal-900 block">Cartão de Crédito</span>
-                  <span className="text-[10px] text-charcoal-500 block">Em até 12x para os convidados</span>
+                  <span className="text-xs font-medium text-charcoal-900 block">
+                    {dict.mpSection.cardCardTitle}
+                  </span>
+                  <span className="text-[10px] text-charcoal-500 block">
+                    {dict.mpSection.cardCardSubtitle}
+                  </span>
                 </div>
               </div>
             </div>
           </div>
         ) : (
           <div className="space-y-4 pt-1">
-            {/* Como funciona para os pais */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-              <div className="p-3 rounded-xl bg-cream-50/80 border border-warm-border">
-                <span className="w-5 h-5 rounded-full bg-charcoal-900 text-white text-[10px] font-mono flex items-center justify-center mb-1.5">
-                  1
-                </span>
-                <strong className="block text-charcoal-900 mb-0.5">Clique em Conectar</strong>
-                <p className="text-[11px] text-charcoal-500 font-sans leading-relaxed">
-                  Você será levado para a tela oficial de login do Mercado Pago.
-                </p>
-              </div>
-
-              <div className="p-3 rounded-xl bg-cream-50/80 border border-warm-border">
-                <span className="w-5 h-5 rounded-full bg-charcoal-900 text-white text-[10px] font-mono flex items-center justify-center mb-1.5">
-                  2
-                </span>
-                <strong className="block text-charcoal-900 mb-0.5">Autorize o Split</strong>
-                <p className="text-[11px] text-charcoal-500 font-sans leading-relaxed">
-                  Faça login com sua conta (ou crie uma em instantes) e autorize a vinculação.
-                </p>
-              </div>
-
-              <div className="p-3 rounded-xl bg-cream-50/80 border border-warm-border">
-                <span className="w-5 h-5 rounded-full bg-charcoal-900 text-white text-[10px] font-mono flex items-center justify-center mb-1.5">
-                  3
-                </span>
-                <strong className="block text-charcoal-900 mb-0.5">Receba os Presentes</strong>
-                <p className="text-[11px] text-charcoal-500 font-sans leading-relaxed">
-                  O dinheiro cai na sua conta sem intermediários, pronto para resgate via Pix.
-                </p>
-              </div>
+              {dict.mpSection.steps.map((step, idx) => (
+                <div key={step.title} className="p-3 rounded-xl bg-cream-50/80 border border-warm-border">
+                  <span className="w-5 h-5 rounded-full bg-charcoal-900 text-white text-[10px] font-mono flex items-center justify-center mb-1.5">
+                    {idx + 1}
+                  </span>
+                  <strong className="block text-charcoal-900 mb-0.5">{step.title}</strong>
+                  <p className="text-[11px] text-charcoal-500 font-sans leading-relaxed">
+                    {step.description}
+                  </p>
+                </div>
+              ))}
             </div>
 
             <div className="flex flex-col sm:flex-row gap-2 pt-1">
@@ -605,7 +589,7 @@ export default function ConfigClient({ event }: ConfigClientProps) {
                 href={`/api/auth/mercadopago/connect?eventId=${event.id}`}
                 className="py-3 px-5 rounded-xl text-xs font-semibold bg-[#009EE3] hover:bg-[#0082ba] text-white shadow-subtle transition flex items-center justify-center gap-2 group"
               >
-                <span>Conectar com Mercado Pago</span>
+                <span>{dict.mpSection.connectButton}</span>
                 <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
               </a>
             </div>
@@ -613,43 +597,39 @@ export default function ConfigClient({ event }: ConfigClientProps) {
             <div className="p-3.5 rounded-xl bg-cream-50/90 border border-warm-border/80 space-y-2">
               <div className="flex items-center gap-1.5 text-xs font-semibold text-charcoal-900">
                 <HelpCircle className="w-3.5 h-3.5 text-charcoal-600 shrink-0" />
-                <span>Primeira vez conectando o Mercado Pago?</span>
+                <span>{dict.mpSection.helpTitle}</span>
               </div>
               <ul className="space-y-1 text-[11px] text-charcoal-600 font-sans leading-relaxed list-disc pl-4">
-                <li>
-                  Não tem conta? Você pode criar uma conta gratuita na própria tela que vai abrir usando seu CPF e e-mail (leva cerca de 2 minutos).
-                </li>
-                <li>
-                  Use preferencialmente a conta do titular que vai resgatar os valores via Pix.
-                </li>
+                <li>{dict.mpSection.helpTip1}</li>
+                <li>{dict.mpSection.helpTip2}</li>
               </ul>
               <a
                 href="mailto:suporte@fralda.online?subject=Ajuda%20para%20conectar%20Mercado%20Pago%20-%20Fralda%20Online"
                 className="inline-block text-[11px] font-medium text-[#007eb5] hover:underline pt-0.5"
               >
-                Precisa de ajuda? Fale com nosso suporte
+                {dict.mpSection.helpSupportLink}
               </a>
             </div>
           </div>
         )}
       </div>
 
-      {/* BLOCO 2: REGRA DE REPASSE DAS TAXAS */}
+      {/* BLOCO 2: TAXAS */}
       <div className="bg-white p-6 rounded-2xl border border-warm-border shadow-subtle space-y-4">
         <div>
           <span className="text-[10px] font-mono uppercase tracking-widest text-charcoal-500 block mb-1">
-            Políticas Financeiras
+            {dict.feesSection.eyebrow}
           </span>
           <h2 className="font-serif text-lg text-charcoal-900 font-medium">
-            Quem assume as taxas de serviço?
+            {dict.feesSection.title}
           </h2>
           <p className="text-xs text-charcoal-500 mt-1 font-sans">
-            A comissão da plataforma é de <strong>4,99%</strong> + as taxas de processamento do Mercado Pago (0,99% Pix ou 3,99% Cartão).
+            {dict.feesSection.subtitleBefore} <strong>{dict.feesSection.subtitleBold}</strong>{' '}
+            {dict.feesSection.subtitleAfter}
           </p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-          {/* Opção GUEST */}
           <button
             type="button"
             onClick={() => setFeePayer('GUEST')}
@@ -662,22 +642,23 @@ export default function ConfigClient({ event }: ConfigClientProps) {
             <div>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-semibold text-charcoal-900">
-                  Repassar para o Convidado
+                  {dict.feesSection.guestTitle}
                 </span>
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-medium">
-                  Recomendado
+                  {dict.feesSection.recommendedBadge}
                 </span>
               </div>
               <p className="text-[11px] text-charcoal-600 leading-relaxed font-sans">
-                As taxas são somadas ao valor final do presente no checkout. Você recebe <strong>100% do valor do presente limpo</strong> na sua conta.
+                {dict.feesSection.guestBodyBefore}{' '}
+                <strong>{dict.feesSection.guestBodyBold}</strong>{' '}
+                {dict.feesSection.guestBodyAfter}
               </p>
             </div>
             <span className="mt-3 text-[10px] font-mono text-charcoal-500 block">
-              Ex: Presente de R$ 50 → Você recebe R$ 50,00 cheios.
+              {dict.feesSection.guestExample}
             </span>
           </button>
 
-          {/* Opção PARENTS */}
           <button
             type="button"
             onClick={() => setFeePayer('PARENTS')}
@@ -690,32 +671,34 @@ export default function ConfigClient({ event }: ConfigClientProps) {
             <div>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-semibold text-charcoal-900">
-                  Os Pais Assumem as Taxas
+                  {dict.feesSection.parentsTitle}
                 </span>
               </div>
               <p className="text-[11px] text-charcoal-600 leading-relaxed font-sans">
-                O convidado paga o valor exato do presente. As taxas (4,99% + tarifa MP) são descontadas do montante que você recebe.
+                {dict.feesSection.parentsBody}
               </p>
             </div>
             <span className="mt-3 text-[10px] font-mono text-charcoal-500 block">
-              Ex: Presente de R$ 50 → Convidado paga R$ 50,00.
+              {dict.feesSection.parentsExample}
             </span>
           </button>
         </div>
       </div>
 
-      {/* BLOCO 2B: SORTEIO OPCIONAL ENTRE PRESENTEADORES */}
+      {/* BLOCO 2B: SORTEIO */}
       <div className="bg-white p-6 rounded-2xl border border-warm-border shadow-subtle space-y-4">
         <div className="flex items-start justify-between gap-4">
           <div>
             <span className="text-[10px] font-mono uppercase tracking-widest text-charcoal-500 block mb-1">
-              Engajamento Opcional
+              {dict.raffleSection.eyebrow}
             </span>
             <h2 className="font-serif text-lg text-charcoal-900 font-medium">
-              Sorteio entre Presenteadores (Chá Rifa)
+              {dict.raffleSection.title}
             </h2>
             <p className="text-xs text-charcoal-500 mt-1 font-sans leading-relaxed">
-              Quando ativado, todo convidado que enviar um presente confirmado ganha automaticamente <strong>1 Número da Sorte</strong>. O sorteio é feito por você no painel e o resultado é definitivo.
+              {dict.raffleSection.bodyBefore}{' '}
+              <strong>{dict.raffleSection.bodyBold}</strong>
+              {dict.raffleSection.bodyAfter}
             </p>
           </div>
 
@@ -726,7 +709,7 @@ export default function ConfigClient({ event }: ConfigClientProps) {
             className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
               isRaffleLocked ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'
             } ${raffleEnabled ? 'bg-charcoal-900' : 'bg-stone-200'}`}
-            aria-label="Ativar ou desativar sorteio"
+            aria-label={dict.raffleSection.toggleAria}
           >
             <span
               className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
@@ -739,37 +722,37 @@ export default function ConfigClient({ event }: ConfigClientProps) {
         {raffleEnabled && (
           <div className="pt-2 border-t border-warm-border/60 space-y-2">
             <label className="block text-[11px] font-mono uppercase text-charcoal-500">
-              Qual será o prêmio sorteado?
+              {dict.raffleSection.prizeLabel}
             </label>
             <input
               type="text"
               disabled={isRaffleLocked}
               value={rafflePrize}
               onChange={(e) => setRafflePrize(e.target.value)}
-              placeholder="Ex: R$ 200 no Pix, Cafeteira ou Cesta Especial"
+              placeholder={dict.raffleSection.prizePlaceholder}
               className="w-full px-3.5 py-2.5 rounded-lg border border-warm-border bg-cream-50/50 text-charcoal-900 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-charcoal-900 disabled:opacity-60"
             />
             {isRaffleLocked && (
               <p className="text-[11px] text-amber-700 font-sans">
-                O sorteio deste evento já foi realizado e seu resultado é definitivo.
+                {dict.raffleSection.lockedNotice}
               </p>
             )}
           </div>
         )}
       </div>
 
-      {/* BLOCO 2C: FOTO DE CAPA / ULTRASSOM */}
+      {/* BLOCO 2C: FOTO DE CAPA */}
       <div className="bg-white p-6 rounded-2xl border border-warm-border shadow-subtle space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <span className="text-[10px] font-mono uppercase tracking-widest text-charcoal-500 block mb-1">
-              Personalização Visual
+              {dict.coverSection.eyebrow}
             </span>
             <h2 className="font-serif text-lg text-charcoal-900 font-medium">
-              Foto de Capa ou Ultrassom
+              {dict.coverSection.title}
             </h2>
             <p className="text-xs text-charcoal-500 mt-1 font-sans leading-relaxed">
-              Aparece em destaque no topo da página do chá e na prévia do link ao compartilhar no WhatsApp.
+              {dict.coverSection.subtitle}
             </p>
           </div>
         </div>
@@ -805,7 +788,7 @@ export default function ConfigClient({ event }: ConfigClientProps) {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={coverImageUrl}
-                alt={`Foto de capa de ${parentsNames}`}
+                alt={t(dict.coverSection.imageAlt, { parents: parentsNames })}
                 className="w-full h-full object-cover"
               />
             </div>
@@ -819,12 +802,12 @@ export default function ConfigClient({ event }: ConfigClientProps) {
                 {uploadingCover ? (
                   <>
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>Otimizando e enviando...</span>
+                    <span>{dict.coverSection.uploading}</span>
                   </>
                 ) : (
                   <>
                     <Upload className="w-3.5 h-3.5" />
-                    <span>Trocar Foto</span>
+                    <span>{dict.coverSection.changePhoto}</span>
                   </>
                 )}
               </button>
@@ -836,7 +819,9 @@ export default function ConfigClient({ event }: ConfigClientProps) {
                 className="py-2 px-3.5 rounded-xl text-xs font-medium text-dusty-rose bg-white hover:bg-dusty-rose-light border border-dusty-rose/30 transition inline-flex items-center gap-1.5 disabled:opacity-60"
               >
                 <Trash2 className="w-3.5 h-3.5" />
-                <span>{removingCover ? 'Removendo...' : 'Remover Foto'}</span>
+                <span>
+                  {removingCover ? dict.coverSection.removing : dict.coverSection.removePhoto}
+                </span>
               </button>
             </div>
           </div>
@@ -856,28 +841,30 @@ export default function ConfigClient({ event }: ConfigClientProps) {
             </div>
             <div>
               <span className="text-xs font-semibold text-charcoal-900 block">
-                {uploadingCover ? 'Otimizando e enviando imagem...' : 'Enviar Foto do Casal ou Ultrassom'}
+                {uploadingCover
+                  ? dict.coverSection.emptyUploading
+                  : dict.coverSection.emptyPrompt}
               </span>
               <span className="text-[11px] text-charcoal-500 font-sans block mt-0.5">
-                JPG, PNG ou WebP · comprimida automaticamente no seu navegador
+                {dict.coverSection.emptyHint}
               </span>
             </div>
           </button>
         )}
       </div>
 
-      {/* BLOCO 3: INFORMAÇÕES DA PÁGINA DO CHÁ */}
+      {/* BLOCO 3: INFORMAÇÕES DO EVENTO */}
       <div className="bg-white p-6 rounded-2xl border border-warm-border shadow-subtle">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1.5">
-              Modalidade do Evento
+              {dict.eventForm.eventTypeLabel}
             </label>
             <div className="grid grid-cols-3 gap-2">
               {[
-                { id: 'REVELACAO', label: 'Chá Revelação' },
-                { id: 'FRALDA', label: 'Chá de Fralda' },
-                { id: 'AMBOS', label: 'Ambos Juntos' },
+                { id: 'REVELACAO', label: eventTypesShort.REVELACAO },
+                { id: 'FRALDA', label: eventTypesShort.FRALDA },
+                { id: 'AMBOS', label: eventTypesShort.AMBOS },
               ].map((type) => (
                 <button
                   key={type.id}
@@ -897,7 +884,7 @@ export default function ConfigClient({ event }: ConfigClientProps) {
 
           <div>
             <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
-              Nome dos Pais *
+              {dict.eventForm.parentsNamesLabel}
             </label>
             <input
               type="text"
@@ -908,21 +895,19 @@ export default function ConfigClient({ event }: ConfigClientProps) {
             />
           </div>
 
-          {/* Nomes dos Bebês (Menino e Menina) */}
           <div className="p-4 bg-cream-50/70 rounded-xl border border-warm-border space-y-3">
             <div>
               <span className="text-[10px] font-mono uppercase tracking-widest text-charcoal-400 block mb-1">
-                Identidade do Bebê
+                {dict.eventForm.identityEyebrow}
               </span>
               <span className="text-xs font-semibold text-charcoal-900 block">
-                Nomes do Menino e da Menina
+                {dict.eventForm.identityTitle}
               </span>
               <p className="text-[11px] text-charcoal-500 font-sans mt-0.5">
-                Ao registrar os dois nomes, eles aparecem no bolão. Assim que você revelar o sexo, o nome vencedor ganha destaque no topo da página!
+                {dict.eventForm.identityHint}
               </p>
             </div>
 
-            {/* Checkbox Não escolhemos o nome */}
             <div className="bg-white p-3 rounded-lg border border-warm-border">
               <label className="flex items-start gap-2.5 cursor-pointer select-none">
                 <input
@@ -941,10 +926,15 @@ export default function ConfigClient({ event }: ConfigClientProps) {
                 />
                 <div className="flex-1">
                   <span className="text-xs font-semibold text-charcoal-900 block">
-                    Ainda não escolhemos o nome do bebê
+                    {dict.eventForm.noNameTitle}
                   </span>
                   <span className="text-[11px] text-charcoal-500 block mt-0.5 font-sans leading-relaxed">
-                    Sua página será exibida com o nome dos pais (ex: <em>Chá de Bebê de {parentsNames || 'Mariana e Rafael'}</em>).
+                    {dict.eventForm.noNameExamplePrefix}{' '}
+                    <em>
+                      {dict.eventForm.noNameExampleShower}{' '}
+                      {parentsNames || dict.eventForm.noNameDefaultParents}
+                    </em>
+                    ).
                   </span>
                 </div>
               </label>
@@ -955,26 +945,26 @@ export default function ConfigClient({ event }: ConfigClientProps) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                   <div>
                     <label className="block text-[11px] font-mono uppercase text-dusty-blue mb-1 font-semibold">
-                      Nome se for Menino 💙
+                      {dict.eventForm.boyLabel}
                     </label>
                     <input
                       type="text"
                       value={boyName}
                       onChange={(e) => setBoyName(e.target.value)}
-                      placeholder="Ex: Arthur"
+                      placeholder={dict.eventForm.boyPlaceholder}
                       className="w-full px-3.5 py-2.5 rounded-lg border border-dusty-blue/30 bg-white text-xs text-charcoal-900 focus:outline-none focus:ring-1 focus:ring-dusty-blue"
                     />
                   </div>
 
                   <div>
                     <label className="block text-[11px] font-mono uppercase text-dusty-rose mb-1 font-semibold">
-                      Nome se for Menina 🌸
+                      {dict.eventForm.girlLabel}
                     </label>
                     <input
                       type="text"
                       value={girlName}
                       onChange={(e) => setGirlName(e.target.value)}
-                      placeholder="Ex: Helena"
+                      placeholder={dict.eventForm.girlPlaceholder}
                       className="w-full px-3.5 py-2.5 rounded-lg border border-dusty-rose/30 bg-white text-xs text-charcoal-900 focus:outline-none focus:ring-1 focus:ring-dusty-rose"
                     />
                   </div>
@@ -982,13 +972,13 @@ export default function ConfigClient({ event }: ConfigClientProps) {
 
                 <div>
                   <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
-                    Título ou Nome Geral do Chá (Opcional)
+                    {dict.eventForm.generalNameLabel}
                   </label>
                   <input
                     type="text"
                     value={babyName}
                     onChange={(e) => setBabyName(e.target.value)}
-                    placeholder="Ex: Arthur ou Helena (deixe em branco para usar os nomes acima)"
+                    placeholder={dict.eventForm.generalNamePlaceholder}
                     className="w-full px-3.5 py-2 rounded-lg border border-warm-border bg-white text-xs text-charcoal-700 focus:outline-none focus:ring-1 focus:ring-charcoal-900"
                   />
                 </div>
@@ -998,7 +988,7 @@ export default function ConfigClient({ event }: ConfigClientProps) {
 
           <div>
             <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
-              Data do Chá
+              {dict.eventForm.eventDateLabel}
             </label>
             <input
               type="date"
@@ -1010,7 +1000,7 @@ export default function ConfigClient({ event }: ConfigClientProps) {
 
           <div>
             <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
-              Mensagem de Boas-Vindas aos Convidados
+              {dict.eventForm.welcomeMessageLabel}
             </label>
             <textarea
               rows={3}
@@ -1020,16 +1010,15 @@ export default function ConfigClient({ event }: ConfigClientProps) {
             />
           </div>
 
-          {/* CHAVE PIX DE CONTATO / RESERVA */}
           <div className="pt-2">
             <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
-              Chave Pix de Contato / Reserva (Opcional)
+              {dict.eventForm.pixKeyLabel}
             </label>
             <input
               type="text"
               value={pixKey}
               onChange={(e) => setPixKey(e.target.value)}
-              placeholder="Chave Pix para referência"
+              placeholder={dict.eventForm.pixKeyPlaceholder}
               className="w-full px-3.5 py-2.5 rounded-lg border border-warm-border text-xs font-mono text-charcoal-900 focus:outline-none focus:ring-1 focus:ring-charcoal-900"
             />
           </div>
@@ -1041,24 +1030,26 @@ export default function ConfigClient({ event }: ConfigClientProps) {
               className="py-2.5 px-5 rounded-lg font-medium text-xs bg-charcoal-900 text-white hover:bg-charcoal-800 shadow-subtle transition flex items-center gap-2"
             >
               <Save className="w-3.5 h-3.5" />
-              <span>{loading ? 'Salvando...' : 'Salvar Alterações'}</span>
+              <span>
+                {loading ? dict.eventForm.savingButton : dict.eventForm.saveChangesButton}
+              </span>
             </button>
           </div>
         </form>
       </div>
 
-      {/* BLOCO 4: PRIVACIDADE E ENCERRAMENTO DE CONTA (LGPD) */}
+      {/* BLOCO 4: LGPD CONTA */}
       <div className="bg-white p-6 rounded-2xl border border-warm-border shadow-subtle space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <span className="text-[10px] font-mono uppercase tracking-widest text-charcoal-500 block mb-1">
-              Privacidade &amp; LGPD
+              {dict.deleteSection.eyebrow}
             </span>
             <h2 className="font-serif text-lg text-charcoal-900 font-medium">
-              Encerrar Conta e Excluir Dados
+              {dict.deleteSection.title}
             </h2>
             <p className="text-xs text-charcoal-500 mt-1 font-sans leading-relaxed">
-              Você pode apagar definitivamente sua conta, sua página do chá, os recados e a foto de capa a qualquer momento. Esta ação é irreversível.
+              {dict.deleteSection.description}
             </p>
           </div>
 
@@ -1071,7 +1062,7 @@ export default function ConfigClient({ event }: ConfigClientProps) {
               }}
               className="py-2 px-3.5 rounded-xl text-xs font-medium text-dusty-rose bg-white hover:bg-dusty-rose-light border border-dusty-rose/30 transition shrink-0 self-start sm:self-center"
             >
-              Encerrar Conta
+              {dict.deleteSection.openButton}
             </button>
           )}
         </div>
@@ -1082,7 +1073,7 @@ export default function ConfigClient({ event }: ConfigClientProps) {
             className="p-4 rounded-xl bg-dusty-rose-light/50 border border-dusty-rose/30 space-y-3"
           >
             <p className="text-xs text-charcoal-800 font-sans leading-relaxed">
-              Para confirmar a exclusão permanente da sua conta e do link do chá, digite sua senha atual:
+              {dict.deleteSection.confirmPrompt}
             </p>
 
             {deleteError && (
@@ -1096,7 +1087,7 @@ export default function ConfigClient({ event }: ConfigClientProps) {
               required
               value={deletePassword}
               onChange={(e) => setDeletePassword(e.target.value)}
-              placeholder="Sua senha atual"
+              placeholder={dict.deleteSection.passwordPlaceholder}
               className="w-full px-3.5 py-2.5 rounded-lg border border-warm-border bg-white text-xs text-charcoal-900 focus:outline-none focus:ring-1 focus:ring-dusty-rose"
             />
 
@@ -1106,7 +1097,9 @@ export default function ConfigClient({ event }: ConfigClientProps) {
                 disabled={deletingAccount}
                 className="py-2 px-4 rounded-lg text-xs font-semibold bg-rose-700 hover:bg-rose-800 text-white transition disabled:opacity-60"
               >
-                {deletingAccount ? 'Excluindo conta...' : 'Excluir minha conta permanentemente'}
+                {deletingAccount
+                  ? dict.deleteSection.deletingButton
+                  : dict.deleteSection.confirmDeleteButton}
               </button>
               <button
                 type="button"
@@ -1118,7 +1111,7 @@ export default function ConfigClient({ event }: ConfigClientProps) {
                 }}
                 className="py-2 px-3.5 rounded-lg text-xs text-charcoal-600 bg-white border border-warm-border hover:bg-cream-50 transition"
               >
-                Cancelar
+                {dict.deleteSection.cancelButton}
               </button>
             </div>
           </form>

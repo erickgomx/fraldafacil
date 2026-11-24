@@ -17,6 +17,9 @@
     "lib/storage.ts",
     "lib/email.ts",
     "lib/webhook.ts",
+    "lib/default-gifts.ts",
+    "lib/share.ts",
+    "lib/i18n/**/*.ts",
     "tests/**/*.test.ts"
   ]
 }

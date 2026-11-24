@@ -1,43 +1,25 @@
-/**
- * ============================================================================
- * HERO PRINCIPAL DO EVENTO (BabyHero)
- * ============================================================================
- * Seção de destaque no topo da página pública do evento.
- * Apresenta:
- * - Título emocional com os nomes dos pais e do bebê (ou dúvida Menino/Menina no Chá Revelação).
- * - Foto de capa opcional com moldura e zoom suave (hover).
- * - Relógio regressivo tipográfico animado com rolagem de dígitos (`RollingNumber`).
- * - Efeito especial de Chuva de Confetes (`canvas-confetti`) e destaque em grande escala
- *   assim que os pais ativam a Revelação oficial do sexo do bebê!
- */
-
 'use client';
 
 import { useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
 import { AnimatePresence, motion, type Variants } from 'framer-motion';
 import { Calendar, Clock } from 'lucide-react';
-import { formatEventDateBR } from '@/lib/validation';
+import { useI18n } from '@/components/LanguageProvider';
+import { eventDict } from '@/lib/i18n/dictionaries/event';
+import { commonDict } from '@/lib/i18n/dictionaries/common';
 
-// Curva suave cúbica bezier para movimento orgânico
 const EASE = [0.22, 1, 0.36, 1] as const;
 
-// Variantes de orquestração de animação do container principal
 const container: Variants = {
   hidden: {},
   show: { transition: { staggerChildren: 0.12, delayChildren: 0.1 } },
 };
 
-// Efeito de subida e desfoque suave para cada elemento filho
 const rise: Variants = {
   hidden: { opacity: 0, y: 18, filter: 'blur(6px)' },
   show: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 0.9, ease: EASE } },
 };
 
-/**
- * Componente que exibe um dígito com efeito de rolagem vertical animada (Rolling Number)
- * sempre que o segundo ou minuto muda na contagem regressiva.
- */
 function RollingNumber({ value }: { value: number }) {
   const text = String(value).padStart(2, '0');
   return (
@@ -58,7 +40,6 @@ function RollingNumber({ value }: { value: number }) {
   );
 }
 
-// Propriedades do Hero do Bebê
 interface BabyHeroProps {
   parentsNames: string;
   babyName?: string | null;
@@ -83,7 +64,10 @@ export default function BabyHero({
   revealedGender,
   eventType = 'REVELACAO',
 }: BabyHeroProps) {
-  // Estado de tempo restante para a contagem regressiva
+  const { locale, t, formatEventDate } = useI18n();
+  const dict = eventDict[locale].babyHero;
+  const typesDict = commonDict[locale].eventTypes;
+
   const [timeLeft, setTimeLeft] = useState<{
     days: number;
     hours: number;
@@ -91,7 +75,6 @@ export default function BabyHero({
     seconds: number;
   } | null>(null);
 
-  // Atualização em tempo real da contagem regressiva a cada segundo
   useEffect(() => {
     const d = new Date(eventDate);
     if (isNaN(d.getTime())) {
@@ -99,7 +82,6 @@ export default function BabyHero({
       return;
     }
 
-    // Usa o dia calendário UTC para evitar antecipação de -3h no fuso brasileiro
     const target = new Date(
       d.getUTCFullYear(),
       d.getUTCMonth(),
@@ -130,7 +112,6 @@ export default function BabyHero({
     return () => clearInterval(interval);
   }, [eventDate]);
 
-  // Efeito de confetes festivos disparado quando a página abre com o sexo já revelado
   useEffect(() => {
     if (revealedGender === 'BOY') {
       confetti({
@@ -151,32 +132,38 @@ export default function BabyHero({
   const isGirl = revealedGender === 'GIRL';
   const isRevealed = Boolean(isBoy || isGirl);
 
-  // Nome do bebê revelado em destaque absoluto
   const winnerName = isBoy
-    ? (boyName?.trim() || babyName?.trim() || 'Nosso Menino')
-    : (girlName?.trim() || babyName?.trim() || 'Nossa Menina');
+    ? boyName?.trim() || babyName?.trim() || dict.defaultBoy
+    : girlName?.trim() || babyName?.trim() || dict.defaultGirl;
 
   const eventLabel =
     eventType === 'REVELACAO'
-      ? 'Chá Revelação'
+      ? typesDict.REVELACAO
       : eventType === 'FRALDA'
-      ? 'Chá de Fralda'
-      : 'Chá de Fralda & Revelação';
+      ? typesDict.FRALDA
+      : typesDict.AMBOS;
 
   return (
     <section className="relative pt-10 pb-16 px-6 overflow-hidden">
-      {/* Atmosfera suave ao fundo com orbes de luz difusa azul e rosa (ajustada para não ofuscar o modo escuro) */}
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-0 overflow-hidden">
-        <div className={`absolute -top-24 left-1/2 -translate-x-[70%] w-[420px] h-[420px] rounded-full blur-3xl transition-opacity duration-1000 ${
-          isRevealed
-            ? (isGirl ? 'bg-dusty-rose-light dark:bg-dusty-rose/15 opacity-90 dark:opacity-30' : 'opacity-20 dark:opacity-0')
-            : 'bg-dusty-rose-light dark:bg-dusty-rose/10 opacity-70 dark:opacity-20 animate-drift'
-        }`} />
-        <div className={`absolute top-10 left-1/2 translate-x-[5%] w-[380px] h-[380px] rounded-full blur-3xl transition-opacity duration-1000 ${
-          isRevealed
-            ? (isBoy ? 'bg-dusty-blue-light dark:bg-dusty-blue/15 opacity-90 dark:opacity-30' : 'opacity-20 dark:opacity-0')
-            : 'bg-dusty-blue-light dark:bg-dusty-blue/10 opacity-70 dark:opacity-20 animate-drift [animation-delay:-7s]'
-        }`} />
+        <div
+          className={`absolute -top-24 left-1/2 -translate-x-[70%] w-[420px] h-[420px] rounded-full blur-3xl transition-opacity duration-1000 ${
+            isRevealed
+              ? isGirl
+                ? 'bg-dusty-rose-light dark:bg-dusty-rose/15 opacity-90 dark:opacity-30'
+                : 'opacity-20 dark:opacity-0'
+              : 'bg-dusty-rose-light dark:bg-dusty-rose/10 opacity-70 dark:opacity-20 animate-drift'
+          }`}
+        />
+        <div
+          className={`absolute top-10 left-1/2 translate-x-[5%] w-[380px] h-[380px] rounded-full blur-3xl transition-opacity duration-1000 ${
+            isRevealed
+              ? isBoy
+                ? 'bg-dusty-blue-light dark:bg-dusty-blue/15 opacity-90 dark:opacity-30'
+                : 'opacity-20 dark:opacity-0'
+              : 'bg-dusty-blue-light dark:bg-dusty-blue/10 opacity-70 dark:opacity-20 animate-drift [animation-delay:-7s]'
+          }`}
+        />
       </div>
 
       <motion.div
@@ -186,7 +173,6 @@ export default function BabyHero({
         className="relative max-w-2xl mx-auto text-center"
       >
         {isRevealed ? (
-          /* QUANDO REVELADO: NOME DO BEBÊ EM DESTAQUE CINEMATOGRÁFICO ASSIM QUE ABRIR A PÁGINA */
           <motion.div
             variants={rise}
             className={`p-6 sm:p-10 rounded-3xl border shadow-card mb-8 text-center relative overflow-hidden backdrop-blur-md transition-all duration-700 ${
@@ -195,24 +181,21 @@ export default function BabyHero({
                 : 'bg-gradient-to-b from-dusty-rose-light/90 via-cream-50/80 to-white dark:from-[#29171C] dark:via-[#1D1618] dark:to-[#141210] border-dusty-rose/30 dark:border-dusty-rose/40 shadow-dusty-rose/10'
             }`}
           >
-            {/* Tag Festiva */}
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[11px] font-mono uppercase tracking-widest font-semibold mb-3 border border-warm-border dark:border-white/15 bg-white/90 dark:bg-white/10 shadow-subtle text-charcoal-700 dark:text-stone-200">
               <span className={`w-2 h-2 rounded-full animate-ping ${isBoy ? 'bg-dusty-blue' : 'bg-dusty-rose'}`} />
-              <span>O Segredo Foi Revelado!</span>
+              <span>{dict.revealedBadge}</span>
             </div>
 
-            {/* Subtítulo de Anúncio */}
             <span
               className={`block text-xs sm:text-sm font-mono uppercase tracking-widest font-bold mb-2 ${
                 isBoy ? 'text-dusty-blue dark:text-sky-300' : 'text-dusty-rose dark:text-pink-300'
               }`}
             >
-              {isBoy ? '💙 É UM MENINO! 💙' : '🌸 É UMA MENINA! 🌸'}
+              {isBoy ? dict.revealedBoyBanner : dict.revealedGirlBanner}
             </span>
 
-            {/* O Nome do Bebê em Destaque Absoluto */}
             <h1 className="font-serif text-4xl sm:text-6xl text-charcoal-900 dark:text-[#FAF8F5] font-normal tracking-tight leading-tight mb-3">
-              {isBoy ? 'O ' : 'A '}
+              {isBoy ? dict.boyArticle : dict.girlArticle}
               <span
                 className={`italic font-medium underline decoration-2 underline-offset-8 ${
                   isBoy
@@ -222,17 +205,19 @@ export default function BabyHero({
               >
                 {winnerName}
               </span>{' '}
-              vem aí!
+              {dict.comingSoonSuffix}
             </h1>
 
             <p className="text-xs sm:text-sm text-charcoal-600 dark:text-stone-300 font-sans max-w-md mx-auto leading-relaxed">
-              Com todo o carinho e amor de <strong className="font-medium text-charcoal-900 dark:text-[#FAF8F5]">{parentsNames}</strong> para celebrar essa bênção com você.
+              {dict.revealedParentsLineStart}{' '}
+              <strong className="font-medium text-charcoal-900 dark:text-[#FAF8F5]">
+                {parentsNames}
+              </strong>{' '}
+              {dict.revealedParentsLineEnd}
             </p>
           </motion.div>
         ) : (
-          /* ANTES DA REVELAÇÃO */
           <>
-            {/* Badge indicando o tipo de evento */}
             <motion.div variants={rise} className="mb-6">
               <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/90 dark:bg-white/10 backdrop-blur-sm border border-warm-border dark:border-white/15 text-charcoal-600 dark:text-stone-300 text-xs font-mono uppercase tracking-wider shadow-subtle">
                 <span className="relative flex w-1.5 h-1.5">
@@ -243,7 +228,6 @@ export default function BabyHero({
               </div>
             </motion.div>
 
-            {/* Nomes dos Pais & Opções Menino / Menina */}
             <motion.h1
               variants={rise}
               className="font-serif text-3xl sm:text-5xl text-charcoal-900 dark:text-[#FAF8F5] font-normal tracking-tight leading-tight mb-4"
@@ -251,17 +235,19 @@ export default function BabyHero({
               {boyName && girlName ? (
                 <>
                   <span className="text-dusty-blue italic font-medium">{boyName}</span>
-                  <span className="text-charcoal-400 font-sans text-xl sm:text-2xl font-light mx-2.5">ou</span>
+                  <span className="text-charcoal-400 font-sans text-xl sm:text-2xl font-light mx-2.5">
+                    {dict.orWord}
+                  </span>
                   <span className="text-dusty-rose italic font-medium">{girlName}</span>
                   <span className="text-charcoal-400">?</span>
                 </>
               ) : babyName ? (
                 <>
-                  Chá de <span className="italic font-normal">{babyName}</span>
+                  {dict.titleBabyPrefix} <span className="italic font-normal">{babyName}</span>
                 </>
               ) : (
                 <>
-                  Chá de Bebê de <span className="italic font-normal">{parentsNames}</span>
+                  {dict.titleParentsPrefix} <span className="italic font-normal">{parentsNames}</span>
                 </>
               )}
             </motion.h1>
@@ -270,13 +256,11 @@ export default function BabyHero({
               variants={rise}
               className="text-xs sm:text-sm text-charcoal-600 dark:text-stone-300 max-w-lg mx-auto leading-relaxed font-sans mb-8"
             >
-              {storyMessage ||
-                'Criamos este espaço para compartilhar com você a alegria dessa espera e receber seu carinho em forma de fraldas e recados.'}
+              {storyMessage || dict.defaultStory}
             </motion.p>
           </>
         )}
 
-        {/* Foto de Capa (se houver) */}
         {coverImageUrl && (
           <motion.div
             variants={rise}
@@ -296,20 +280,19 @@ export default function BabyHero({
           </motion.div>
         )}
 
-        {/* Contagem Regressiva Tipográfica */}
         <motion.div variants={rise}>
           {timeLeft ? (
             <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 max-w-md mx-auto border border-warm-border shadow-card">
               <div className="flex items-center justify-center gap-1.5 text-[11px] font-mono text-charcoal-500 uppercase tracking-widest mb-4">
                 <Clock className="w-3.5 h-3.5 text-charcoal-500" />
-                <span>Contagem para o evento</span>
+                <span>{dict.countdownTitle}</span>
               </div>
               <div className="grid grid-cols-4 gap-2">
                 {[
-                  { label: 'Dias', value: timeLeft.days },
-                  { label: 'Horas', value: timeLeft.hours },
-                  { label: 'Min', value: timeLeft.minutes },
-                  { label: 'Seg', value: timeLeft.seconds },
+                  { label: dict.units.days, value: timeLeft.days },
+                  { label: dict.units.hours, value: timeLeft.hours },
+                  { label: dict.units.minutes, value: timeLeft.minutes },
+                  { label: dict.units.seconds, value: timeLeft.seconds },
                 ].map((unit) => (
                   <div
                     key={unit.label}
@@ -326,7 +309,7 @@ export default function BabyHero({
           ) : (
             <div className="inline-flex items-center gap-2 text-xs font-mono text-charcoal-600 bg-white py-2 px-4 rounded-lg border border-warm-border shadow-subtle">
               <Calendar className="w-3.5 h-3.5 text-charcoal-500" />
-              <span>Data comemorativa: {formatEventDateBR(eventDate)}</span>
+              <span>{t(dict.celebrationDate, { date: formatEventDate(eventDate) })}</span>
             </div>
           )}
         </motion.div>

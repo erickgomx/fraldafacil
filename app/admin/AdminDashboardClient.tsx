@@ -6,7 +6,7 @@
  * - Cards de resumo financeiro (Faturamento Bruto, Lucro da Plataforma, Repasse aos Pais).
  * - Gráfico interativo com barras dos últimos 30 dias de movimentação.
  * - Tabela completa de auditoria com busca em tempo real por nome, e-mail, CPF ou evento.
- * - Exportação de relatórios para CSV em um clique.
+ * - Exportação de relatórios para CSV e PDF no idioma selecionado.
  * - Lista ranqueada dos Chás de Bebê com maior arrecadação.
  */
 
@@ -37,6 +37,9 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { useI18n } from '@/components/LanguageProvider';
+import { adminDict } from '@/lib/i18n/dictionaries/admin';
+import { commonDict } from '@/lib/i18n/dictionaries/common';
 
 export interface AdminMetricsData {
   totalGross: number;
@@ -139,10 +142,16 @@ export default function AdminDashboardClient({
   chartData,
 }: AdminDashboardClientProps) {
   const router = useRouter();
+  const { locale, intlLocale, t, formatCurrency, formatDate } = useI18n();
+  const copy = adminDict[locale];
+  const common = commonDict[locale];
+
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isExportingPDF, setIsExportingPDF] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'ALL' | 'APPROVED' | 'PENDING' | 'REJECTED' | 'REFUNDED' | 'CHARGED_BACK'>('ALL');
+  const [statusFilter, setStatusFilter] = useState<
+    'ALL' | 'APPROVED' | 'PENDING' | 'REJECTED' | 'REFUNDED' | 'CHARGED_BACK'
+  >('ALL');
   const [methodFilter, setMethodFilter] = useState<'ALL' | 'PIX' | 'CREDIT_CARD'>('ALL');
   const [timePeriod, setTimePeriod] = useState<'ALL' | 'MONTH' | 'WEEK' | 'TODAY'>('ALL');
 
@@ -171,7 +180,7 @@ export default function AdminDashboardClient({
       if (!res.ok || !data.success) {
         setFeedback({
           type: 'error',
-          message: data.message || data.error || 'Erro ao verificar status do pagamento.',
+          message: data.message || data.error || copy.audit.verifyMessages.genericError,
         });
         return;
       }
@@ -188,42 +197,62 @@ export default function AdminDashboardClient({
       } else {
         setFeedback({
           type: 'info',
-          message: data.message || 'Pagamento ainda está pendente no Mercado Pago.',
+          message: data.message || copy.audit.verifyMessages.stillPending,
         });
       }
     } catch (err: unknown) {
       console.error('Erro na verificação de pagamento:', err);
       setFeedback({
         type: 'error',
-        message: 'Falha de comunicação ao verificar o pagamento. Tente novamente.',
+        message: copy.audit.verifyMessages.connectionError,
       });
     } finally {
       setVerifyingId(null);
     }
   };
 
-  // Formatação de Moeda Brasileira
-  const formatBRL = (val: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(val || 0);
+  const formatBRL = (val: number) => formatCurrency(val || 0);
+
+  const formatDateTime = (dateStr: string) =>
+    formatDate(dateStr, {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+
+  const translateOrderStatus = (status: string): string => {
+    if (status === 'APPROVED') return copy.audit.statuses.APPROVED;
+    if (status === 'PENDING') return copy.audit.statuses.PENDING;
+    if (status === 'REFUNDED') return copy.audit.statuses.REFUNDED;
+    if (status === 'CHARGED_BACK') return copy.audit.statuses.CHARGED_BACK;
+    if (status === 'REJECTED') return copy.audit.statuses.REJECTED;
+    return status;
   };
 
-  // Formatação de Data Brasileira
-  const formatDate = (dateStr: string) => {
-    try {
-      const d = new Date(dateStr);
-      return new Intl.DateTimeFormat('pt-BR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      }).format(d);
-    } catch {
-      return dateStr;
-    }
+  const translatePdfOrderStatus = (status: string): string => {
+    const pdfStatuses = copy.exports.pdf.statuses;
+    if (status === 'APPROVED') return pdfStatuses.APPROVED;
+    if (status === 'PENDING') return pdfStatuses.PENDING;
+    if (status === 'REFUNDED') return pdfStatuses.REFUNDED;
+    if (status === 'CHARGED_BACK') return pdfStatuses.CHARGED_BACK;
+    if (status === 'REJECTED') return pdfStatuses.REJECTED;
+    return status;
+  };
+
+  const translateEventType = (eventType: string): string => {
+    if (eventType === 'REVELACAO') return copy.topEvents.eventTypes.REVELACAO;
+    if (eventType === 'FRALDA') return copy.topEvents.eventTypes.FRALDA;
+    if (eventType === 'AMBOS') return copy.topEvents.eventTypes.AMBOS;
+    return eventType;
+  };
+
+  const translatePdfEventType = (eventType: string): string => {
+    if (eventType === 'REVELACAO') return copy.exports.pdf.eventTypes.REVELACAO;
+    if (eventType === 'FRALDA') return copy.exports.pdf.eventTypes.FRALDA;
+    if (eventType === 'AMBOS') return copy.exports.pdf.eventTypes.AMBOS;
+    return eventType;
   };
 
   const handleRefresh = () => {
@@ -235,51 +264,50 @@ export default function AdminDashboardClient({
   // Exportar Relatório em CSV
   const handleExportCSV = () => {
     if (ordersList.length === 0) {
-      alert('Nenhuma transação disponível para exportação.');
+      alert(copy.exports.noOrdersAlert);
       return;
     }
 
-    const headers = [
-      'ID Pedido',
-      'Data e Hora',
-      'Chá / Evento (Slug)',
-      'Nome do Bebê',
-      'Organizadores',
-      'Pagador',
-      'E-mail Pagador',
-      'Telefone Pagador',
-      'CPF Pagador',
-      'Método de Pagamento',
-      'Valor Bruto (R$)',
-      'Lucro Plataforma (R$)',
-      'Líquido Pais (R$)',
-      'Taxa Gateway (R$)',
-      'Quem Pagou Taxa',
-      'Status',
-      'Palpite Bolão',
-      'Mensagem Convidado',
-    ];
+    const headers = copy.exports.csvHeaders;
 
-    const rows = ordersList.map((o) => [
-      `"${o.id}"`,
-      `"${formatDate(o.createdAt)}"`,
-      `"${o.eventSlug}"`,
-      `"${o.babyName || ''}"`,
-      `"${o.parentsNames}"`,
-      `"${o.payerName.replace(/"/g, '""')}"`,
-      `"${o.payerEmail}"`,
-      `"${o.payerPhone || ''}"`,
-      `"${o.payerCpf || ''}"`,
-      `"${o.paymentMethod}"`,
-      o.amount.toFixed(2),
-      o.platformFee.toFixed(2),
-      o.netAmount.toFixed(2),
-      o.gatewayFee.toFixed(2),
-      `"${o.feePayer}"`,
-      `"${o.status}"`,
-      `"${o.pollGuess || ''}"`,
-      `"${(o.payerMessage || '').replace(/"/g, '""')}"`,
-    ]);
+    const rows = ordersList.map((o) => {
+      const methodLabel =
+        o.paymentMethod === 'PIX'
+          ? copy.audit.methods.PIX
+          : copy.audit.methods.CREDIT_CARD;
+      const feePayerLabel =
+        o.feePayer === 'GUEST'
+          ? copy.exports.feePayerGuest
+          : copy.exports.feePayerParents;
+      const statusLabel = translateOrderStatus(o.status);
+      const pollGuessLabel =
+        o.pollGuess === 'BOY'
+          ? common.genders.boy
+          : o.pollGuess === 'GIRL'
+            ? common.genders.girl
+            : o.pollGuess || '';
+
+      return [
+        `"${o.id}"`,
+        `"${formatDateTime(o.createdAt)}"`,
+        `"${o.eventSlug}"`,
+        `"${(o.babyName || '').replace(/"/g, '""')}"`,
+        `"${o.parentsNames.replace(/"/g, '""')}"`,
+        `"${o.payerName.replace(/"/g, '""')}"`,
+        `"${o.payerEmail}"`,
+        `"${o.payerPhone || ''}"`,
+        `"${o.payerCpf || ''}"`,
+        `"${methodLabel}"`,
+        o.amount.toFixed(2),
+        o.platformFee.toFixed(2),
+        o.netAmount.toFixed(2),
+        o.gatewayFee.toFixed(2),
+        `"${feePayerLabel}"`,
+        `"${statusLabel}"`,
+        `"${pollGuessLabel.replace(/"/g, '""')}"`,
+        `"${(o.payerMessage || '').replace(/"/g, '""')}"`,
+      ];
+    });
 
     const csvContent =
       '\uFEFF' + [headers.join(';'), ...rows.map((e) => e.join(';'))].join('\n');
@@ -287,23 +315,24 @@ export default function AdminDashboardClient({
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', `relatorio_geral_fralda_facil_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute(
+      'download',
+      `${copy.exports.csvFilePrefix}${new Date().toISOString().slice(0, 10)}.csv`
+    );
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   // Filtragem dinâmica de pedidos
   const filteredOrders = useMemo(() => {
     return ordersList.filter((order) => {
-      // Filtro de Status
       if (statusFilter !== 'ALL' && order.status !== statusFilter) return false;
 
-      // Filtro de Método
       if (methodFilter === 'PIX' && order.paymentMethod !== 'PIX') return false;
       if (methodFilter === 'CREDIT_CARD' && order.paymentMethod === 'PIX') return false;
 
-      // Filtro de Busca por Texto
       if (searchTerm.trim() !== '') {
         const query = searchTerm.toLowerCase();
         const matchesName = order.payerName.toLowerCase().includes(query);
@@ -313,7 +342,14 @@ export default function AdminDashboardClient({
         const matchesId = order.id.toLowerCase().includes(query);
         const matchesCpf = (order.payerCpf || '').includes(query);
 
-        if (!matchesName && !matchesEmail && !matchesSlug && !matchesBaby && !matchesId && !matchesCpf) {
+        if (
+          !matchesName &&
+          !matchesEmail &&
+          !matchesSlug &&
+          !matchesBaby &&
+          !matchesId &&
+          !matchesCpf
+        ) {
           return false;
         }
       }
@@ -324,9 +360,18 @@ export default function AdminDashboardClient({
 
   // Referências temporais para cálculos reativos em tempo real
   const now = useMemo(() => new Date(), []);
-  const startOfToday = useMemo(() => new Date(now.getFullYear(), now.getMonth(), now.getDate()), [now]);
-  const sevenDaysAgo = useMemo(() => new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000), [now]);
-  const thirtyDaysAgo = useMemo(() => new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000), [now]);
+  const startOfToday = useMemo(
+    () => new Date(now.getFullYear(), now.getMonth(), now.getDate()),
+    [now]
+  );
+  const sevenDaysAgo = useMemo(
+    () => new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000),
+    [now]
+  );
+  const thirtyDaysAgo = useMemo(
+    () => new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000),
+    [now]
+  );
   const hasTruncatedAuditList = metrics.totalOrdersCount > ordersList.length;
 
   // Pedidos aprovados no período selecionado
@@ -337,7 +382,7 @@ export default function AdminDashboardClient({
       if (timePeriod === 'TODAY') return orderDate >= startOfToday;
       if (timePeriod === 'WEEK') return orderDate >= sevenDaysAgo;
       if (timePeriod === 'MONTH') return orderDate >= thirtyDaysAgo;
-      return true; // ALL
+      return true;
     });
   }, [ordersList, timePeriod, startOfToday, sevenDaysAgo, thirtyDaysAgo]);
 
@@ -358,27 +403,28 @@ export default function AdminDashboardClient({
       if (timePeriod === 'MONTH') return metrics.earningsMonth;
       return metrics.totalPlatformFee;
     }
-    return approvedInPeriod.reduce((sum, o) => sum + (o.platformFee ?? o.amount * 0.0499), 0);
+    return approvedInPeriod.reduce(
+      (sum, o) => sum + (o.platformFee ?? o.amount * 0.0499),
+      0
+    );
   }, [approvedInPeriod, hasTruncatedAuditList, timePeriod, metrics]);
 
   // Valores calculados de acordo com o seletor de período rápido
   const currentPeriodData = useMemo(() => {
-    const labels = {
-      TODAY: 'Hoje',
-      WEEK: 'Últimos 7 dias',
-      MONTH: 'Últimos 30 dias',
-      ALL: 'Todo o Histórico',
-    };
     return {
       gross: periodGross,
       earnings: periodEarnings,
-      label: labels[timePeriod],
+      label: copy.header.periods[timePeriod],
     };
-  }, [timePeriod, periodGross, periodEarnings]);
+  }, [timePeriod, periodGross, periodEarnings, copy.header.periods]);
 
   // Geração dinâmica dos pontos do gráfico sincronizados com a lista de pedidos e o período selecionado
   const computedChartData = useMemo(() => {
-    if (hasTruncatedAuditList && (timePeriod === 'ALL' || timePeriod === 'MONTH') && chartData.length > 0) {
+    if (
+      hasTruncatedAuditList &&
+      (timePeriod === 'ALL' || timePeriod === 'MONTH') &&
+      chartData.length > 0
+    ) {
       return chartData;
     }
 
@@ -415,7 +461,11 @@ export default function AdminDashboardClient({
 
     for (let i = numDays - 1; i >= 0; i--) {
       const targetDate = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
-      const dayStart = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
+      const dayStart = new Date(
+        targetDate.getFullYear(),
+        targetDate.getMonth(),
+        targetDate.getDate()
+      );
       const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000 - 1);
 
       const dayOrders = ordersList.filter((o) => {
@@ -460,9 +510,11 @@ export default function AdminDashboardClient({
   // Exportar Relatório em PDF
   const handleExportPDF = () => {
     if (ordersList.length === 0) {
-      alert('Nenhuma transação disponível para exportação.');
+      alert(copy.exports.noOrdersAlert);
       return;
     }
+
+    const pdfCopy = copy.exports.pdf;
 
     try {
       setIsExportingPDF(true);
@@ -473,27 +525,31 @@ export default function AdminDashboardClient({
         format: 'a4',
       });
 
-      const primaryColor: [number, number, number] = [15, 23, 42]; // slate-900
-      const secondaryColor: [number, number, number] = [71, 85, 105]; // slate-600
-      const borderColor: [number, number, number] = [226, 232, 240]; // slate-200
+      const primaryColor: [number, number, number] = [15, 23, 42];
+      const secondaryColor: [number, number, number] = [71, 85, 105];
+      const borderColor: [number, number, number] = [226, 232, 240];
 
       // Header do Relatório
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(15);
       doc.setTextColor(...primaryColor);
-      doc.text('FRALDA FACIL', 14, 15);
+      doc.text(pdfCopy.brand, 14, 15);
 
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(9);
       doc.setTextColor(...secondaryColor);
-      doc.text('Relatorio Administrativo & Auditoria Financeira', 14, 21);
+      doc.text(pdfCopy.subtitle, 14, 21);
 
       // Metadados à direita
       doc.setFontSize(8);
-      const generatedAt = new Date().toLocaleString('pt-BR');
-      doc.text(`Gerado em: ${generatedAt}`, 283, 13, { align: 'right' });
-      doc.text(`Responsavel: ${admin.name} (${admin.email})`, 283, 18, { align: 'right' });
-      doc.text(`Filtro de Periodo: ${currentPeriodData.label}`, 283, 23, { align: 'right' });
+      const generatedAt = new Date().toLocaleString(intlLocale);
+      doc.text(t(pdfCopy.generatedAt, { date: generatedAt }), 283, 13, { align: 'right' });
+      doc.text(t(pdfCopy.responsible, { name: admin.name, email: admin.email }), 283, 18, {
+        align: 'right',
+      });
+      doc.text(t(pdfCopy.periodFilter, { period: currentPeriodData.label }), 283, 23, {
+        align: 'right',
+      });
 
       // Linha horizontal elegante
       doc.setDrawColor(...borderColor);
@@ -506,23 +562,11 @@ export default function AdminDashboardClient({
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(10);
       doc.setTextColor(...primaryColor);
-      doc.text('1. RESUMO FINANCEIRO & PERFORMANCE', 14, currentY);
+      doc.text(pdfCopy.section1Title, 14, currentY);
 
       currentY += 4;
 
-      const summaryHead = [
-        [
-          'Total Bruto',
-          'Lucro Plataforma (4,99%)',
-          'Repasse Pais (~95,01%)',
-          'Taxa Gateway MP',
-          'Ticket Medio',
-          'Conversao',
-          'Pedidos Aprov.',
-          'Total Pedidos',
-          'Total Chas',
-        ],
-      ];
+      const summaryHead = [pdfCopy.section1Headers];
 
       const summaryBody = [
         [
@@ -563,28 +607,18 @@ export default function AdminDashboardClient({
         margin: { left: 14, right: 14 },
       });
 
-      currentY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 7;
+      currentY =
+        (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 7;
 
       // Seção 2: Métodos de Pagamento e Taxas
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(10);
       doc.setTextColor(...primaryColor);
-      doc.text('2. METODOS DE PAGAMENTO & REPASSE', 14, currentY);
+      doc.text(pdfCopy.section2Title, 14, currentY);
 
       currentY += 4;
 
-      const paymentHead = [
-        [
-          'PIX (Qtd)',
-          'PIX (Volume R$)',
-          'Cartao (Qtd)',
-          'Cartao (Volume R$)',
-          'Taxa Paga por Convidado',
-          'Taxa Paga pelos Pais',
-          'Chas com MP Conectado',
-          'Chas MP Pendente',
-        ],
-      ];
+      const paymentHead = [pdfCopy.section2Headers];
 
       const paymentBody = [
         [
@@ -592,10 +626,10 @@ export default function AdminDashboardClient({
           formatBRL(metrics.pixGrossAmount),
           String(metrics.cardOrdersCount),
           formatBRL(metrics.cardGrossAmount),
-          `${metrics.guestFeeCount} pedidos`,
-          `${metrics.parentsFeeCount} pedidos`,
-          `${metrics.mpConnectedCount} eventos`,
-          `${metrics.mpPendingCount} eventos`,
+          t(pdfCopy.ordersUnit, { count: metrics.guestFeeCount }),
+          t(pdfCopy.ordersUnit, { count: metrics.parentsFeeCount }),
+          t(pdfCopy.eventsUnit, { count: metrics.mpConnectedCount }),
+          t(pdfCopy.eventsUnit, { count: metrics.mpPendingCount }),
         ],
       ];
 
@@ -624,28 +658,27 @@ export default function AdminDashboardClient({
         margin: { left: 14, right: 14 },
       });
 
-      currentY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 7;
+      currentY =
+        (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 7;
 
       // Seção 3: Ranking de Chás / Top Eventos
       if (topEvents && topEvents.length > 0) {
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(10);
         doc.setTextColor(...primaryColor);
-        doc.text('3. TOP CHAS DE BEBE (MAIOR ARRECADACAO)', 14, currentY);
+        doc.text(pdfCopy.section3Title, 14, currentY);
 
         currentY += 4;
 
-        const eventsHead = [
-          ['#', 'Bebe / Slug', 'Organizadores', 'Email Responsavel', 'Tipo', 'MP', 'Pedidos', 'Total Arrecadado', 'Lucro Plataforma'],
-        ];
+        const eventsHead = [pdfCopy.section3Headers];
 
         const eventsBody = topEvents.slice(0, 10).map((e, idx) => [
           String(idx + 1),
           `${e.babyName ? e.babyName + ' ' : ''}(${e.slug})`,
           e.parentsNames,
           e.ownerEmail,
-          e.eventType === 'REVELACAO' ? 'Revelacao' : e.eventType === 'FRALDA' ? 'Cha de Fralda' : 'Ambos',
-          e.mpConnected ? 'Conectado' : 'Pendente',
+          translatePdfEventType(e.eventType),
+          e.mpConnected ? pdfCopy.mpConnected : pdfCopy.mpPending,
           String(e.ordersCount),
           formatBRL(e.grossRaised),
           formatBRL(e.platformEarnings),
@@ -682,7 +715,8 @@ export default function AdminDashboardClient({
           margin: { left: 14, right: 14 },
         });
 
-        currentY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 7;
+        currentY =
+          (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 7;
       }
 
       // Seção 4: Tabela de Pedidos e Auditoria
@@ -697,28 +731,28 @@ export default function AdminDashboardClient({
       doc.setFontSize(10);
       doc.setTextColor(...primaryColor);
       doc.text(
-        `4. EXTRATO DE PEDIDOS & AUDITORIA (${ordersToExport.length} registro${ordersToExport.length === 1 ? '' : 's'})`,
+        ordersToExport.length === 1
+          ? t(pdfCopy.section4TitleSingular, { count: 1 })
+          : t(pdfCopy.section4TitlePlural, { count: ordersToExport.length }),
         14,
         currentY
       );
 
       currentY += 4;
 
-      const ordersHead = [
-        ['ID Pedido', 'Data', 'Evento / Slug', 'Pagador', 'CPF', 'Metodo', 'Bruto (R$)', 'Lucro (R$)', 'Liq. Pais (R$)', 'Status'],
-      ];
+      const ordersHead = [pdfCopy.section4Headers];
 
       const ordersBody = ordersToExport.map((o) => [
         o.id.slice(-8),
-        formatDate(o.createdAt),
+        formatDateTime(o.createdAt),
         o.babyName ? `${o.babyName} (${o.eventSlug})` : o.eventSlug,
         o.payerName,
         o.payerCpf || '-',
-        o.paymentMethod === 'PIX' ? 'PIX' : 'Cartao',
+        o.paymentMethod === 'PIX' ? pdfCopy.methods.PIX : pdfCopy.methods.CREDIT_CARD,
         formatBRL(o.amount),
         formatBRL(o.platformFee),
         formatBRL(o.netAmount),
-        o.status === 'APPROVED' ? 'Aprovado' : o.status === 'PENDING' ? 'Pendente' : 'Rejeitado',
+        translatePdfOrderStatus(o.status),
       ]);
 
       autoTable(doc, {
@@ -754,11 +788,11 @@ export default function AdminDashboardClient({
         margin: { left: 14, right: 14 },
         didParseCell: (data) => {
           if (data.section === 'body' && data.column.index === 9) {
-            const val = String(data.cell.raw);
-            if (val === 'Aprovado') {
+            const rawStatus = ordersToExport[data.row.index]?.status;
+            if (rawStatus === 'APPROVED') {
               data.cell.styles.textColor = [16, 185, 129];
               data.cell.styles.fontStyle = 'bold';
-            } else if (val === 'Pendente') {
+            } else if (rawStatus === 'PENDING' || rawStatus === 'REFUNDED') {
               data.cell.styles.textColor = [245, 158, 11];
             } else {
               data.cell.styles.textColor = [239, 68, 68];
@@ -773,17 +807,19 @@ export default function AdminDashboardClient({
         doc.setPage(i);
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(7.5);
-        doc.setTextColor(148, 163, 184); // slate-400
+        doc.setTextColor(148, 163, 184);
         doc.line(14, 198, 283, 198);
-        doc.text('Fralda Facil • Documento confidencial para uso administrativo exclusivo', 14, 203);
-        doc.text(`Pagina ${i} de ${totalPages}`, 283, 203, { align: 'right' });
+        doc.text(pdfCopy.footerConfidential, 14, 203);
+        doc.text(t(pdfCopy.footerPage, { page: i, total: totalPages }), 283, 203, {
+          align: 'right',
+        });
       }
 
       const dateStr = new Date().toISOString().slice(0, 10);
-      doc.save(`relatorio_admin_fralda_online_${dateStr}.pdf`);
+      doc.save(`${copy.exports.pdfFilePrefix}${dateStr}.pdf`);
     } catch (err) {
       console.error('Erro ao gerar relatorio em PDF:', err);
-      alert('Ocorreu um erro ao gerar o relatorio em PDF. Tente novamente.');
+      alert(copy.exports.pdfErrorAlert);
     } finally {
       setIsExportingPDF(false);
     }
@@ -798,7 +834,7 @@ export default function AdminDashboardClient({
             <div className="flex items-center gap-2 mb-2">
               <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium text-slate-600 bg-slate-100 border border-slate-200">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                admin
+                {copy.header.badge}
               </span>
               <span className="text-xs text-slate-400">•</span>
               <span className="text-xs text-slate-500">
@@ -806,10 +842,10 @@ export default function AdminDashboardClient({
               </span>
             </div>
             <h1 className="text-xl sm:text-2xl font-serif font-semibold text-slate-900 tracking-tight">
-              Painel Administrativo
+              {copy.header.title}
             </h1>
             <p className="text-xs sm:text-sm text-slate-500 mt-0.5 max-w-2xl">
-              Métricas financeiras, comissões da plataforma (4,99%), conversão e auditoria de pedidos.
+              {copy.header.subtitle}
             </p>
           </div>
 
@@ -820,27 +856,29 @@ export default function AdminDashboardClient({
               disabled={isRefreshing}
               className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium shadow-2xs transition disabled:opacity-50"
             >
-              <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${isRefreshing ? 'animate-spin' : ''}`} />
-              <span>{isRefreshing ? 'Atualizando...' : 'Atualizar'}</span>
+              <RefreshCw
+                className={`w-3.5 h-3.5 text-slate-500 ${isRefreshing ? 'animate-spin' : ''}`}
+              />
+              <span>{isRefreshing ? copy.header.refreshing : copy.header.refresh}</span>
             </button>
 
             <button
               onClick={handleExportCSV}
               className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium shadow-2xs transition"
-              title="Exportar dados em formato CSV"
+              title={copy.header.exportCsvTitle}
             >
               <Download className="w-3.5 h-3.5 text-slate-500" />
-              <span>Exportar CSV</span>
+              <span>{copy.header.exportCsv}</span>
             </button>
 
             <button
               onClick={handleExportPDF}
               disabled={isExportingPDF}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium shadow-xs transition disabled:opacity-50"
-              title="Exportar relatório completo em PDF"
+              title={copy.header.exportPdfTitle}
             >
               <FileText className="w-3.5 h-3.5" />
-              <span>{isExportingPDF ? 'Gerando PDF...' : 'Exportar PDF'}</span>
+              <span>{isExportingPDF ? copy.header.exportingPdf : copy.header.exportPdf}</span>
             </button>
           </div>
         </div>
@@ -849,7 +887,7 @@ export default function AdminDashboardClient({
         <div className="mt-6 pt-6 border-t border-slate-100 flex flex-wrap items-center justify-between gap-4">
           <span className="text-xs font-medium text-slate-500 flex items-center gap-1.5">
             <Calendar className="w-3.5 h-3.5 text-slate-400" />
-            Recorte de Faturamento:
+            {copy.header.periodRangeLabel}
           </span>
 
           <div className="inline-flex p-1 bg-slate-100 rounded-xl text-xs font-medium">
@@ -861,7 +899,7 @@ export default function AdminDashboardClient({
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              Todo o Histórico
+              {copy.header.periods.ALL}
             </button>
             <button
               onClick={() => setTimePeriod('MONTH')}
@@ -871,7 +909,7 @@ export default function AdminDashboardClient({
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              Últimos 30 Dias
+              {copy.header.periods.MONTH}
             </button>
             <button
               onClick={() => setTimePeriod('WEEK')}
@@ -881,7 +919,7 @@ export default function AdminDashboardClient({
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              Últimos 7 Dias
+              {copy.header.periods.WEEK}
             </button>
             <button
               onClick={() => setTimePeriod('TODAY')}
@@ -891,7 +929,7 @@ export default function AdminDashboardClient({
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              Hoje
+              {copy.header.periods.TODAY}
             </button>
           </div>
         </div>
@@ -903,7 +941,7 @@ export default function AdminDashboardClient({
         <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs hover:border-slate-300 transition-colors">
           <div className="flex items-center justify-between mb-3">
             <span className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">
-              Total Arrecadado ({currentPeriodData.label})
+              {t(copy.kpis.totalRaisedWithPeriod, { period: currentPeriodData.label })}
             </span>
             <div className="w-8 h-8 rounded-xl bg-amber-50 border border-amber-100 text-amber-700 flex items-center justify-center">
               <DollarSign className="w-4 h-4" />
@@ -913,7 +951,7 @@ export default function AdminDashboardClient({
             {formatBRL(currentPeriodData.gross)}
           </div>
           <div className="mt-3 flex items-center justify-between text-xs text-slate-500 pt-3 border-t border-slate-100">
-            <span>Ticket Médio:</span>
+            <span>{copy.kpis.averageTicketLabel}</span>
             <strong className="text-slate-700 font-mono">{formatBRL(metrics.averageTicket)}</strong>
           </div>
         </div>
@@ -923,10 +961,10 @@ export default function AdminDashboardClient({
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-1.5">
               <span className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">
-                Ganhos da Plataforma
+                {copy.kpis.platformEarnings}
               </span>
               <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
-                4,99%
+                {copy.kpis.platformFeeRate}
               </span>
             </div>
             <div className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-700 flex items-center justify-center">
@@ -937,8 +975,10 @@ export default function AdminDashboardClient({
             {formatBRL(currentPeriodData.earnings)}
           </div>
           <div className="mt-3 flex items-center justify-between text-xs text-slate-500 pt-3 border-t border-slate-100">
-            <span>Lucro Líquido:</span>
-            <span className="text-emerald-600 font-medium font-mono">Split Automático</span>
+            <span>{copy.kpis.netProfitLabel}</span>
+            <span className="text-emerald-600 font-medium font-mono">
+              {copy.kpis.autoSplitLabel}
+            </span>
           </div>
         </div>
 
@@ -946,7 +986,7 @@ export default function AdminDashboardClient({
         <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs hover:border-slate-300 transition-colors">
           <div className="flex items-center justify-between mb-3">
             <span className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">
-              Repassado aos Pais
+              {copy.kpis.parentsNet}
             </span>
             <div className="w-8 h-8 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-700 flex items-center justify-center">
               <Wallet className="w-4 h-4" />
@@ -956,8 +996,10 @@ export default function AdminDashboardClient({
             {formatBRL(metrics.totalParentsNet)}
           </div>
           <div className="mt-3 flex items-center justify-between text-xs text-slate-500 pt-3 border-t border-slate-100">
-            <span>Repasse Líquido:</span>
-            <strong className="text-indigo-700 font-medium font-mono">~95,01%</strong>
+            <span>{copy.kpis.netPayoutLabel}</span>
+            <strong className="text-indigo-700 font-medium font-mono">
+              {copy.kpis.parentsNetPercent}
+            </strong>
           </div>
         </div>
 
@@ -965,7 +1007,7 @@ export default function AdminDashboardClient({
         <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs hover:border-slate-300 transition-colors">
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-              Taxas Gateway (MP)
+              {copy.kpis.gatewayFee}
             </span>
             <div className="w-9 h-9 rounded-2xl bg-slate-100 border border-slate-200 text-slate-700 flex items-center justify-center">
               <CreditCard className="w-4 h-4" />
@@ -975,8 +1017,10 @@ export default function AdminDashboardClient({
             {formatBRL(metrics.totalGatewayFee)}
           </div>
           <div className="mt-3 flex items-center justify-between text-xs text-slate-500 pt-3 border-t border-slate-100">
-            <span>Pix 0,99% | Cartão 3,99%</span>
-            <span className="text-slate-600 font-mono text-[11px]">Processamento</span>
+            <span>{copy.kpis.gatewayRatesLabel}</span>
+            <span className="text-slate-600 font-mono text-[11px]">
+              {copy.kpis.processingLabel}
+            </span>
           </div>
         </div>
       </div>
@@ -988,10 +1032,10 @@ export default function AdminDashboardClient({
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold text-sm text-slate-900 flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-              Funil de Pedidos
+              {copy.panels.funnelTitle}
             </h3>
             <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
-              {metrics.conversionRate.toFixed(1)}% aprovados
+              {t(copy.panels.funnelApprovedPct, { pct: metrics.conversionRate.toFixed(1) })}
             </span>
           </div>
 
@@ -1007,7 +1051,7 @@ export default function AdminDashboardClient({
                   }%`,
                 }}
                 className="bg-emerald-500 h-full transition-all"
-                title={`Aprovados: ${metrics.approvedOrdersCount}`}
+                title={t(copy.panels.funnelApprovedTooltip, { count: metrics.approvedOrdersCount })}
               />
               <div
                 style={{
@@ -1018,7 +1062,7 @@ export default function AdminDashboardClient({
                   }%`,
                 }}
                 className="bg-amber-400 h-full transition-all"
-                title={`Pendentes: ${metrics.pendingOrdersCount}`}
+                title={t(copy.panels.funnelPendingTooltip, { count: metrics.pendingOrdersCount })}
               />
               <div
                 style={{
@@ -1029,7 +1073,7 @@ export default function AdminDashboardClient({
                   }%`,
                 }}
                 className="bg-rose-400 h-full transition-all"
-                title={`Rejeitados/Expirados: ${metrics.rejectedOrdersCount}`}
+                title={t(copy.panels.funnelRejectedTooltip, { count: metrics.rejectedOrdersCount })}
               />
             </div>
 
@@ -1038,19 +1082,19 @@ export default function AdminDashboardClient({
                 <span className="text-emerald-700 font-semibold block text-base font-mono">
                   {metrics.approvedOrdersCount}
                 </span>
-                <span className="text-[11px] text-emerald-800">Aprovados</span>
+                <span className="text-[11px] text-emerald-800">{copy.panels.funnelApproved}</span>
               </div>
               <div className="p-2 rounded-xl bg-amber-50/60 border border-amber-100">
                 <span className="text-amber-700 font-semibold block text-base font-mono">
                   {metrics.pendingOrdersCount}
                 </span>
-                <span className="text-[11px] text-amber-800">Pendentes</span>
+                <span className="text-[11px] text-amber-800">{copy.panels.funnelPending}</span>
               </div>
               <div className="p-2 rounded-xl bg-rose-50/60 border border-rose-100">
                 <span className="text-rose-700 font-semibold block text-base font-mono">
                   {metrics.rejectedOrdersCount}
                 </span>
-                <span className="text-[11px] text-rose-800">Cancelados</span>
+                <span className="text-[11px] text-rose-800">{copy.panels.funnelCanceled}</span>
               </div>
             </div>
           </div>
@@ -1060,7 +1104,7 @@ export default function AdminDashboardClient({
         <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
           <h3 className="font-semibold text-sm text-slate-900 mb-4 flex items-center gap-2">
             <QrCode className="w-4 h-4 text-indigo-600" />
-            Métodos &amp; Pagador da Taxa
+            {copy.panels.methodsTitle}
           </h3>
 
           <div className="space-y-4 text-xs">
@@ -1069,27 +1113,35 @@ export default function AdminDashboardClient({
               <div className="flex items-center justify-between">
                 <span className="flex items-center gap-1.5 font-medium text-slate-700">
                   <QrCode className="w-3.5 h-3.5 text-teal-600" />
-                  Pix ({metrics.pixOrdersCount} pedidos)
+                  {t(copy.panels.methodsPix, { count: metrics.pixOrdersCount })}
                 </span>
-                <strong className="font-mono text-slate-900">{formatBRL(metrics.pixGrossAmount)}</strong>
+                <strong className="font-mono text-slate-900">
+                  {formatBRL(metrics.pixGrossAmount)}
+                </strong>
               </div>
               <div className="flex items-center justify-between pt-1 border-t border-slate-200/60">
                 <span className="flex items-center gap-1.5 font-medium text-slate-700">
                   <CreditCard className="w-3.5 h-3.5 text-blue-600" />
-                  Cartão ({metrics.cardOrdersCount} pedidos)
+                  {t(copy.panels.methodsCard, { count: metrics.cardOrdersCount })}
                 </span>
-                <strong className="font-mono text-slate-900">{formatBRL(metrics.cardGrossAmount)}</strong>
+                <strong className="font-mono text-slate-900">
+                  {formatBRL(metrics.cardGrossAmount)}
+                </strong>
               </div>
             </div>
 
             {/* Split: Convidado vs Pais */}
             <div className="flex items-center justify-between pt-1 text-slate-600">
-              <span>Taxa paga pelo convidado:</span>
-              <strong className="text-slate-900 font-mono">{metrics.guestFeeCount} pedidos</strong>
+              <span>{copy.panels.methodsFeeGuest}</span>
+              <strong className="text-slate-900 font-mono">
+                {t(copy.panels.methodsOrdersCount, { count: metrics.guestFeeCount })}
+              </strong>
             </div>
             <div className="flex items-center justify-between text-slate-600">
-              <span>Taxa assumida pelos pais:</span>
-              <strong className="text-slate-900 font-mono">{metrics.parentsFeeCount} pedidos</strong>
+              <span>{copy.panels.methodsFeeParents}</span>
+              <strong className="text-slate-900 font-mono">
+                {t(copy.panels.methodsOrdersCount, { count: metrics.parentsFeeCount })}
+              </strong>
             </div>
           </div>
         </div>
@@ -1098,36 +1150,44 @@ export default function AdminDashboardClient({
         <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
           <h3 className="font-semibold text-sm text-slate-900 mb-4 flex items-center gap-2">
             <Users className="w-4 h-4 text-rose-600" />
-            Comunidade &amp; Engajamento
+            {copy.panels.communityTitle}
           </h3>
 
           <div className="grid grid-cols-2 gap-3 text-xs">
             <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100">
-              <span className="text-slate-500 block mb-0.5">Usuários Cadastrados</span>
+              <span className="text-slate-500 block mb-0.5">{copy.panels.communityUsers}</span>
               <strong className="text-xl font-semibold font-serif text-slate-900 block tabular-nums">
                 {metrics.totalUsers}
               </strong>
             </div>
 
             <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100">
-              <span className="text-slate-500 block mb-0.5">Total de Chás Criados</span>
+              <span className="text-slate-500 block mb-0.5">{copy.panels.communityEvents}</span>
               <strong className="text-xl font-semibold font-serif text-slate-900 block tabular-nums">
                 {metrics.totalEvents}
               </strong>
             </div>
 
             <div className="p-3 rounded-2xl bg-emerald-50/50 border border-emerald-100">
-              <span className="text-emerald-700 block mb-0.5">MP Conectados</span>
+              <span className="text-emerald-700 block mb-0.5">
+                {copy.panels.communityMpConnected}
+              </span>
               <strong className="text-base font-bold text-emerald-900 block font-mono">
                 {metrics.mpConnectedCount}
                 <span className="text-[10px] font-normal text-emerald-600 ml-1">
-                  ({metrics.totalEvents > 0 ? Math.round((metrics.mpConnectedCount / metrics.totalEvents) * 100) : 0}%)
+                  (
+                  {metrics.totalEvents > 0
+                    ? Math.round((metrics.mpConnectedCount / metrics.totalEvents) * 100)
+                    : 0}
+                  %)
                 </span>
               </strong>
             </div>
 
             <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100">
-              <span className="text-slate-500 block mb-0.5">Recados &amp; Bolões</span>
+              <span className="text-slate-500 block mb-0.5">
+                {copy.panels.communityMessagesAndPolls}
+              </span>
               <strong className="text-base font-bold text-slate-900 block font-mono">
                 {metrics.totalGuestMessages} / {metrics.totalPollVotes}
               </strong>
@@ -1141,27 +1201,25 @@ export default function AdminDashboardClient({
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
             <h3 className="font-serif font-bold text-lg text-slate-900">
-              Curva de Arrecadação e Lucro ({currentPeriodData.label})
+              {t(copy.chart.title, { period: currentPeriodData.label })}
             </h3>
-            <p className="text-xs text-slate-500">
-              Volume arrecadado por período e receita gerada para a plataforma.
-            </p>
+            <p className="text-xs text-slate-500">{copy.chart.subtitle}</p>
           </div>
           <div className="flex flex-wrap items-center gap-4 text-xs font-medium">
             <span className="flex items-center gap-1.5 text-slate-700">
               <span className="w-3 h-3 rounded-md bg-amber-500" />
-              Arrecadação Bruta ({formatBRL(currentPeriodData.gross)})
+              {t(copy.chart.legendGross, { amount: formatBRL(currentPeriodData.gross) })}
             </span>
             <span className="flex items-center gap-1.5 text-emerald-700">
               <span className="w-3 h-3 rounded-md bg-emerald-600" />
-              Lucro do Site ({formatBRL(currentPeriodData.earnings)})
+              {t(copy.chart.legendEarnings, { amount: formatBRL(currentPeriodData.earnings) })}
             </span>
           </div>
         </div>
 
         {/* Gráfico de Barras com Linhas Guia e Eixo X Separado */}
         <div className="relative pt-2">
-          {/* Linhas de grade de fundo (Rótulos de valor de referência no eixo Y) */}
+          {/* Linhas de grade de fundo */}
           <div className="absolute inset-x-0 top-6 h-48 flex flex-col justify-between pointer-events-none opacity-40">
             <div className="border-b border-dashed border-slate-200 w-full flex justify-end">
               <span className="text-[10px] font-mono text-slate-400 -mt-2.5 bg-white px-1">
@@ -1175,21 +1233,23 @@ export default function AdminDashboardClient({
             </div>
             <div className="border-b border-dashed border-slate-200 w-full flex justify-end">
               <span className="text-[10px] font-mono text-slate-400 -mt-2.5 bg-white px-1">
-                R$ 0,00
+                {formatBRL(0)}
               </span>
             </div>
           </div>
 
-          {/* Área das Barras (Plot Area) */}
+          {/* Área das Barras */}
           <div className="relative h-48 flex items-end gap-1.5 sm:gap-2.5 overflow-x-auto pt-6 pb-0 border-b border-slate-200">
             {computedChartData.map((pt, idx) => {
               const maxBarHeight = 150;
-              const grossHeight = pt.gross > 0
-                ? Math.max(8, Math.round((pt.gross / maxChartValue) * maxBarHeight))
-                : 4;
-              const earningsHeight = pt.earnings > 0
-                ? Math.max(4, Math.round((pt.earnings / maxChartValue) * maxBarHeight))
-                : 2;
+              const grossHeight =
+                pt.gross > 0
+                  ? Math.max(8, Math.round((pt.gross / maxChartValue) * maxBarHeight))
+                  : 4;
+              const earningsHeight =
+                pt.earnings > 0
+                  ? Math.max(4, Math.round((pt.earnings / maxChartValue) * maxBarHeight))
+                  : 2;
 
               return (
                 <div
@@ -1200,14 +1260,20 @@ export default function AdminDashboardClient({
                   <div className="absolute bottom-full mb-3 hidden group-hover:flex flex-col items-center z-30 pointer-events-none whitespace-nowrap">
                     <div className="bg-slate-900 text-white rounded-xl p-2.5 shadow-xl text-[11px] space-y-1">
                       <p className="font-semibold border-b border-slate-700 pb-1">{pt.label}</p>
-                      <p className="text-amber-300 font-mono">Bruto: {formatBRL(pt.gross)}</p>
-                      <p className="text-emerald-400 font-mono">Lucro Site: {formatBRL(pt.earnings)}</p>
-                      <p className="text-slate-300">{pt.orders} presente(s) aprovado(s)</p>
+                      <p className="text-amber-300 font-mono">
+                        {t(copy.chart.tooltipGross, { amount: formatBRL(pt.gross) })}
+                      </p>
+                      <p className="text-emerald-400 font-mono">
+                        {t(copy.chart.tooltipEarnings, { amount: formatBRL(pt.earnings) })}
+                      </p>
+                      <p className="text-slate-300">
+                        {t(copy.chart.tooltipOrders, { count: pt.orders })}
+                      </p>
                     </div>
                     <div className="w-2 h-2 bg-slate-900 rotate-45 -mt-1" />
                   </div>
 
-                  {/* Barras Lado a Lado apoiadas na mesma linha horizontal */}
+                  {/* Barras Lado a Lado */}
                   <div className="w-full flex items-end justify-center gap-0.5 sm:gap-1">
                     <div
                       style={{ height: `${grossHeight}px` }}
@@ -1231,7 +1297,7 @@ export default function AdminDashboardClient({
             })}
           </div>
 
-          {/* Rótulos do Eixo X em linha dedicada */}
+          {/* Rótulos do Eixo X */}
           <div className="flex items-center gap-1.5 sm:gap-2.5 pt-2">
             {computedChartData.map((pt, idx) => (
               <div key={idx} className="flex-1 min-w-[20px] text-center">
@@ -1240,9 +1306,7 @@ export default function AdminDashboardClient({
                     {pt.label}
                   </span>
                 ) : (
-                  <span className="text-[10px] font-mono block opacity-0 select-none">
-                    --
-                  </span>
+                  <span className="text-[10px] font-mono block opacity-0 select-none">--</span>
                 )}
               </div>
             ))}
@@ -1251,10 +1315,13 @@ export default function AdminDashboardClient({
           {/* Feedback se não houver faturamento aprovado no período */}
           {currentPeriodData.gross === 0 && (
             <div className="text-center py-4 text-xs text-slate-400 mt-2 bg-slate-50/50 rounded-xl border border-slate-100">
-              Nenhuma transação aprovada registrada em <strong>{currentPeriodData.label.toLowerCase()}</strong>.
+              {copy.chart.emptyPeriodPrefix}{' '}
+              <strong>{currentPeriodData.label.toLowerCase()}</strong>.
               {ordersList.some((o) => o.status === 'PENDING') && (
                 <span className="ml-1 text-amber-600 font-medium">
-                  (Há {ordersList.filter((o) => o.status === 'PENDING').length} pagamento(s) pendente(s) na tabela abaixo aguardando verificação)
+                  {t(copy.chart.pendingNotice, {
+                    count: ordersList.filter((o) => o.status === 'PENDING').length,
+                  })}
                 </span>
               )}
             </div>
@@ -1268,14 +1335,12 @@ export default function AdminDashboardClient({
           <div>
             <h3 className="font-serif font-bold text-lg text-slate-900 flex items-center gap-2">
               <Baby className="w-5 h-5 text-indigo-600" />
-              Ranking dos Chás Mais Arrecadadores
+              {copy.topEvents.title}
             </h3>
-            <p className="text-xs text-slate-500">
-              Eventos com maior volume financeiro transacionado na história da plataforma.
-            </p>
+            <p className="text-xs text-slate-500">{copy.topEvents.subtitle}</p>
           </div>
           <span className="text-xs text-slate-400 font-mono">
-            {topEvents.length} eventos monitorados
+            {t(copy.topEvents.monitoredCount, { count: topEvents.length })}
           </span>
         </div>
 
@@ -1283,13 +1348,13 @@ export default function AdminDashboardClient({
           <table className="w-full text-left text-xs">
             <thead>
               <tr className="border-b border-slate-200 text-slate-400 font-semibold uppercase tracking-wider">
-                <th className="py-3 px-3">#</th>
-                <th className="py-3 px-4">Chá / Família</th>
-                <th className="py-3 px-4">Tipo</th>
-                <th className="py-3 px-4">Mercado Pago</th>
-                <th className="py-3 px-4">Presentes</th>
-                <th className="py-3 px-4">Total Arrecadado</th>
-                <th className="py-3 px-4 text-right">Lucro Plataforma</th>
+                <th className="py-3 px-3">{copy.topEvents.columns.rank}</th>
+                <th className="py-3 px-4">{copy.topEvents.columns.event}</th>
+                <th className="py-3 px-4">{copy.topEvents.columns.type}</th>
+                <th className="py-3 px-4">{copy.topEvents.columns.mp}</th>
+                <th className="py-3 px-4">{copy.topEvents.columns.gifts}</th>
+                <th className="py-3 px-4">{copy.topEvents.columns.gross}</th>
+                <th className="py-3 px-4 text-right">{copy.topEvents.columns.earnings}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -1300,11 +1365,15 @@ export default function AdminDashboardClient({
                   </td>
                   <td className="py-3.5 px-4">
                     <div className="font-semibold text-slate-900 flex items-center gap-1.5">
-                      <span>{ev.babyName ? `Chá de ${ev.babyName}` : ev.parentsNames}</span>
+                      <span>
+                        {ev.babyName
+                          ? t(copy.topEvents.showerOfBaby, { name: ev.babyName })
+                          : ev.parentsNames}
+                      </span>
                       <Link
                         href={`/${ev.slug}`}
                         target="_blank"
-                        title="Ver página pública do evento"
+                        title={copy.topEvents.viewPublicPage}
                         className="text-slate-400 hover:text-slate-700 inline-flex items-center"
                       >
                         <ExternalLink className="w-3 h-3" />
@@ -1316,23 +1385,25 @@ export default function AdminDashboardClient({
                   </td>
                   <td className="py-3.5 px-4">
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 text-slate-700">
-                      {ev.eventType}
+                      {translateEventType(ev.eventType)}
                     </span>
                   </td>
                   <td className="py-3.5 px-4">
                     {ev.mpConnected ? (
                       <span className="inline-flex items-center gap-1 text-[11px] text-emerald-700 font-medium">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                        Conectado
+                        {copy.topEvents.mpConnected}
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1 text-[11px] text-amber-700 font-medium">
                         <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                        Pendente
+                        {copy.topEvents.mpPending}
                       </span>
                     )}
                   </td>
-                  <td className="py-3.5 px-4 font-mono">{ev.ordersCount} pedidos</td>
+                  <td className="py-3.5 px-4 font-mono">
+                    {t(copy.topEvents.ordersSuffix, { count: ev.ordersCount })}
+                  </td>
                   <td className="py-3.5 px-4 font-bold text-slate-900 font-mono">
                     {formatBRL(ev.grossRaised)}
                   </td>
@@ -1345,7 +1416,7 @@ export default function AdminDashboardClient({
               {topEvents.length === 0 && (
                 <tr>
                   <td colSpan={7} className="text-center py-8 text-slate-400">
-                    Nenhum evento registrado ainda.
+                    {copy.topEvents.empty}
                   </td>
                 </tr>
               )}
@@ -1355,25 +1426,32 @@ export default function AdminDashboardClient({
       </div>
 
       {/* Auditoria Geral de Pedidos / Transações do Site */}
-      <div id="transacoes-gerais" className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-sm space-y-6">
+      <div
+        id="transacoes-gerais"
+        className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-sm space-y-6"
+      >
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <h3 className="font-serif font-bold text-lg text-slate-900 flex items-center gap-2">
               <ShieldCheck className="w-5 h-5 text-rose-600" />
-              Auditoria de Todas as Transações do Site
+              {copy.audit.title}
             </h3>
-            <p className="text-xs text-slate-500">
-              Histórico completo de pagamentos recebidos, comissões retidas e dados dos pagadores.
-            </p>
+            <p className="text-xs text-slate-500">{copy.audit.subtitle}</p>
           </div>
 
           <div className="text-xs text-slate-500 font-mono text-right">
             <span>
-              Exibindo <strong>{filteredOrders.length}</strong> de {ordersList.length} pedidos
+              {t(copy.audit.showingCount, {
+                shown: filteredOrders.length,
+                total: ordersList.length,
+              })}
             </span>
             {hasTruncatedAuditList && (
               <span className="block text-[11px] text-slate-400 font-sans mt-0.5">
-                Exibindo os {ordersList.length} pedidos mais recentes de {metrics.totalOrdersCount} no total (KPIs acima refletem 100% do histórico).
+                {t(copy.audit.truncatedNotice, {
+                  loaded: ordersList.length,
+                  total: metrics.totalOrdersCount,
+                })}
               </span>
             )}
           </div>
@@ -1386,8 +1464,8 @@ export default function AdminDashboardClient({
               feedback.type === 'success'
                 ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
                 : feedback.type === 'info'
-                ? 'bg-blue-50 border-blue-200 text-blue-800'
-                : 'bg-rose-50 border-rose-200 text-rose-800'
+                  ? 'bg-blue-50 border-blue-200 text-blue-800'
+                  : 'bg-rose-50 border-rose-200 text-rose-800'
             }`}
           >
             <div className="flex items-center gap-2">
@@ -1419,7 +1497,7 @@ export default function AdminDashboardClient({
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Buscar por pagador, e-mail, CPF, slug do chá ou ID do pedido..."
+              placeholder={copy.audit.searchPlaceholder}
               className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500"
             />
           </div>
@@ -1430,17 +1508,23 @@ export default function AdminDashboardClient({
               value={statusFilter}
               onChange={(e) =>
                 setStatusFilter(
-                  e.target.value as 'ALL' | 'APPROVED' | 'PENDING' | 'REJECTED' | 'REFUNDED' | 'CHARGED_BACK'
+                  e.target.value as
+                    | 'ALL'
+                    | 'APPROVED'
+                    | 'PENDING'
+                    | 'REJECTED'
+                    | 'REFUNDED'
+                    | 'CHARGED_BACK'
                 )
               }
               className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-rose-500/20"
             >
-              <option value="ALL">Status: Todos</option>
-              <option value="APPROVED">Apenas Aprovados</option>
-              <option value="PENDING">Apenas Pendentes</option>
-              <option value="REJECTED">Apenas Rejeitados / Cancelados</option>
-              <option value="REFUNDED">Apenas Estornados</option>
-              <option value="CHARGED_BACK">Apenas Contestados (Chargeback)</option>
+              <option value="ALL">{copy.audit.statusOptions.ALL}</option>
+              <option value="APPROVED">{copy.audit.statusOptions.APPROVED}</option>
+              <option value="PENDING">{copy.audit.statusOptions.PENDING}</option>
+              <option value="REJECTED">{copy.audit.statusOptions.REJECTED}</option>
+              <option value="REFUNDED">{copy.audit.statusOptions.REFUNDED}</option>
+              <option value="CHARGED_BACK">{copy.audit.statusOptions.CHARGED_BACK}</option>
             </select>
           </div>
 
@@ -1448,12 +1532,14 @@ export default function AdminDashboardClient({
           <div className="sm:col-span-3">
             <select
               value={methodFilter}
-              onChange={(e) => setMethodFilter(e.target.value as 'ALL' | 'PIX' | 'CREDIT_CARD')}
+              onChange={(e) =>
+                setMethodFilter(e.target.value as 'ALL' | 'PIX' | 'CREDIT_CARD')
+              }
               className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-rose-500/20"
             >
-              <option value="ALL">Método: Todos</option>
-              <option value="PIX">Apenas Pix</option>
-              <option value="CREDIT_CARD">Apenas Cartão de Crédito</option>
+              <option value="ALL">{copy.audit.methodOptions.ALL}</option>
+              <option value="PIX">{copy.audit.methodOptions.PIX}</option>
+              <option value="CREDIT_CARD">{copy.audit.methodOptions.CREDIT_CARD}</option>
             </select>
           </div>
         </div>
@@ -1463,22 +1549,22 @@ export default function AdminDashboardClient({
           <table className="w-full text-left text-xs">
             <thead>
               <tr className="border-b border-slate-200 text-slate-400 font-semibold uppercase tracking-wider">
-                <th className="py-3 px-3">Data/Hora</th>
-                <th className="py-3 px-3">Chá / Evento</th>
-                <th className="py-3 px-3">Pagador</th>
-                <th className="py-3 px-3">Método</th>
-                <th className="py-3 px-3">Valor Bruto</th>
-                <th className="py-3 px-3">Ganho Site</th>
-                <th className="py-3 px-3">Líquido Pais</th>
-                <th className="py-3 px-3">Status</th>
-                <th className="py-3 px-3 text-right">Recado</th>
+                <th className="py-3 px-3">{copy.audit.columns.date}</th>
+                <th className="py-3 px-3">{copy.audit.columns.event}</th>
+                <th className="py-3 px-3">{copy.audit.columns.payer}</th>
+                <th className="py-3 px-3">{copy.audit.columns.method}</th>
+                <th className="py-3 px-3">{copy.audit.columns.gross}</th>
+                <th className="py-3 px-3">{copy.audit.columns.fee}</th>
+                <th className="py-3 px-3">{copy.audit.columns.net}</th>
+                <th className="py-3 px-3">{copy.audit.columns.status}</th>
+                <th className="py-3 px-3 text-right">{copy.audit.columns.message}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-700">
               {filteredOrders.map((ord) => (
                 <tr key={ord.id} className="hover:bg-slate-50/70 transition-colors">
                   <td className="py-3 px-3 font-mono text-[11px] text-slate-500 whitespace-nowrap">
-                    {formatDate(ord.createdAt)}
+                    {formatDateTime(ord.createdAt)}
                   </td>
                   <td className="py-3 px-3">
                     <Link
@@ -1505,7 +1591,9 @@ export default function AdminDashboardClient({
                   </td>
                   <td className="py-3 px-3">
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-700">
-                      {ord.paymentMethod === 'PIX' ? 'PIX' : 'Cartão'}
+                      {ord.paymentMethod === 'PIX'
+                        ? copy.audit.methods.PIX
+                        : copy.audit.methods.CREDIT_CARD}
                     </span>
                   </td>
                   <td className="py-3 px-3 font-mono font-bold text-slate-900">
@@ -1522,54 +1610,66 @@ export default function AdminDashboardClient({
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
                           <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                          Aprovado
+                          {copy.audit.statuses.APPROVED}
                         </span>
                         <button
                           type="button"
                           onClick={() => handleVerifyPayment(ord.id)}
                           disabled={verifyingId === ord.id}
                           className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-white hover:bg-slate-100 text-slate-600 border border-slate-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                          title="Sincronizar status atualizado no Mercado Pago (ex: estornos ou chargebacks)"
+                          title={copy.audit.actions.syncTitle}
                         >
                           <RefreshCw
-                            className={`w-2.5 h-2.5 ${verifyingId === ord.id ? 'animate-spin text-rose-500' : 'text-slate-400'}`}
+                            className={`w-2.5 h-2.5 ${
+                              verifyingId === ord.id ? 'animate-spin text-rose-500' : 'text-slate-400'
+                            }`}
                           />
-                          <span>{verifyingId === ord.id ? 'Verificando...' : 'Sincronizar'}</span>
+                          <span>
+                            {verifyingId === ord.id
+                              ? copy.audit.actions.verifying
+                              : copy.audit.actions.sync}
+                          </span>
                         </button>
                       </div>
                     ) : ord.status === 'PENDING' ? (
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
                           <Clock className="w-3 h-3 text-amber-600" />
-                          Pendente
+                          {copy.audit.statuses.PENDING}
                         </span>
                         <button
                           type="button"
                           onClick={() => handleVerifyPayment(ord.id)}
                           disabled={verifyingId === ord.id}
                           className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 shadow-xs hover:border-slate-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                          title="Consultar status deste pagamento em tempo real no Mercado Pago"
+                          title={copy.audit.actions.verifyTitle}
                         >
                           <RefreshCw
-                            className={`w-2.5 h-2.5 ${verifyingId === ord.id ? 'animate-spin text-rose-500' : 'text-slate-500'}`}
+                            className={`w-2.5 h-2.5 ${
+                              verifyingId === ord.id ? 'animate-spin text-rose-500' : 'text-slate-500'
+                            }`}
                           />
-                          <span>{verifyingId === ord.id ? 'Verificando...' : 'Verificar'}</span>
+                          <span>
+                            {verifyingId === ord.id
+                              ? copy.audit.actions.verifying
+                              : copy.audit.actions.verify}
+                          </span>
                         </button>
                       </div>
                     ) : ord.status === 'REFUNDED' ? (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-800 border border-amber-200">
                         <XCircle className="w-3 h-3 text-amber-600" />
-                        Estornado
+                        {copy.audit.statuses.REFUNDED}
                       </span>
                     ) : ord.status === 'CHARGED_BACK' ? (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-100 text-rose-800 border border-rose-300">
                         <XCircle className="w-3 h-3 text-rose-700" />
-                        Contestado
+                        {copy.audit.statuses.CHARGED_BACK}
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">
                         <XCircle className="w-3 h-3 text-rose-600" />
-                        {ord.status === 'REJECTED' ? 'Recusado' : ord.status}
+                        {translateOrderStatus(ord.status)}
                       </span>
                     )}
                   </td>
@@ -1591,7 +1691,7 @@ export default function AdminDashboardClient({
               {filteredOrders.length === 0 && (
                 <tr>
                   <td colSpan={9} className="text-center py-8 text-slate-400">
-                    Nenhuma transação encontrada com os filtros selecionados.
+                    {copy.audit.empty}
                   </td>
                 </tr>
               )}

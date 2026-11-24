@@ -1,16 +1,3 @@
-/**
- * ============================================================================
- * PÁGINA DE CADASTRO E CRIAÇÃO DO CHÁ (/cadastro)
- * ============================================================================
- * Assistente acolhedor para que os pais criem sua conta e página em 2 minutos:
- * - Seleção intuitiva do tipo de evento:
- *   1. Chá Revelação (com campos para nome de menino e menina ou opção "ainda não definimos").
- *   2. Chá de Fralda tradicional.
- *   3. Ambos juntos.
- * - Gerador inteligente de link amigável (slug) em tempo real conforme os pais digitam.
- * - Pré-visualização do link oficial: `fralda.online/seu-link`.
- */
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -20,7 +7,11 @@ import { Lock, Mail, ArrowRight, User, Link2, Calendar, Sparkles } from 'lucide-
 import BrandLogo from '@/components/BrandLogo';
 import BrandLoader from '@/components/BrandLoader';
 import ThemeToggle from '@/components/ThemeToggle';
-import { sanitizeSlug, validateSlug } from '@/lib/validation';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
+import { useI18n } from '@/components/LanguageProvider';
+import { authDict } from '@/lib/i18n/dictionaries/auth';
+import { commonDict } from '@/lib/i18n/dictionaries/common';
+import { isReservedSlug, sanitizeSlug, validateSlug } from '@/lib/validation';
 
 function generateSuggestedSlug({
   parentsName,
@@ -63,6 +54,10 @@ function generateSuggestedSlug({
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { locale } = useI18n();
+  const dict = authDict[locale].register;
+  const eventTypesShort = commonDict[locale].eventTypes.short;
+
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -78,7 +73,6 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Sugere o slug automaticamente conforme os nomes são preenchidos
   useEffect(() => {
     if (!slugManuallyEdited) {
       const suggested = generateSuggestedSlug({
@@ -111,23 +105,31 @@ export default function RegisterPage() {
     setSlug(suggested);
   };
 
+  const getLocalizedSlugError = (val: string): string | null => {
+    const clean = val.trim().toLowerCase();
+    if (clean.length < 3) return dict.slugMinLengthError;
+    if (clean.length > 80) return dict.slugMaxLengthError;
+    if (isReservedSlug(clean)) return dict.slugReservedError;
+    return validateSlug(clean).valid ? null : dict.slugErrorFallback;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    const slugCheck = validateSlug(slug);
-    if (!slugCheck.valid) {
-      setError(slugCheck.error || 'Link inválido para o evento.');
+    const slugError = getLocalizedSlugError(slug);
+    if (slugError) {
+      setError(slugError);
       return;
     }
 
     if (password.length < 6) {
-      setError('A senha deve conter no mínimo 6 caracteres.');
+      setError(dict.passwordMinError);
       return;
     }
 
     if (password !== confirmPassword) {
-      setError('As senhas digitadas não coincidem.');
+      setError(dict.passwordMismatchError);
       return;
     }
 
@@ -149,13 +151,14 @@ export default function RegisterPage() {
           girlName: noNameYet ? null : girlName,
           eventType,
           eventDate: eventDate || undefined,
+          locale,
         }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || 'Erro ao criar conta.');
+        throw new Error(data.error || dict.createErrorFallback);
       }
 
       router.push('/painel');
@@ -164,329 +167,331 @@ export default function RegisterPage() {
       if (err instanceof Error) {
         setError(err.message);
       } else {
-        setError('Ocorreu um erro inesperado.');
+        setError(dict.unexpectedError);
       }
     } finally {
       setLoading(false);
     }
   };
 
+  const inlineSlugError = slug.length > 0 ? getLocalizedSlugError(slug) : null;
+
   return (
     <>
       <BrandLoader visible={loading} fullScreen minDurationMs={500} />
       <main className="min-h-screen bg-cream-50 text-charcoal-900 flex flex-col justify-center items-center p-6 py-12 relative">
-        <div className="absolute top-5 right-5 sm:top-6 sm:right-6">
+        <div className="absolute top-5 right-5 sm:top-6 sm:right-6 flex items-center gap-2">
+          <LanguageSwitcher size="sm" />
           <ThemeToggle size="sm" />
         </div>
         <div className="w-full max-w-lg">
-        {/* Header com a nova marca oficial */}
-        <div className="text-center mb-8 flex flex-col items-center">
-          <Link href="/" className="inline-flex mb-3 group hover:opacity-95 transition">
-            <BrandLogo size="md" />
-          </Link>
-          <p className="text-xs text-charcoal-500 font-sans mt-1">
-            Configure sua página com lista de presentes e bolão em 2 minutos
-          </p>
-        </div>
-
-        {/* Card Principal */}
-        <div className="bg-white rounded-2xl p-8 shadow-subtle border border-warm-border">
-          <div className="flex items-center justify-between mb-6 pb-4 border-b border-warm-border/60">
-            <h1 className="font-serif text-xl font-normal text-charcoal-900">
-              Criar meu Chá
-            </h1>
-            <span className="text-[11px] font-mono text-charcoal-500">
-              Gratuito para começar
-            </span>
+          <div className="text-center mb-8 flex flex-col items-center">
+            <Link href="/" className="inline-flex mb-3 group hover:opacity-95 transition">
+              <BrandLogo size="md" />
+            </Link>
+            <p className="text-xs text-charcoal-500 font-sans mt-1">
+              {dict.pageSubtitle}
+            </p>
           </div>
 
-          {error && (
-            <div className="mb-5 p-3 rounded-lg bg-dusty-rose-light border border-dusty-rose/30 text-dusty-rose text-xs font-sans">
-              {error}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Tipo do Evento */}
-            <div>
-              <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1.5">
-                Modalidade do Evento
-              </label>
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { id: 'REVELACAO', label: 'Chá Revelação' },
-                  { id: 'FRALDA', label: 'Chá de Fralda' },
-                  { id: 'AMBOS', label: 'Ambos Juntos' },
-                ].map((type) => (
-                  <button
-                    key={type.id}
-                    type="button"
-                    onClick={() => setEventType(type.id as 'REVELACAO' | 'FRALDA' | 'AMBOS')}
-                    className={`py-2 px-2 text-xs font-medium rounded-lg border text-center transition ${
-                      eventType === type.id
-                        ? 'border-charcoal-900 bg-charcoal-900 text-white shadow-subtle'
-                        : 'border-warm-border bg-white text-charcoal-600 hover:bg-stone-50'
-                    }`}
-                  >
-                    {type.label}
-                  </button>
-                ))}
-              </div>
+          <div className="bg-white rounded-2xl p-8 shadow-subtle border border-warm-border">
+            <div className="flex items-center justify-between mb-6 pb-4 border-b border-warm-border/60">
+              <h1 className="font-serif text-xl font-normal text-charcoal-900">
+                {dict.cardTitle}
+              </h1>
+              <span className="text-[11px] font-mono text-charcoal-500">
+                {dict.freeBadge}
+              </span>
             </div>
 
-            {/* Nomes dos Pais */}
-            <div>
-              <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
-                Nome dos Pais (ou da Mãe) *
-              </label>
-              <div className="relative">
-                <User className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-charcoal-400" />
-                <input
-                  type="text"
-                  required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Ex: Mariana e Rafael"
-                  className="w-full pl-9 pr-3.5 py-2.5 rounded-lg border border-warm-border bg-cream-50/50 text-charcoal-900 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-charcoal-900"
-                />
-              </div>
-            </div>
-
-            {/* Checkbox "Ainda não escolhemos o nome" */}
-            <div className="bg-cream-50 p-3.5 rounded-xl border border-warm-border">
-              <label className="flex items-start gap-3 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={noNameYet}
-                  onChange={(e) => {
-                    const checked = e.target.checked;
-                    setNoNameYet(checked);
-                    if (checked) {
-                      setBabyName('');
-                      setBoyName('');
-                      setGirlName('');
-                    }
-                  }}
-                  className="mt-0.5 h-4 w-4 rounded border-warm-border text-charcoal-900 focus:ring-charcoal-900 cursor-pointer accent-charcoal-900"
-                />
-                <div className="flex-1">
-                  <span className="text-xs font-semibold text-charcoal-900 block">
-                    Ainda não escolhemos o nome do bebê
-                  </span>
-                  <span className="text-[11px] text-charcoal-500 block mt-0.5 font-sans leading-relaxed">
-                    Tudo bem! O link e a página usarão o nome dos pais (ex: <em>Chá de {name || 'Mariana e Rafael'}</em>) e você poderá cadastrar os nomes nas configurações quando decidir.
-                  </span>
-                </div>
-              </label>
-            </div>
-
-            {/* Opções de Nomes dos Bebês (Apenas quando desmarcado) */}
-            {!noNameYet && (
-              <div className="space-y-3 pt-1">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[11px] font-mono uppercase text-dusty-blue font-semibold mb-1">
-                      Nome se for Menino 💙
-                    </label>
-                    <input
-                      type="text"
-                      value={boyName}
-                      onChange={(e) => setBoyName(e.target.value)}
-                      placeholder="Ex: Arthur"
-                      className="w-full px-3.5 py-2.5 rounded-lg border border-dusty-blue/30 bg-white text-charcoal-900 text-xs focus:outline-none focus:ring-1 focus:ring-dusty-blue"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-mono uppercase text-dusty-rose font-semibold mb-1">
-                      Nome se for Menina 🌸
-                    </label>
-                    <input
-                      type="text"
-                      value={girlName}
-                      onChange={(e) => setGirlName(e.target.value)}
-                      placeholder="Ex: Helena"
-                      className="w-full px-3.5 py-2.5 rounded-lg border border-dusty-rose/30 bg-white text-charcoal-900 text-xs focus:outline-none focus:ring-1 focus:ring-dusty-rose"
-                    />
-                  </div>
-                </div>
-
-                {eventType === 'FRALDA' && (
-                  <div>
-                    <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
-                      Ou Nome Único já Escolhido (Opcional)
-                    </label>
-                    <input
-                      type="text"
-                      value={babyName}
-                      onChange={(e) => setBabyName(e.target.value)}
-                      placeholder="Ex: Theo"
-                      className="w-full px-3.5 py-2 rounded-lg border border-warm-border bg-cream-50/50 text-charcoal-900 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-charcoal-900"
-                    />
-                  </div>
-                )}
+            {error && (
+              <div className="mb-5 p-3 rounded-lg bg-dusty-rose-light border border-dusty-rose/30 text-dusty-rose text-xs font-sans">
+                {error}
               </div>
             )}
 
-            {/* Link Personalizado do Evento */}
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="block text-[11px] font-mono uppercase text-charcoal-500">
-                  Endereço da Página Pública *
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1.5">
+                  {dict.eventTypeLabel}
                 </label>
-                {slugManuallyEdited && (
-                  <button
-                    type="button"
-                    onClick={handleResetSlugToAuto}
-                    className="inline-flex items-center gap-1 text-[11px] text-amber-700 hover:text-amber-900 font-sans underline"
-                  >
-                    <Sparkles className="w-3 h-3" />
-                    <span>Sugerir pelos nomes</span>
-                  </button>
-                )}
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { id: 'REVELACAO', label: eventTypesShort.REVELACAO },
+                    { id: 'FRALDA', label: eventTypesShort.FRALDA },
+                    { id: 'AMBOS', label: eventTypesShort.AMBOS },
+                  ].map((type) => (
+                    <button
+                      key={type.id}
+                      type="button"
+                      onClick={() => setEventType(type.id as 'REVELACAO' | 'FRALDA' | 'AMBOS')}
+                      className={`py-2 px-2 text-xs font-medium rounded-lg border text-center transition ${
+                        eventType === type.id
+                          ? 'border-charcoal-900 bg-charcoal-900 text-white shadow-subtle'
+                          : 'border-warm-border bg-white text-charcoal-600 hover:bg-stone-50'
+                      }`}
+                    >
+                      {type.label}
+                    </button>
+                  ))}
+                </div>
               </div>
-              <div className="relative">
-                <Link2 className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-charcoal-400" />
-                <input
-                  type="text"
-                  required
-                  value={slug}
-                  onChange={(e) => handleSlugInputChange(e.target.value)}
-                  placeholder="ex: revelacao-arthur-ou-helena"
-                  className="w-full pl-9 pr-3.5 py-2.5 rounded-lg border border-warm-border bg-cream-50/50 text-charcoal-900 font-mono text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-charcoal-900"
-                />
-              </div>
-              <p className="text-[11px] text-charcoal-500 mt-1.5 font-mono">
-                Link: <span className="text-charcoal-900 font-medium">fralda.online/{slug || 'seu-link'}</span>
-              </p>
-              {slug.length > 0 && !validateSlug(slug).valid && (
-                <p className="text-[11px] text-dusty-rose mt-1 font-sans">
-                  {validateSlug(slug).error}
-                </p>
-              )}
-            </div>
 
-            {/* Data Prevista */}
-            <div className="min-w-0">
-              <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
-                Data do Evento (Opcional)
-              </label>
-              <div className="relative w-full min-w-0 overflow-hidden rounded-lg">
-                <Calendar className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-charcoal-400 pointer-events-none z-10" />
-                <input
-                  type="date"
-                  value={eventDate}
-                  onChange={(e) => setEventDate(e.target.value)}
-                  className="block w-full min-w-0 max-w-full box-border appearance-none pl-9 pr-3.5 py-2.5 min-h-[42px] rounded-lg border border-warm-border bg-cream-50/50 text-charcoal-900 text-xs text-left focus:bg-white focus:outline-none focus:ring-1 focus:ring-charcoal-900"
-                />
-              </div>
-            </div>
-
-            {/* Credenciais de Acesso */}
-            <div className="space-y-3 pt-1">
               <div>
                 <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
-                  E-mail *
+                  {dict.parentsLabel}
                 </label>
                 <div className="relative">
-                  <Mail className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-charcoal-400" />
+                  <User className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-charcoal-400" />
                   <input
-                    type="email"
+                    type="text"
                     required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="email@exemplo.com"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder={dict.parentsPlaceholder}
                     className="w-full pl-9 pr-3.5 py-2.5 rounded-lg border border-warm-border bg-cream-50/50 text-charcoal-900 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-charcoal-900"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
-                    Senha *
-                  </label>
-                  <div className="relative">
-                    <Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-charcoal-400" />
-                    <input
-                      type="password"
-                      required
-                      minLength={6}
-                      autoComplete="new-password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Mínimo 6 dígitos"
-                      className="w-full pl-9 pr-3.5 py-2.5 rounded-lg border border-warm-border bg-cream-50/50 text-charcoal-900 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-charcoal-900"
-                    />
+              <div className="bg-cream-50 p-3.5 rounded-xl border border-warm-border">
+                <label className="flex items-start gap-3 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={noNameYet}
+                    onChange={(e) => {
+                      const checked = e.target.checked;
+                      setNoNameYet(checked);
+                      if (checked) {
+                        setBabyName('');
+                        setBoyName('');
+                        setGirlName('');
+                      }
+                    }}
+                    className="mt-0.5 h-4 w-4 rounded border-warm-border text-charcoal-900 focus:ring-charcoal-900 cursor-pointer accent-charcoal-900"
+                  />
+                  <div className="flex-1">
+                    <span className="text-xs font-semibold text-charcoal-900 block">
+                      {dict.noNameCheckboxTitle}
+                    </span>
+                    <span className="text-[11px] text-charcoal-500 block mt-0.5 font-sans leading-relaxed">
+                      {dict.noNameCheckboxHintBefore}{' '}
+                      <em>
+                        {dict.noNameCheckboxExamplePrefix} {name || dict.noNameCheckboxDefaultParents}
+                      </em>
+                      {dict.noNameCheckboxHintAfter}
+                    </span>
                   </div>
-                </div>
+                </label>
+              </div>
 
-                <div>
-                  <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
-                    Confirmar Senha *
-                  </label>
-                  <div className="relative">
-                    <Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-charcoal-400" />
-                    <input
-                      type="password"
-                      required
-                      minLength={6}
-                      autoComplete="new-password"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder="Repita a senha"
-                      className="w-full pl-9 pr-3.5 py-2.5 rounded-lg border border-warm-border bg-cream-50/50 text-charcoal-900 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-charcoal-900"
-                    />
+              {!noNameYet && (
+                <div className="space-y-3 pt-1">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-mono uppercase text-dusty-blue font-semibold mb-1">
+                        {dict.boyNameLabel}
+                      </label>
+                      <input
+                        type="text"
+                        value={boyName}
+                        onChange={(e) => setBoyName(e.target.value)}
+                        placeholder={dict.boyNamePlaceholder}
+                        className="w-full px-3.5 py-2.5 rounded-lg border border-dusty-blue/30 bg-white text-charcoal-900 text-xs focus:outline-none focus:ring-1 focus:ring-dusty-blue"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-mono uppercase text-dusty-rose font-semibold mb-1">
+                        {dict.girlNameLabel}
+                      </label>
+                      <input
+                        type="text"
+                        value={girlName}
+                        onChange={(e) => setGirlName(e.target.value)}
+                        placeholder={dict.girlNamePlaceholder}
+                        className="w-full px-3.5 py-2.5 rounded-lg border border-dusty-rose/30 bg-white text-charcoal-900 text-xs focus:outline-none focus:ring-1 focus:ring-dusty-rose"
+                      />
+                    </div>
                   </div>
-                  {confirmPassword.length > 0 && password !== confirmPassword && (
-                    <p className="text-[11px] text-dusty-rose mt-1 font-sans">
-                      As senhas não coincidem.
-                    </p>
+
+                  {eventType === 'FRALDA' && (
+                    <div>
+                      <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
+                        {dict.singleBabyNameLabel}
+                      </label>
+                      <input
+                        type="text"
+                        value={babyName}
+                        onChange={(e) => setBabyName(e.target.value)}
+                        placeholder={dict.singleBabyNamePlaceholder}
+                        className="w-full px-3.5 py-2 rounded-lg border border-warm-border bg-cream-50/50 text-charcoal-900 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-charcoal-900"
+                      />
+                    </div>
                   )}
                 </div>
-              </div>
-            </div>
+              )}
 
-            <div className="pt-2">
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-3 px-4 rounded-lg font-medium text-xs text-white bg-charcoal-900 hover:bg-charcoal-800 transition shadow-subtle flex items-center justify-center gap-2 disabled:opacity-60"
-              >
-                {loading ? (
-                  <span>Criando página...</span>
-                ) : (
-                  <>
-                    <span>Criar Minha Página de Chá</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </>
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-[11px] font-mono uppercase text-charcoal-500">
+                    {dict.slugLabel}
+                  </label>
+                  {slugManuallyEdited && (
+                    <button
+                      type="button"
+                      onClick={handleResetSlugToAuto}
+                      className="inline-flex items-center gap-1 text-[11px] text-amber-700 hover:text-amber-900 font-sans underline"
+                    >
+                      <Sparkles className="w-3 h-3" />
+                      <span>{dict.suggestSlugButton}</span>
+                    </button>
+                  )}
+                </div>
+                <div className="relative">
+                  <Link2 className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-charcoal-400" />
+                  <input
+                    type="text"
+                    required
+                    value={slug}
+                    onChange={(e) => handleSlugInputChange(e.target.value)}
+                    placeholder={dict.slugPlaceholder}
+                    className="w-full pl-9 pr-3.5 py-2.5 rounded-lg border border-warm-border bg-cream-50/50 text-charcoal-900 font-mono text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-charcoal-900"
+                  />
+                </div>
+                <p className="text-[11px] text-charcoal-500 mt-1.5 font-mono">
+                  {dict.slugPreviewPrefix}{' '}
+                  <span className="text-charcoal-900 font-medium">
+                    fralda.online/{slug || dict.slugPreviewPlaceholder}
+                  </span>
+                </p>
+                {inlineSlugError && (
+                  <p className="text-[11px] text-dusty-rose mt-1 font-sans">
+                    {inlineSlugError}
+                  </p>
                 )}
-              </button>
+              </div>
 
-              <p className="text-[11px] text-charcoal-500 font-sans text-center mt-3 leading-relaxed">
-                Ao continuar, você concorda com nossos{' '}
-                <Link href="/termos" target="_blank" className="underline hover:text-charcoal-900 transition-colors">
-                  Termos de Uso
-                </Link>{' '}
-                e{' '}
-                <Link href="/privacidade" target="_blank" className="underline hover:text-charcoal-900 transition-colors">
-                  Política de Privacidade
-                </Link>.
+              <div className="min-w-0">
+                <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
+                  {dict.eventDateLabel}
+                </label>
+                <div className="relative w-full min-w-0 overflow-hidden rounded-lg">
+                  <Calendar className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-charcoal-400 pointer-events-none z-10" />
+                  <input
+                    type="date"
+                    value={eventDate}
+                    onChange={(e) => setEventDate(e.target.value)}
+                    className="block w-full min-w-0 max-w-full box-border appearance-none pl-9 pr-3.5 py-2.5 min-h-[42px] rounded-lg border border-warm-border bg-cream-50/50 text-charcoal-900 text-xs text-left focus:bg-white focus:outline-none focus:ring-1 focus:ring-charcoal-900"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-3 pt-1">
+                <div>
+                  <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
+                    {dict.emailLabel}
+                  </label>
+                  <div className="relative">
+                    <Mail className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-charcoal-400" />
+                    <input
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder={dict.emailPlaceholder}
+                      className="w-full pl-9 pr-3.5 py-2.5 rounded-lg border border-warm-border bg-cream-50/50 text-charcoal-900 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-charcoal-900"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
+                      {dict.passwordLabel}
+                    </label>
+                    <div className="relative">
+                      <Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-charcoal-400" />
+                      <input
+                        type="password"
+                        required
+                        minLength={6}
+                        autoComplete="new-password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder={dict.passwordPlaceholder}
+                        className="w-full pl-9 pr-3.5 py-2.5 rounded-lg border border-warm-border bg-cream-50/50 text-charcoal-900 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-charcoal-900"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
+                      {dict.confirmPasswordLabel}
+                    </label>
+                    <div className="relative">
+                      <Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-charcoal-400" />
+                      <input
+                        type="password"
+                        required
+                        minLength={6}
+                        autoComplete="new-password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder={dict.confirmPasswordPlaceholder}
+                        className="w-full pl-9 pr-3.5 py-2.5 rounded-lg border border-warm-border bg-cream-50/50 text-charcoal-900 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-charcoal-900"
+                      />
+                    </div>
+                    {confirmPassword.length > 0 && password !== confirmPassword && (
+                      <p className="text-[11px] text-dusty-rose mt-1 font-sans">
+                        {dict.passwordMismatchInline}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-3 px-4 rounded-lg font-medium text-xs text-white bg-charcoal-900 hover:bg-charcoal-800 transition shadow-subtle flex items-center justify-center gap-2 disabled:opacity-60"
+                >
+                  {loading ? (
+                    <span>{dict.submitting}</span>
+                  ) : (
+                    <>
+                      <span>{dict.submit}</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </>
+                  )}
+                </button>
+
+                <p className="text-[11px] text-charcoal-500 font-sans text-center mt-3 leading-relaxed">
+                  {dict.legalPrefix}{' '}
+                  <Link href="/termos" target="_blank" className="underline hover:text-charcoal-900 transition-colors">
+                    {dict.terms}
+                  </Link>{' '}
+                  {dict.legalAnd}{' '}
+                  <Link href="/privacidade" target="_blank" className="underline hover:text-charcoal-900 transition-colors">
+                    {dict.privacy}
+                  </Link>
+                  .
+                </p>
+              </div>
+            </form>
+
+            <div className="mt-6 pt-5 border-t border-warm-border/60 text-center">
+              <p className="text-xs text-charcoal-500 font-sans">
+                {dict.alreadyHaveAccount}{' '}
+                <Link href="/login" className="font-medium text-charcoal-900 underline underline-offset-2">
+                  {dict.signInLink}
+                </Link>
               </p>
             </div>
-          </form>
-
-          <div className="mt-6 pt-5 border-t border-warm-border/60 text-center">
-            <p className="text-xs text-charcoal-500 font-sans">
-              Já possui uma página cadastrada?{' '}
-              <Link href="/login" className="font-medium text-charcoal-900 underline underline-offset-2">
-                Fazer login
-              </Link>
-            </p>
           </div>
         </div>
-      </div>
-    </main>
+      </main>
     </>
   );
 }

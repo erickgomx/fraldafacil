@@ -1,18 +1,10 @@
-/**
- * ============================================================================
- * CLIENTE DE EDIÇÃO DA LISTA DE PRESENTES (PresentesClient)
- * ============================================================================
- * Permite aos pais:
- * - Adicionar novos presentes personalizados com título, valor e foto.
- * - Ativar ou desativar itens da lista com um switch toggle em tempo real.
- * - Excluir presentes não desejados da vitrine.
- */
-
 'use client';
 
 import { useState } from 'react';
 import { Check, Pencil, Plus, Trash2, X } from 'lucide-react';
-import { DEFAULT_GIFT_IMAGE_URL, GIFT_GALLERY_OPTIONS } from '@/lib/gift-gallery';
+import { DEFAULT_GIFT_IMAGE_URL, getGiftGalleryOptions } from '@/lib/gift-gallery';
+import { useI18n } from '@/components/LanguageProvider';
+import { painelDict } from '@/lib/i18n/dictionaries/painel';
 
 export interface AdminGiftItem {
   id: string;
@@ -30,6 +22,10 @@ interface PresentesClientProps {
 }
 
 export default function PresentesClient({ eventId, initialGifts }: PresentesClientProps) {
+  const { locale, formatCurrency } = useI18n();
+  const dict = painelDict[locale].gifts;
+  const galleryOptions = getGiftGalleryOptions(locale);
+
   const [gifts, setGifts] = useState<AdminGiftItem[]>(initialGifts);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingGift, setEditingGift] = useState<AdminGiftItem | null>(null);
@@ -65,7 +61,7 @@ export default function PresentesClient({ eventId, initialGifts }: PresentesClie
   };
 
   const handleDelete = async (giftId: string) => {
-    if (!confirm('Deseja remover este presente da lista?')) return;
+    if (!confirm(dict.confirmDelete)) return;
 
     try {
       const res = await fetch(`/api/events/gifts?id=${giftId}`, {
@@ -83,7 +79,7 @@ export default function PresentesClient({ eventId, initialGifts }: PresentesClie
   const handleCategoryChange = (nextCategory: 'fraldas' | 'higiene' | 'brincadeiras') => {
     setCategory(nextCategory);
     if (!hasPickedImage && !editingGift) {
-      const match = GIFT_GALLERY_OPTIONS.find((opt) => opt.category === nextCategory);
+      const match = galleryOptions.find((opt) => opt.category === nextCategory);
       if (match) setImageUrl(match.imageUrl);
     }
   };
@@ -125,7 +121,7 @@ export default function PresentesClient({ eventId, initialGifts }: PresentesClie
 
     const parsedPrice = parseFloat(String(price).replace(',', '.'));
     if (isNaN(parsedPrice) || parsedPrice < 1 || parsedPrice > 50000) {
-      setFormError('Informe um valor válido entre R$ 1,00 e R$ 50.000,00.');
+      setFormError(dict.invalidPriceError);
       return;
     }
 
@@ -166,29 +162,28 @@ export default function PresentesClient({ eventId, initialGifts }: PresentesClie
         setIsModalOpen(false);
         resetForm();
       } else {
-        setFormError(data.error || 'Não foi possível salvar o presente.');
+        setFormError(data.error || dict.saveErrorFallback);
       }
     } catch (err) {
       console.error('Erro ao salvar presente:', err);
-      setFormError('Erro de conexão ao salvar o presente.');
+      setFormError(dict.saveConnectionError);
     } finally {
       setLoading(false);
     }
   };
 
   const selectedGalleryOption =
-    GIFT_GALLERY_OPTIONS.find((opt) => opt.imageUrl === imageUrl) ?? GIFT_GALLERY_OPTIONS[0];
+    galleryOptions.find((opt) => opt.imageUrl === imageUrl) ?? galleryOptions[0];
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-warm-border">
         <div>
           <h1 className="font-serif text-2xl font-normal text-charcoal-900">
-            Itens da Vitrine de Presentes
+            {dict.pageTitle}
           </h1>
           <p className="text-xs text-charcoal-500 font-sans mt-0.5">
-            Gerencie, edite ou personalize quais fraldas e mimos estão visíveis para os convidados
+            {dict.pageSubtitle}
           </p>
         </div>
 
@@ -197,11 +192,10 @@ export default function PresentesClient({ eventId, initialGifts }: PresentesClie
           className="inline-flex items-center gap-1.5 py-2 px-3.5 rounded-lg font-medium text-xs bg-charcoal-900 text-white hover:bg-charcoal-800 transition shadow-subtle self-start sm:self-auto"
         >
           <Plus className="w-3.5 h-3.5" />
-          <span>Novo Presente</span>
+          <span>{dict.newGiftButton}</span>
         </button>
       </div>
 
-      {/* Grid de Itens */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {gifts.map((item) => (
           <div
@@ -223,7 +217,7 @@ export default function PresentesClient({ eventId, initialGifts }: PresentesClie
                   className="w-full h-full object-cover"
                 />
                 <span className="absolute top-2 left-2 text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-white/90 backdrop-blur-sm text-charcoal-700 border border-warm-border/60">
-                  {item.category}
+                  {dict.categories[item.category as keyof typeof dict.categories] ?? item.category}
                 </span>
 
                 <button
@@ -235,36 +229,38 @@ export default function PresentesClient({ eventId, initialGifts }: PresentesClie
                       : 'bg-stone-100/95 text-charcoal-500 border-stone-200'
                   }`}
                 >
-                  {item.active ? 'Visível' : 'Oculto'}
+                  {item.active ? dict.visibleBadge : dict.hiddenBadge}
                 </button>
               </div>
 
-              <h3 className="font-serif text-sm font-medium text-charcoal-900 line-clamp-1">{item.title}</h3>
+              <h3 className="font-serif text-sm font-medium text-charcoal-900 line-clamp-1">
+                {item.title}
+              </h3>
               <p className="text-xs text-charcoal-500 mt-1 line-clamp-2 font-sans">
-                {item.description || 'Presente especial para a chegada do bebê.'}
+                {item.description || dict.defaultDescription}
               </p>
             </div>
 
             <div className="mt-4 pt-3 border-t border-warm-border/60 flex items-center justify-between gap-2">
               <span className="font-mono text-sm font-semibold text-charcoal-900 tabular-nums">
-                R$ {item.price.toFixed(2).replace('.', ',')}
+                {formatCurrency(item.price)}
               </span>
 
               <div className="flex items-center gap-1">
                 <button
                   type="button"
                   onClick={() => openEditModal(item)}
-                  title="Editar presente"
+                  title={dict.editTitle}
                   className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium text-charcoal-700 bg-cream-50 hover:bg-cream-100 border border-warm-border transition"
                 >
                   <Pencil className="w-3 h-3" />
-                  <span>Editar</span>
+                  <span>{dict.editButton}</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => handleDelete(item.id)}
-                  title="Excluir presente"
+                  title={dict.deleteTitle}
                   className="w-7 h-7 rounded-lg text-charcoal-400 hover:text-dusty-rose hover:bg-dusty-rose-light/60 flex items-center justify-center transition"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
@@ -275,7 +271,6 @@ export default function PresentesClient({ eventId, initialGifts }: PresentesClie
         ))}
       </div>
 
-      {/* Modal de Criação / Edição */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-charcoal-900/40 backdrop-blur-sm animate-fade-in">
           <div className="bg-white rounded-xl p-6 sm:p-8 max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-card border border-warm-border relative">
@@ -291,12 +286,10 @@ export default function PresentesClient({ eventId, initialGifts }: PresentesClie
             </button>
 
             <h2 className="font-serif text-xl font-normal text-charcoal-900 mb-1">
-              {editingGift ? 'Editar Presente' : 'Cadastrar Presente'}
+              {editingGift ? dict.modalEditTitle : dict.modalCreateTitle}
             </h2>
             <p className="text-xs text-charcoal-500 mb-5 font-sans">
-              {editingGift
-                ? 'Atualize o título, descrição, categoria, valor ou foto do presente'
-                : 'Insira o título, categoria, valor sugerido e escolha uma foto da galeria'}
+              {editingGift ? dict.modalEditSubtitle : dict.modalCreateSubtitle}
             </p>
 
             {formError && (
@@ -308,27 +301,27 @@ export default function PresentesClient({ eventId, initialGifts }: PresentesClie
             <form onSubmit={handleSaveGift} className="space-y-4">
               <div>
                 <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
-                  Título do Presente *
+                  {dict.fieldTitleLabel}
                 </label>
                 <input
                   type="text"
                   required
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Ex: Fralda Tamanho GG"
+                  placeholder={dict.fieldTitlePlaceholder}
                   className="w-full px-3.5 py-2 rounded-lg border border-warm-border text-xs text-charcoal-900 focus:outline-none focus:ring-1 focus:ring-charcoal-900"
                 />
               </div>
 
               <div>
                 <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
-                  Descrição Curta
+                  {dict.fieldDescriptionLabel}
                 </label>
                 <input
                   type="text"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Ex: Para a fase das primeiras brincadeiras no chão"
+                  placeholder={dict.fieldDescriptionPlaceholder}
                   className="w-full px-3.5 py-2 rounded-lg border border-warm-border text-xs text-charcoal-900 focus:outline-none focus:ring-1 focus:ring-charcoal-900"
                 />
               </div>
@@ -336,7 +329,7 @@ export default function PresentesClient({ eventId, initialGifts }: PresentesClie
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
-                    Valor (R$) *
+                    {dict.fieldPriceLabel}
                   </label>
                   <input
                     type="number"
@@ -345,14 +338,14 @@ export default function PresentesClient({ eventId, initialGifts }: PresentesClie
                     required
                     value={price}
                     onChange={(e) => setPrice(e.target.value)}
-                    placeholder="50,00"
+                    placeholder={dict.fieldPricePlaceholder}
                     className="w-full px-3.5 py-2 rounded-lg border border-warm-border text-xs font-mono font-semibold text-charcoal-900 focus:outline-none focus:ring-1 focus:ring-charcoal-900"
                   />
                 </div>
 
                 <div>
                   <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
-                    Categoria
+                    {dict.fieldCategoryLabel}
                   </label>
                   <select
                     value={category}
@@ -361,9 +354,9 @@ export default function PresentesClient({ eventId, initialGifts }: PresentesClie
                     }
                     className="w-full px-3.5 py-2 rounded-lg border border-warm-border text-xs text-charcoal-900 focus:outline-none focus:ring-1 focus:ring-charcoal-900 bg-white"
                   >
-                    <option value="fraldas">Fraldas</option>
-                    <option value="higiene">Higiene</option>
-                    <option value="brincadeiras">Cuidados</option>
+                    <option value="fraldas">{dict.categories.fraldas}</option>
+                    <option value="higiene">{dict.categories.higiene}</option>
+                    <option value="brincadeiras">{dict.categories.brincadeiras}</option>
                   </select>
                 </div>
               </div>
@@ -371,7 +364,7 @@ export default function PresentesClient({ eventId, initialGifts }: PresentesClie
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="block text-[11px] font-mono uppercase text-charcoal-500">
-                    Foto do Presente (Galeria) *
+                    {dict.fieldPhotoLabel}
                   </label>
                   <span className="text-[11px] text-charcoal-500 font-sans">
                     {selectedGalleryOption.label}
@@ -379,7 +372,7 @@ export default function PresentesClient({ eventId, initialGifts }: PresentesClie
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {GIFT_GALLERY_OPTIONS.map((option) => {
+                  {galleryOptions.map((option) => {
                     const isSelected = imageUrl === option.imageUrl;
                     return (
                       <button
@@ -421,7 +414,7 @@ export default function PresentesClient({ eventId, initialGifts }: PresentesClie
                 </div>
 
                 <p className="text-[11px] text-charcoal-400 mt-1.5 font-sans">
-                  Ocasião: {selectedGalleryOption.occasion}
+                  {dict.occasionPrefix} {selectedGalleryOption.occasion}
                 </p>
               </div>
 
@@ -431,10 +424,10 @@ export default function PresentesClient({ eventId, initialGifts }: PresentesClie
                 className="w-full py-2.5 px-4 rounded-lg font-medium text-xs bg-charcoal-900 text-white hover:bg-charcoal-800 transition shadow-subtle mt-4"
               >
                 {loading
-                  ? 'Salvando...'
+                  ? dict.savingButton
                   : editingGift
-                  ? 'Salvar Alterações'
-                  : 'Salvar Presente'}
+                  ? dict.saveChangesButton
+                  : dict.saveCreateButton}
               </button>
             </form>
           </div>

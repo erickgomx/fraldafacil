@@ -1,11 +1,3 @@
-/**
- * ============================================================================
- * PÁGINA DE REDEFINIÇÃO DE SENHA (/redefinir-senha)
- * ============================================================================
- * Valida o token temporário passado na URL (`?token=...`) e permite que o usuário
- * cadastre sua nova senha com segurança.
- */
-
 'use client';
 
 import { Suspense, useState } from 'react';
@@ -14,11 +6,17 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Lock, ArrowRight, CheckCircle2, AlertCircle } from 'lucide-react';
 import BrandLogo from '@/components/BrandLogo';
 import BrandLoader from '@/components/BrandLoader';
+import ThemeToggle from '@/components/ThemeToggle';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
+import { useI18n } from '@/components/LanguageProvider';
+import { authDict } from '@/lib/i18n/dictionaries/auth';
 
 function ResetPasswordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
+  const { locale } = useI18n();
+  const dict = authDict[locale].reset;
 
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -33,17 +31,17 @@ function ResetPasswordForm() {
           <AlertCircle className="w-6 h-6" />
         </div>
         <h1 className="font-serif text-xl font-normal text-charcoal-900">
-          Link inválido ou ausente
+          {dict.invalidTitle}
         </h1>
         <p className="text-xs text-charcoal-600 font-sans leading-relaxed">
-          O link de recuperação acessado não possui o código de segurança necessário ou está incompleto.
+          {dict.invalidBody}
         </p>
         <div className="pt-2">
           <Link
             href="/recuperar-senha"
             className="w-full py-2.5 px-4 rounded-lg font-medium text-xs text-white bg-charcoal-900 hover:bg-charcoal-800 transition shadow-subtle flex items-center justify-center gap-2"
           >
-            <span>Solicitar Novo Link</span>
+            <span>{dict.requestNewLink}</span>
           </Link>
         </div>
       </div>
@@ -55,12 +53,12 @@ function ResetPasswordForm() {
     setError('');
 
     if (password.length < 6) {
-      setError('A nova senha deve ter no mínimo 6 caracteres.');
+      setError(dict.minLengthError);
       return;
     }
 
     if (password !== confirmPassword) {
-      setError('As senhas digitadas não coincidem.');
+      setError(dict.mismatchError);
       return;
     }
 
@@ -76,7 +74,7 @@ function ResetPasswordForm() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || 'Erro ao redefinir senha.');
+        throw new Error(data.error || dict.resetErrorFallback);
       }
 
       setSuccess(true);
@@ -87,7 +85,7 @@ function ResetPasswordForm() {
       if (err instanceof Error) {
         setError(err.message);
       } else {
-        setError('Ocorreu um erro ao atualizar a senha.');
+        setError(dict.updateErrorFallback);
       }
     } finally {
       setLoading(false);
@@ -101,17 +99,17 @@ function ResetPasswordForm() {
           <CheckCircle2 className="w-6 h-6" />
         </div>
         <h1 className="font-serif text-xl font-normal text-charcoal-900">
-          Senha alterada com sucesso!
+          {dict.successTitle}
         </h1>
         <p className="text-xs text-charcoal-600 font-sans leading-relaxed">
-          Sua nova senha já está ativa. Estamos redirecionando você para a tela de login...
+          {dict.successBody}
         </p>
         <div className="pt-2">
           <Link
             href="/login?reset=success"
             className="w-full py-2.5 px-4 rounded-lg font-medium text-xs text-white bg-charcoal-900 hover:bg-charcoal-800 transition shadow-subtle flex items-center justify-center gap-2"
           >
-            <span>Fazer Login Agora</span>
+            <span>{dict.loginNow}</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
@@ -123,10 +121,10 @@ function ResetPasswordForm() {
     <>
       <BrandLoader visible={loading} fullScreen minDurationMs={500} />
       <h1 className="font-serif text-xl font-normal text-charcoal-900 mb-2">
-        Criar Nova Senha
+        {dict.title}
       </h1>
       <p className="text-xs text-charcoal-500 font-sans mb-6 leading-relaxed">
-        Digite sua nova senha abaixo para restaurar o acesso à sua conta.
+        {dict.subtitle}
       </p>
 
       {error && (
@@ -138,7 +136,7 @@ function ResetPasswordForm() {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
-            Nova Senha (Mínimo 6 dígitos)
+            {dict.newPasswordLabel}
           </label>
           <div className="relative">
             <Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-charcoal-400" />
@@ -156,7 +154,7 @@ function ResetPasswordForm() {
 
         <div>
           <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
-            Confirmar Nova Senha
+            {dict.confirmPasswordLabel}
           </label>
           <div className="relative">
             <Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-charcoal-400" />
@@ -178,10 +176,10 @@ function ResetPasswordForm() {
           className="w-full py-2.5 px-4 rounded-lg font-medium text-xs text-white bg-charcoal-900 hover:bg-charcoal-800 transition shadow-subtle flex items-center justify-center gap-2 disabled:opacity-60"
         >
           {loading ? (
-            <span>Atualizando senha...</span>
+            <span>{dict.submitting}</span>
           ) : (
             <>
-              <span>Salvar Nova Senha</span>
+              <span>{dict.submit}</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </>
           )}
@@ -192,22 +190,33 @@ function ResetPasswordForm() {
 }
 
 export default function ResetPasswordPage() {
+  const { locale } = useI18n();
+  const dict = authDict[locale].reset;
+
   return (
-    <main className="min-h-screen bg-cream-50 text-charcoal-900 flex flex-col justify-center items-center p-6">
+    <main className="min-h-screen bg-cream-50 text-charcoal-900 flex flex-col justify-center items-center p-6 relative">
+      <div className="absolute top-5 right-5 sm:top-6 sm:right-6 flex items-center gap-2">
+        <LanguageSwitcher size="sm" />
+        <ThemeToggle size="sm" />
+      </div>
       <div className="w-full max-w-sm">
-        {/* Header */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2 mb-2 group">
             <BrandLogo size="md" />
           </Link>
           <p className="text-xs text-charcoal-500 font-sans mt-2">
-            Segurança da sua conta no Fralda Online
+            {dict.pageSubtitle}
           </p>
         </div>
 
-        {/* Card */}
         <div className="bg-white rounded-2xl p-8 shadow-subtle border border-warm-border">
-          <Suspense fallback={<div className="py-8 flex items-center justify-center"><BrandLoader fullScreen={false} /></div>}>
+          <Suspense
+            fallback={
+              <div className="py-8 flex items-center justify-center">
+                <BrandLoader fullScreen={false} />
+              </div>
+            }
+          >
             <ResetPasswordForm />
           </Suspense>
         </div>

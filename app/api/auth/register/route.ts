@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { hashPassword, signJwt, AUTH_COOKIE_NAME, sanitizeEventPayload } from '@/lib/auth';
-import { DEFAULT_GIFT_ITEMS } from '@/lib/default-gifts';
+import { DEFAULT_GIFT_ITEMS, getDefaultGiftItems } from '@/lib/default-gifts';
+import { LOCALE_COOKIE_NAME, normalizeLocale } from '@/lib/i18n/types';
 import { sendWelcomeEventEmail } from '@/lib/email';
 import {
   isValidEmail,
@@ -114,6 +115,18 @@ export async function POST(req: NextRequest) {
       parsedEventDate = parseEventDateInput(defaultDateStr)!;
     }
 
+    const resolvedLocale =
+      normalizeLocale(body?.locale) ||
+      normalizeLocale(req.cookies.get(LOCALE_COOKIE_NAME)?.value) ||
+      'pt';
+    const initialGiftItems = getDefaultGiftItems(resolvedLocale) || DEFAULT_GIFT_ITEMS;
+    const defaultStoryByLocale = {
+      pt: 'Estamos muito felizes e ansiosos pela chegada do nosso maior tesouro! Criamos esta página com muito amor para compartilhar esse momento mágico com você.',
+      en: 'We are so happy and excited for the arrival of our greatest blessing! We created this page with all our love to share this magical moment with you.',
+      es: '¡Estamos muy felices y emocionados por la llegada de nuestro mayor tesoro! Creamos esta página con mucho amor para compartir este momento mágico contigo.',
+    } as const;
+    const joinerByLocale = { pt: 'ou', en: 'or', es: 'o' } as const;
+
     let resolvedBabyName: string | null = null;
     let resolvedBoyName: string | null = null;
     let resolvedGirlName: string | null = null;
@@ -125,7 +138,7 @@ export async function POST(req: NextRequest) {
       if (babyName?.trim()) {
         resolvedBabyName = babyName.trim();
       } else if (resolvedBoyName && resolvedGirlName) {
-        resolvedBabyName = `${resolvedBoyName} ou ${resolvedGirlName}`;
+        resolvedBabyName = `${resolvedBoyName} ${joinerByLocale[resolvedLocale]} ${resolvedGirlName}`;
       } else if (resolvedBoyName) {
         resolvedBabyName = resolvedBoyName;
       } else if (resolvedGirlName) {
@@ -149,9 +162,9 @@ export async function POST(req: NextRequest) {
             parentsNames: name.trim(),
             eventDate: parsedEventDate,
             themeColor: '#38BDF8',
-            storyMessage: 'Estamos muito felizes e ansiosos pela chegada do nosso maior tesouro! Criamos esta página com muito amor para compartilhar esse momento mágico com você.',
+            storyMessage: defaultStoryByLocale[resolvedLocale],
             items: {
-              create: DEFAULT_GIFT_ITEMS.map((item) => ({
+              create: initialGiftItems.map((item) => ({
                 title: item.title,
                 description: item.description,
                 price: item.price,

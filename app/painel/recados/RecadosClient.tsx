@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Download, Loader2, MessageCircle, Trash2 } from 'lucide-react';
 import { buildThankYouWhatsAppUrl } from '@/lib/share';
-import { formatEventDateBR } from '@/lib/validation';
+import { useI18n } from '@/components/LanguageProvider';
+import { painelDict } from '@/lib/i18n/dictionaries/painel';
 
 export interface GuestbookMessageRow {
   id: string;
@@ -43,17 +44,16 @@ function sanitizePdfText(text: string): string {
 
 export default function RecadosClient({ event, initialMessages }: RecadosClientProps) {
   const router = useRouter();
+  const { locale, t, formatCurrency, formatEventDate, formatDate } = useI18n();
+  const dict = painelDict[locale].messages;
+
   const [messages, setMessages] = useState<GuestbookMessageRow[]>(initialMessages);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [exportingPdf, setExportingPdf] = useState(false);
   const [feedbackError, setFeedbackError] = useState('');
 
   const handleDeleteMessage = async (messageId: string) => {
-    if (
-      !confirm(
-        'Remover este recado do mural público e do livro de recados? O valor recebido do presente permanece intacto.'
-      )
-    ) {
+    if (!confirm(dict.confirmDelete)) {
       return;
     }
 
@@ -65,12 +65,12 @@ export default function RecadosClient({ event, initialMessages }: RecadosClientP
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        throw new Error(data.error || 'Não foi possível remover o recado.');
+        throw new Error(data.error || dict.deleteErrorFallback);
       }
       setMessages((prev) => prev.filter((m) => m.id !== messageId));
       router.refresh();
     } catch (err: unknown) {
-      setFeedbackError(err instanceof Error ? err.message : 'Erro ao remover recado.');
+      setFeedbackError(err instanceof Error ? err.message : dict.deleteGenericError);
     } finally {
       setDeletingId(null);
     }
@@ -100,10 +100,9 @@ export default function RecadosClient({ event, initialMessages }: RecadosClientP
           : event.revealedGender === 'GIRL'
           ? event.girlName || event.babyName
           : event.boyName && event.girlName
-          ? `${event.boyName} ou ${event.girlName}`
+          ? `${event.boyName} ${dict.pdf.orWord} ${event.girlName}`
           : event.babyName;
 
-      // Cabeçalho editorial na página 1
       doc.setFillColor(250, 247, 242);
       doc.roundedRect(margin, 14, contentWidth, 38, 4, 4, 'F');
       doc.setDrawColor(231, 226, 218);
@@ -112,13 +111,13 @@ export default function RecadosClient({ event, initialMessages }: RecadosClientP
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(9);
       doc.setTextColor(194, 118, 91);
-      doc.text('FRALDA ONLINE  |  RECORDACAO DA FAMILIA', margin + 6, 23);
+      doc.text(dict.pdf.kicker, margin + 6, 23);
 
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(18);
       doc.setTextColor(28, 25, 23);
       doc.text(
-        sanitizePdfText(`Livro de Recados — ${event.parentsNames}`),
+        sanitizePdfText(t(dict.pdf.headerTitle, { parents: event.parentsNames })),
         margin + 6,
         32
       );
@@ -127,28 +126,34 @@ export default function RecadosClient({ event, initialMessages }: RecadosClientP
       doc.setFontSize(10);
       doc.setTextColor(87, 83, 78);
       const subtitleParts: string[] = [];
-      if (resolvedBabyLabel) subtitleParts.push(`Bebe: ${sanitizePdfText(resolvedBabyLabel)}`);
-      const formattedDate = formatEventDateBR(event.eventDate);
-      if (formattedDate) subtitleParts.push(`Data do cha: ${formattedDate}`);
-      subtitleParts.push(`${messages.length} recado(s)`);
+      if (resolvedBabyLabel) {
+        subtitleParts.push(
+          sanitizePdfText(t(dict.pdf.babyLabel, { baby: resolvedBabyLabel }))
+        );
+      }
+      const formattedDate = formatEventDate(event.eventDate);
+      if (formattedDate) {
+        subtitleParts.push(sanitizePdfText(t(dict.pdf.dateLabel, { date: formattedDate })));
+      }
+      subtitleParts.push(sanitizePdfText(t(dict.pdf.countLabel, { count: messages.length })));
       doc.text(subtitleParts.join('  •  '), margin + 6, 42);
 
       let y = 60;
 
       for (const item of messages) {
-        const cleanMsg = sanitizePdfText(item.message) || '(Sem texto)';
-        const cleanName = sanitizePdfText(item.name) || 'Convidado';
-        const cleanGift = sanitizePdfText(item.giftTitle) || 'Presente';
-        const dateLabel = new Date(item.createdAt).toLocaleDateString('pt-BR', {
+        const cleanMsg = sanitizePdfText(item.message) || dict.pdf.emptyMsg;
+        const cleanName = sanitizePdfText(item.name) || dict.pdf.guestFallback;
+        const cleanGift = sanitizePdfText(item.giftTitle) || dict.pdf.giftFallback;
+        const dateLabel = formatDate(item.createdAt, {
           day: '2-digit',
           month: 'short',
           year: 'numeric',
         });
         const guessLabel =
           item.pollGuess === 'BOY'
-            ? ' | Palpite: Menino'
+            ? dict.pdf.guessBoy
             : item.pollGuess === 'GIRL'
-            ? ' | Palpite: Menina'
+            ? dict.pdf.guessGirl
             : '';
 
         doc.setFont('helvetica', 'italic');
@@ -165,7 +170,6 @@ export default function RecadosClient({ event, initialMessages }: RecadosClientP
         doc.setDrawColor(231, 226, 218);
         doc.roundedRect(margin, y, contentWidth, cardHeight, 3, 3, 'FD');
 
-        // Faixa lateral decorativa terracota
         doc.setFillColor(194, 118, 91);
         doc.rect(margin, y + 2, 1.4, cardHeight - 4, 'F');
 
@@ -187,7 +191,11 @@ export default function RecadosClient({ event, initialMessages }: RecadosClientP
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(8);
         doc.setTextColor(120, 113, 108);
-        doc.text(`Mimo escolhido: ${cleanGift}`, margin + 6, y + cardHeight - 3.5);
+        doc.text(
+          sanitizePdfText(t(dict.pdf.chosenGift, { gift: cleanGift })),
+          margin + 6,
+          y + cardHeight - 3.5
+        );
 
         y += cardHeight + 5;
       }
@@ -200,7 +208,11 @@ export default function RecadosClient({ event, initialMessages }: RecadosClientP
         doc.setTextColor(168, 162, 158);
         doc.text(
           sanitizePdfText(
-            `Fralda Online • Livro de Recados de ${event.parentsNames} — Pagina ${p} de ${totalPages}`
+            t(dict.pdf.footerPage, {
+              parents: event.parentsNames,
+              page: p,
+              total: totalPages,
+            })
           ),
           pageWidth / 2,
           pageHeight - 9,
@@ -208,10 +220,10 @@ export default function RecadosClient({ event, initialMessages }: RecadosClientP
         );
       }
 
-      doc.save(`livro-de-recados-${event.slug}.pdf`);
+      doc.save(`${dict.pdf.filePrefix}-${event.slug}.pdf`);
     } catch (err) {
       console.error('Erro ao gerar PDF do livro de recados:', err);
-      setFeedbackError('Não foi possível gerar o PDF no momento. Tente novamente.');
+      setFeedbackError(dict.pdfErrorFallback);
     } finally {
       setExportingPdf(false);
     }
@@ -222,10 +234,10 @@ export default function RecadosClient({ event, initialMessages }: RecadosClientP
       <div className="pb-4 border-b border-warm-border flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="font-serif text-2xl font-normal text-charcoal-900">
-            Livro de Recados dos Convidados
+            {dict.pageTitle}
           </h1>
           <p className="text-xs text-charcoal-500 font-sans mt-0.5">
-            Todas as mensagens de carinho deixadas pelos convidados durante a confirmação de presentes
+            {dict.pageSubtitle}
           </p>
         </div>
 
@@ -239,12 +251,12 @@ export default function RecadosClient({ event, initialMessages }: RecadosClientP
             {exportingPdf ? (
               <>
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                <span>Gerando PDF...</span>
+                <span>{dict.generatingPdf}</span>
               </>
             ) : (
               <>
                 <Download className="w-3.5 h-3.5" />
-                <span>Baixar Livro de Recados (PDF)</span>
+                <span>{dict.downloadPdf}</span>
               </>
             )}
           </button>
@@ -259,9 +271,11 @@ export default function RecadosClient({ event, initialMessages }: RecadosClientP
 
       {messages.length === 0 ? (
         <div className="bg-white rounded-xl p-12 text-center border border-warm-border shadow-subtle max-w-md mx-auto">
-          <h3 className="font-serif text-base text-charcoal-800 font-normal">Nenhum recado ainda</h3>
+          <h3 className="font-serif text-base text-charcoal-800 font-normal">
+            {dict.emptyTitle}
+          </h3>
           <p className="text-xs text-charcoal-500 font-sans mt-1">
-            Assim que os convidados presentearem e deixarem uma mensagem, ela aparecerá aqui.
+            {dict.emptySubtitle}
           </p>
         </div>
       ) : (
@@ -272,6 +286,7 @@ export default function RecadosClient({ event, initialMessages }: RecadosClientP
               guestName: m.name,
               giftTitle: m.giftTitle,
               parentsNames: event.parentsNames,
+              locale,
             });
 
             return (
@@ -282,9 +297,11 @@ export default function RecadosClient({ event, initialMessages }: RecadosClientP
                 <div>
                   <div className="flex items-start justify-between gap-2 mb-3">
                     <div>
-                      <h3 className="font-serif text-sm font-medium text-charcoal-900">{m.name}</h3>
+                      <h3 className="font-serif text-sm font-medium text-charcoal-900">
+                        {m.name}
+                      </h3>
                       <span className="text-[11px] font-mono text-charcoal-400">
-                        {new Date(m.createdAt).toLocaleDateString('pt-BR', {
+                        {formatDate(m.createdAt, {
                           day: '2-digit',
                           month: 'short',
                           hour: '2-digit',
@@ -302,7 +319,7 @@ export default function RecadosClient({ event, initialMessages }: RecadosClientP
                               : 'bg-dusty-rose-light border-dusty-rose/30 text-dusty-rose'
                           }`}
                         >
-                          {m.pollGuess === 'BOY' ? 'Apostou: Menino' : 'Apostou: Menina'}
+                          {m.pollGuess === 'BOY' ? dict.guessedBoy : dict.guessedGirl}
                         </span>
                       )}
 
@@ -310,7 +327,7 @@ export default function RecadosClient({ event, initialMessages }: RecadosClientP
                         type="button"
                         onClick={() => handleDeleteMessage(m.id)}
                         disabled={deletingId === m.id}
-                        title="Remover recado do mural"
+                        title={dict.removeTitle}
                         className="w-7 h-7 rounded-lg text-charcoal-400 hover:text-dusty-rose hover:bg-dusty-rose-light/60 flex items-center justify-center transition disabled:opacity-50"
                       >
                         {deletingId === m.id ? (
@@ -331,12 +348,12 @@ export default function RecadosClient({ event, initialMessages }: RecadosClientP
                   <div className="flex items-center justify-between text-xs gap-2">
                     <span className="text-charcoal-500 text-[11px] font-sans truncate">
                       {m.paymentMethod === 'CREDIT_CARD'
-                        ? 'Presente no Cartão:'
-                        : 'Presente via Pix:'}{' '}
+                        ? dict.giftViaCard
+                        : dict.giftViaPix}{' '}
                       <strong className="font-medium text-charcoal-700">{m.giftTitle}</strong>
                     </span>
                     <span className="font-mono text-xs font-semibold text-charcoal-900 tabular-nums shrink-0">
-                      R$ {m.amount.toFixed(2).replace('.', ',')}
+                      {formatCurrency(m.amount)}
                     </span>
                   </div>
 
@@ -349,7 +366,7 @@ export default function RecadosClient({ event, initialMessages }: RecadosClientP
                         className="inline-flex items-center gap-1.5 text-[11px] font-medium text-emerald-700 hover:text-emerald-900 underline underline-offset-2"
                       >
                         <MessageCircle className="w-3.5 h-3.5" />
-                        <span>Agradecer no WhatsApp</span>
+                        <span>{dict.thankWhatsApp}</span>
                       </a>
                     </div>
                   )}

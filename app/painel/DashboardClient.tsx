@@ -1,15 +1,3 @@
-/**
- * ============================================================================
- * CLIENTE DO DASHBOARD DO ORGANIZADOR (DashboardClient)
- * ============================================================================
- * Painel interativo dos pais, projetado para máxima clareza:
- * - Checklist inicial para garantir que o recebimento via Pix está pronto.
- * - Resumo financeiro direto ao ponto: quanto já é seu (líquido), presentes e palpites.
- * - Bloco unificado do Bolão + Revelação ao Vivo do sexo do bebê.
- * - Sorteio entre presenteadores (quando ativado nas configurações).
- * - Lista das últimas mensagens e presentes recebidos da família.
- */
-
 'use client';
 
 import { useMemo, useState } from 'react';
@@ -32,6 +20,9 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { shareEvent, buildSharePayload, buildThankYouWhatsAppUrl } from '@/lib/share';
+import { useI18n } from '@/components/LanguageProvider';
+import { painelDict } from '@/lib/i18n/dictionaries/painel';
+import { commonDict } from '@/lib/i18n/dictionaries/common';
 
 interface DashboardOrderItem {
   id: string;
@@ -90,16 +81,17 @@ interface DashboardClientProps {
   pollVotes?: DashboardPollVote[];
 }
 
-function formatBRL(value: number) {
-  return `R$ ${value.toFixed(2).replace('.', ',')}`;
-}
-
 export default function DashboardClient({
   event,
   metrics,
   orders = [],
   pollVotes = [],
 }: DashboardClientProps) {
+  const { locale, t, formatCurrency, formatDate } = useI18n();
+  const dict = painelDict[locale].dashboard;
+  const gendersDict = commonDict[locale].genders;
+  const methodsDict = commonDict[locale].paymentMethods;
+
   const [revealed, setRevealed] = useState<string | null>(event.revealedGender);
   const [loadingGender, setLoadingGender] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
@@ -137,7 +129,7 @@ export default function DashboardClient({
       });
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || 'Não foi possível realizar o sorteio.');
+        throw new Error(data.error || dict.drawErrorFallback);
       }
       setRaffleWinner({
         name: data.winner.name,
@@ -151,7 +143,7 @@ export default function DashboardClient({
         colors: ['#C2765B', '#4A6B82', '#B86B77', '#FAF8F5'],
       });
     } catch (err: unknown) {
-      setRaffleError(err instanceof Error ? err.message : 'Erro ao sortear.');
+      setRaffleError(err instanceof Error ? err.message : dict.drawUnknownError);
     } finally {
       setDrawingRaffle(false);
     }
@@ -202,6 +194,7 @@ export default function DashboardClient({
       girlName: event.girlName,
       eventType: event.eventType,
       revealedGender: revealed,
+      locale,
     });
     if (res !== 'CANCELLED') {
       setCopiedLink(true);
@@ -217,16 +210,17 @@ export default function DashboardClient({
     girlName: event.girlName,
     eventType: event.eventType,
     revealedGender: revealed,
+    locale,
   }).whatsappUrl;
 
   const leadingTeam =
     metrics.totalVotes === 0
-      ? 'Nenhum palpite ainda'
+      ? dict.leadingNone
       : metrics.boyPercent === metrics.girlPercent
-      ? 'Empate técnico (50% a 50%)'
+      ? dict.leadingTie
       : metrics.boyPercent > metrics.girlPercent
-      ? `Menino na frente (${metrics.boyPercent}%)`
-      : `Menina na frente (${metrics.girlPercent}%)`;
+      ? t(dict.leadingBoy, { percent: metrics.boyPercent })
+      : t(dict.leadingGirl, { percent: metrics.girlPercent });
 
   const filteredOrders = useMemo(() => {
     const q = orderSearch.trim().toLowerCase();
@@ -260,7 +254,6 @@ export default function DashboardClient({
 
   return (
     <div className="space-y-6">
-      {/* 1. CABEÇALHO ACOLHEDOR + COMPARTILHAMENTO DIRETO */}
       <div className="bg-white rounded-2xl p-6 sm:p-8 border border-warm-border shadow-subtle">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
           <div>
@@ -271,14 +264,14 @@ export default function DashboardClient({
                 }`}
               />
               <span>
-                {event.mpConnected ? 'Página pronta para receber presentes' : 'Falta conectar seu recebimento'}
+                {event.mpConnected ? dict.statusReady : dict.statusPending}
               </span>
             </div>
             <h1 className="font-serif text-2xl sm:text-3xl font-medium text-charcoal-900">
-              Olá, {event.parentsNames}
+              {t(dict.greeting, { parents: event.parentsNames })}
             </h1>
             <p className="text-xs sm:text-sm text-charcoal-500 font-sans mt-1">
-              Endereço do seu chá:{' '}
+              {dict.pageAddressLabel}{' '}
               <Link
                 href={`/${event.slug}`}
                 target="_blank"
@@ -298,7 +291,7 @@ export default function DashboardClient({
               className="py-2.5 px-4 rounded-xl bg-[#25D366] hover:bg-[#20ba5a] text-white font-medium text-xs transition shadow-subtle flex items-center gap-2"
             >
               <MessageCircle className="w-4 h-4" />
-              <span className="font-semibold">Enviar no WhatsApp</span>
+              <span className="font-semibold">{dict.sendWhatsApp}</span>
             </a>
 
             <button
@@ -308,12 +301,12 @@ export default function DashboardClient({
               {copiedLink ? (
                 <>
                   <Check className="w-3.5 h-3.5 text-stone-200" />
-                  <span>Convite Copiado!</span>
+                  <span>{dict.inviteCopied}</span>
                 </>
               ) : (
                 <>
                   <Share2 className="w-3.5 h-3.5 text-stone-300" />
-                  <span>Copiar Convite</span>
+                  <span>{dict.copyInvite}</span>
                 </>
               )}
             </button>
@@ -321,93 +314,91 @@ export default function DashboardClient({
         </div>
       </div>
 
-      {/* 2. PASSO A PASSO PENDENTE (SÓ APARECE SE FALTAR CONECTAR MERCADO PAGO) */}
       {!event.mpConnected && (
         <div className="bg-amber-50/90 border border-amber-300 p-5 sm:p-6 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-subtle">
           <div className="space-y-1.5">
             <div className="flex items-center gap-2 text-amber-950 font-semibold text-sm">
               <Wallet className="w-4 h-4 text-amber-700 shrink-0" />
-              <span>Passo obrigatório: conecte seu Mercado Pago para receber os Pix</span>
+              <span>{dict.mpRequiredTitle}</span>
             </div>
             <p className="text-amber-900/80 text-xs leading-relaxed max-w-xl font-sans">
-              Sem conectar sua conta, seus convidados não conseguem finalizar o pagamento dos presentes. O dinheiro cai direto na sua conta Mercado Pago.
+              {dict.mpRequiredBody}
             </p>
           </div>
           <Link
             href="/painel/configuracoes"
             className="py-2.5 px-5 rounded-xl bg-[#009EE3] hover:bg-[#0082ba] text-white font-semibold text-xs transition shadow-subtle text-center shrink-0 inline-flex items-center justify-center gap-1.5"
           >
-            <span>Conectar Agora</span>
+            <span>{dict.connectNow}</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
       )}
 
-      {/* 3. RESUMO DO SEU CHÁ (3 NÚMEROS SIMPLES E CLAROS) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Card 1: O dinheiro que vai para os pais */}
         <div className="bg-white p-6 rounded-2xl border border-warm-border shadow-subtle flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between gap-2 mb-2">
               <span className="text-xs font-medium text-charcoal-600">
-                Valor disponível para você
+                {dict.kpiNetTitle}
               </span>
               <span className="text-[10px] font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                Direto no seu MP
+                {dict.kpiNetBadge}
               </span>
             </div>
             <strong className="font-serif text-3xl font-semibold text-charcoal-900 tabular-nums block">
-              {formatBRL(metrics.netAmount)}
+              {formatCurrency(metrics.netAmount)}
             </strong>
           </div>
           <p className="text-[11px] text-charcoal-500 mt-3 pt-3 border-t border-warm-border/60 font-sans">
             {metrics.totalOrders === 0
-              ? 'Assim que o primeiro presente for pago, o valor aparece aqui.'
+              ? dict.kpiNetEmpty
               : metrics.platformFee > 0
-              ? `Total dos presentes: ${formatBRL(metrics.totalGross)} · Taxa: ${formatBRL(metrics.platformFee)}`
-              : 'Valor líquido já descontado de taxas.'}
+              ? t(dict.kpiNetBreakdown, {
+                  gross: formatCurrency(metrics.totalGross),
+                  fee: formatCurrency(metrics.platformFee),
+                })
+              : dict.kpiNetFallback}
           </p>
         </div>
 
-        {/* Card 2: Presentes */}
         <div className="bg-white p-6 rounded-2xl border border-warm-border shadow-subtle flex flex-col justify-between">
           <div>
             <span className="text-xs font-medium text-charcoal-600 block mb-2">
-              Presentes confirmados
+              {dict.kpiOrdersTitle}
             </span>
             <strong className="font-serif text-3xl font-semibold text-charcoal-900 tabular-nums block">
               {metrics.totalOrders}
             </strong>
           </div>
           <div className="mt-3 pt-3 border-t border-warm-border/60 flex items-center justify-between text-[11px] font-sans">
-            <span className="text-charcoal-500">Quer editar preços ou itens?</span>
+            <span className="text-charcoal-500">{dict.kpiOrdersHint}</span>
             <Link
               href="/painel/presentes"
               className="font-medium text-charcoal-800 hover:text-terracotta underline underline-offset-2"
             >
-              Ver lista
+              {dict.kpiOrdersLink}
             </Link>
           </div>
         </div>
 
-        {/* Card 3: Bolão (ou Recados quando for Chá de Fralda) */}
         {event.eventType === 'FRALDA' ? (
           <div className="bg-white p-6 rounded-2xl border border-warm-border shadow-subtle flex flex-col justify-between">
             <div>
               <span className="text-xs font-medium text-charcoal-600 block mb-2">
-                Recados no Mural
+                {dict.kpiMessagesTitle}
               </span>
               <strong className="font-serif text-3xl font-semibold text-charcoal-900 tabular-nums block">
                 {metrics.totalMessages ?? 0}
               </strong>
             </div>
             <div className="mt-3 pt-3 border-t border-warm-border/60 flex items-center justify-between text-[11px] font-sans">
-              <span className="text-charcoal-500">Mensagens de carinho</span>
+              <span className="text-charcoal-500">{dict.kpiMessagesHint}</span>
               <Link
                 href="/painel/recados"
                 className="font-medium text-charcoal-800 hover:text-terracotta underline underline-offset-2"
               >
-                Ver recados
+                {dict.kpiMessagesLink}
               </Link>
             </div>
           </div>
@@ -415,7 +406,7 @@ export default function DashboardClient({
           <div className="bg-white p-6 rounded-2xl border border-warm-border shadow-subtle flex flex-col justify-between">
             <div>
               <span className="text-xs font-medium text-charcoal-600 block mb-2">
-                Palpites no Bolão
+                {dict.kpiPollTitle}
               </span>
               <strong className="font-serif text-3xl font-semibold text-charcoal-900 tabular-nums block">
                 {metrics.totalVotes}
@@ -428,251 +419,258 @@ export default function DashboardClient({
         )}
       </div>
 
-      {/* 4. BOLÃO & MOMENTO DA REVELAÇÃO (EXIBIDO APENAS SE NÃO FOR CHÁ DE FRALDA PURO) */}
       {event.eventType !== 'FRALDA' && (
-      <div className="bg-white rounded-2xl p-6 sm:p-8 border border-warm-border shadow-subtle space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <span className="text-[10px] font-mono uppercase tracking-widest text-charcoal-400 block mb-1">
-              Interação com a Família
-            </span>
-            <h2 className="font-serif text-xl font-medium text-charcoal-900 flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-terracotta" />
-              <span>Placar do Bolão &amp; Revelação ao Vivo</span>
-            </h2>
-          </div>
-
-          {revealed && (
-            <span
-              className={`py-1.5 px-3.5 rounded-full text-xs font-mono font-medium border inline-flex items-center gap-1.5 self-start sm:self-auto ${
-                revealed === 'BOY'
-                  ? 'bg-dusty-blue-light border-dusty-blue/30 text-dusty-blue'
-                  : 'bg-dusty-rose-light border-dusty-rose/30 text-dusty-rose'
-              }`}
-            >
-              <span>Revelado:</span>
-              <strong>
-                {revealed === 'BOY'
-                  ? event.boyName
-                    ? `Menino (${event.boyName}) 💙`
-                    : 'Menino 💙'
-                  : event.girlName
-                  ? `Menina (${event.girlName}) 🌸`
-                  : 'Menina 🌸'}
-              </strong>
-            </span>
-          )}
-        </div>
-
-        {/* Barra de Placar */}
-        <div className="p-4 rounded-xl bg-cream-50/70 border border-warm-border/80">
-          <div className="flex justify-between items-baseline text-xs font-mono mb-2">
-            <span className="text-dusty-blue font-medium">
-              💙 Menino: {metrics.boyPercent}% ({metrics.boyVotes})
-            </span>
-            <span className="text-dusty-rose font-medium">
-              ({metrics.girlVotes}) {metrics.girlPercent}% :Menina 🌸
-            </span>
-          </div>
-          <div className="h-3 bg-cream-200/70 rounded-full overflow-hidden flex border border-warm-border p-0.5">
-            <div
-              style={{ width: `${metrics.boyPercent}%` }}
-              className="h-full bg-dusty-blue rounded-l-full transition-all duration-500"
-            />
-            <div
-              style={{ width: `${metrics.girlPercent}%` }}
-              className="h-full bg-dusty-rose rounded-r-full transition-all duration-500"
-            />
-          </div>
-        </div>
-
-        {/* Botões de Revelação */}
-        <div>
-          <p className="text-xs text-charcoal-500 font-sans mb-3">
-            Quando chegar a hora da revelação, clique abaixo para anunciar na página pública com chuva de confetes:
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <button
-              onClick={() => handleRevealGender('BOY')}
-              disabled={loadingGender}
-              className={`py-3 px-4 rounded-xl font-medium text-xs transition border flex flex-col items-center justify-center gap-0.5 ${
-                revealed === 'BOY'
-                  ? 'bg-dusty-blue text-white border-dusty-blue shadow-subtle font-semibold'
-                  : 'bg-dusty-blue-light/70 text-dusty-blue border-dusty-blue/30 hover:bg-dusty-blue/20'
-              }`}
-            >
-              <span className="font-semibold text-xs">É um Menino 💙</span>
-              {event.boyName && (
-                <span className="text-[11px] opacity-90 font-serif italic">({event.boyName})</span>
-              )}
-            </button>
-
-            <button
-              onClick={() => handleRevealGender('GIRL')}
-              disabled={loadingGender}
-              className={`py-3 px-4 rounded-xl font-medium text-xs transition border flex flex-col items-center justify-center gap-0.5 ${
-                revealed === 'GIRL'
-                  ? 'bg-dusty-rose text-white border-dusty-rose shadow-subtle font-semibold'
-                  : 'bg-dusty-rose-light/70 text-dusty-rose border-dusty-rose/30 hover:bg-dusty-rose/20'
-              }`}
-            >
-              <span className="font-semibold text-xs">É uma Menina 🌸</span>
-              {event.girlName && (
-                <span className="text-[11px] opacity-90 font-serif italic">({event.girlName})</span>
-              )}
-            </button>
-
-            <button
-              onClick={() => handleRevealGender(null)}
-              disabled={loadingGender}
-              className="py-3 px-4 rounded-xl text-xs text-charcoal-600 bg-cream-100 hover:bg-cream-200 border border-warm-border transition"
-            >
-              Manter em Segredo
-            </button>
-          </div>
-        </div>
-
-        {/* Lista de Participantes do Bolão */}
-        {pollVotes.length > 0 && (
-          <div className="pt-4 border-t border-warm-border/70">
-            <button
-              type="button"
-              onClick={() => setShowPollVoters((prev) => !prev)}
-              className="w-full flex items-center justify-between text-xs font-medium text-charcoal-800 hover:text-terracotta transition py-1"
-            >
-              <span className="inline-flex items-center gap-2">
-                <Users className="w-4 h-4 text-charcoal-500" />
-                <span>
-                  Ver participantes do bolão ({pollVotes.length})
-                  {revealed ? ` · ${winnersCount} acertaram!` : ''}
-                </span>
+        <div className="bg-white rounded-2xl p-6 sm:p-8 border border-warm-border shadow-subtle space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <span className="text-[10px] font-mono uppercase tracking-widest text-charcoal-400 block mb-1">
+                {dict.pollEyebrow}
               </span>
-              {showPollVoters ? (
-                <ChevronUp className="w-4 h-4 text-charcoal-400" />
-              ) : (
-                <ChevronDown className="w-4 h-4 text-charcoal-400" />
-              )}
-            </button>
+              <h2 className="font-serif text-xl font-medium text-charcoal-900 flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-terracotta" />
+                <span>{dict.pollSectionTitle}</span>
+              </h2>
+            </div>
 
-            {showPollVoters && (
-              <div className="mt-4 space-y-3">
-                <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setPollFilter('ALL')}
-                    className={`px-3 py-1 rounded-full text-[11px] font-medium border transition ${
-                      pollFilter === 'ALL'
-                        ? 'bg-charcoal-900 text-white border-charcoal-900'
-                        : 'bg-cream-50 text-charcoal-600 border-warm-border hover:bg-cream-100'
-                    }`}
-                  >
-                    Todos ({pollVotes.length})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPollFilter('BOY')}
-                    className={`px-3 py-1 rounded-full text-[11px] font-medium border transition ${
-                      pollFilter === 'BOY'
-                        ? 'bg-dusty-blue text-white border-dusty-blue'
-                        : 'bg-dusty-blue-light/60 text-dusty-blue border-dusty-blue/30'
-                    }`}
-                  >
-                    Menino 💙 ({pollVotes.filter((v) => v.guess === 'BOY').length})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPollFilter('GIRL')}
-                    className={`px-3 py-1 rounded-full text-[11px] font-medium border transition ${
-                      pollFilter === 'GIRL'
-                        ? 'bg-dusty-rose text-white border-dusty-rose'
-                        : 'bg-dusty-rose-light/60 text-dusty-rose border-dusty-rose/30'
-                    }`}
-                  >
-                    Menina 🌸 ({pollVotes.filter((v) => v.guess === 'GIRL').length})
-                  </button>
-                  {(revealed === 'BOY' || revealed === 'GIRL') && (
-                    <button
-                      type="button"
-                      onClick={() => setPollFilter('WINNERS')}
-                      className={`px-3 py-1 rounded-full text-[11px] font-semibold border transition ${
-                        pollFilter === 'WINNERS'
-                          ? 'bg-terracotta text-white border-terracotta'
-                          : 'bg-cream-100 text-terracotta border-terracotta/40 hover:bg-cream-200'
-                      }`}
-                    >
-                      🏆 Acertaram o palpite! ({winnersCount})
-                    </button>
-                  )}
-                </div>
-
-                <div className="max-h-64 overflow-y-auto divide-y divide-warm-border/50 rounded-xl border border-warm-border/70 bg-cream-50/40 px-3.5">
-                  {filteredPollVotes.length === 0 ? (
-                    <p className="py-4 text-center text-xs text-charcoal-500 font-sans">
-                      Nenhum palpite encontrado neste filtro.
-                    </p>
-                  ) : (
-                    filteredPollVotes.map((vote) => {
-                      const isWinner = Boolean(revealed && vote.guess === revealed);
-                      return (
-                        <div
-                          key={vote.id}
-                          className="py-2.5 flex items-center justify-between gap-3 text-xs"
-                        >
-                          <div className="flex items-center gap-2 min-w-0">
-                            <span className="font-medium text-charcoal-900 truncate">
-                              {vote.voterName}
-                            </span>
-                            {isWinner && (
-                              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-terracotta/10 text-terracotta border border-terracotta/30 font-semibold shrink-0">
-                                🏆 Acertou!
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2.5 shrink-0">
-                            <span
-                              className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
-                                vote.guess === 'BOY'
-                                  ? 'bg-dusty-blue-light border-dusty-blue/30 text-dusty-blue'
-                                  : 'bg-dusty-rose-light border-dusty-rose/30 text-dusty-rose'
-                              }`}
-                            >
-                              {vote.guess === 'BOY' ? 'Menino 💙' : 'Menina 🌸'}
-                            </span>
-                            <span className="text-[10px] font-mono text-charcoal-400">
-                              {new Date(vote.createdAt).toLocaleDateString('pt-BR', {
-                                day: '2-digit',
-                                month: '2-digit',
-                              })}
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-              </div>
+            {revealed && (
+              <span
+                className={`py-1.5 px-3.5 rounded-full text-xs font-mono font-medium border inline-flex items-center gap-1.5 self-start sm:self-auto ${
+                  revealed === 'BOY'
+                    ? 'bg-dusty-blue-light border-dusty-blue/30 text-dusty-blue'
+                    : 'bg-dusty-rose-light border-dusty-rose/30 text-dusty-rose'
+                }`}
+              >
+                <span>{dict.revealedTag}</span>
+                <strong>
+                  {revealed === 'BOY'
+                    ? event.boyName
+                      ? `${gendersDict.boy} (${event.boyName}) 💙`
+                      : `${gendersDict.boy} 💙`
+                    : event.girlName
+                    ? `${gendersDict.girl} (${event.girlName}) 🌸`
+                    : `${gendersDict.girl} 🌸`}
+                </strong>
+              </span>
             )}
           </div>
-        )}
-      </div>
+
+          <div className="p-4 rounded-xl bg-cream-50/70 border border-warm-border/80">
+            <div className="flex justify-between items-baseline text-xs font-mono mb-2">
+              <span className="text-dusty-blue font-medium">
+                {t(dict.pollBarBoy, { percent: metrics.boyPercent, votes: metrics.boyVotes })}
+              </span>
+              <span className="text-dusty-rose font-medium">
+                {t(dict.pollBarGirl, { percent: metrics.girlPercent, votes: metrics.girlVotes })}
+              </span>
+            </div>
+            <div className="h-3 bg-cream-200/70 rounded-full overflow-hidden flex border border-warm-border p-0.5">
+              <div
+                style={{ width: `${metrics.boyPercent}%` }}
+                className="h-full bg-dusty-blue rounded-l-full transition-all duration-500"
+              />
+              <div
+                style={{ width: `${metrics.girlPercent}%` }}
+                className="h-full bg-dusty-rose rounded-r-full transition-all duration-500"
+              />
+            </div>
+          </div>
+
+          <div>
+            <p className="text-xs text-charcoal-500 font-sans mb-3">
+              {dict.revealInstruction}
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <button
+                onClick={() => handleRevealGender('BOY')}
+                disabled={loadingGender}
+                className={`py-3 px-4 rounded-xl font-medium text-xs transition border flex flex-col items-center justify-center gap-0.5 ${
+                  revealed === 'BOY'
+                    ? 'bg-dusty-blue text-white border-dusty-blue shadow-subtle font-semibold'
+                    : 'bg-dusty-blue-light/70 text-dusty-blue border-dusty-blue/30 hover:bg-dusty-blue/20'
+                }`}
+              >
+                <span className="font-semibold text-xs">{dict.revealBoyCta}</span>
+                {event.boyName && (
+                  <span className="text-[11px] opacity-90 font-serif italic">({event.boyName})</span>
+                )}
+              </button>
+
+              <button
+                onClick={() => handleRevealGender('GIRL')}
+                disabled={loadingGender}
+                className={`py-3 px-4 rounded-xl font-medium text-xs transition border flex flex-col items-center justify-center gap-0.5 ${
+                  revealed === 'GIRL'
+                    ? 'bg-dusty-rose text-white border-dusty-rose shadow-subtle font-semibold'
+                    : 'bg-dusty-rose-light/70 text-dusty-rose border-dusty-rose/30 hover:bg-dusty-rose/20'
+                }`}
+              >
+                <span className="font-semibold text-xs">{dict.revealGirlCta}</span>
+                {event.girlName && (
+                  <span className="text-[11px] opacity-90 font-serif italic">({event.girlName})</span>
+                )}
+              </button>
+
+              <button
+                onClick={() => handleRevealGender(null)}
+                disabled={loadingGender}
+                className="py-3 px-4 rounded-xl text-xs text-charcoal-600 bg-cream-100 hover:bg-cream-200 border border-warm-border transition"
+              >
+                {dict.keepSecretCta}
+              </button>
+            </div>
+          </div>
+
+          {pollVotes.length > 0 && (
+            <div className="pt-4 border-t border-warm-border/70">
+              <button
+                type="button"
+                onClick={() => setShowPollVoters((prev) => !prev)}
+                className="w-full flex items-center justify-between text-xs font-medium text-charcoal-800 hover:text-terracotta transition py-1"
+              >
+                <span className="inline-flex items-center gap-2">
+                  <Users className="w-4 h-4 text-charcoal-500" />
+                  <span>
+                    {t(dict.votersToggleLabel, { count: pollVotes.length })}
+                    {revealed ? t(dict.votersWinnersSuffix, { count: winnersCount }) : ''}
+                  </span>
+                </span>
+                {showPollVoters ? (
+                  <ChevronUp className="w-4 h-4 text-charcoal-400" />
+                ) : (
+                  <ChevronDown className="w-4 h-4 text-charcoal-400" />
+                )}
+              </button>
+
+              {showPollVoters && (
+                <div className="mt-4 space-y-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setPollFilter('ALL')}
+                      className={`px-3 py-1 rounded-full text-[11px] font-medium border transition ${
+                        pollFilter === 'ALL'
+                          ? 'bg-charcoal-900 text-white border-charcoal-900'
+                          : 'bg-cream-50 text-charcoal-600 border-warm-border hover:bg-cream-100'
+                      }`}
+                    >
+                      {t(dict.filterAll, { count: pollVotes.length })}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPollFilter('BOY')}
+                      className={`px-3 py-1 rounded-full text-[11px] font-medium border transition ${
+                        pollFilter === 'BOY'
+                          ? 'bg-dusty-blue text-white border-dusty-blue'
+                          : 'bg-dusty-blue-light/60 text-dusty-blue border-dusty-blue/30'
+                      }`}
+                    >
+                      {t(dict.filterBoy, {
+                        count: pollVotes.filter((v) => v.guess === 'BOY').length,
+                      })}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPollFilter('GIRL')}
+                      className={`px-3 py-1 rounded-full text-[11px] font-medium border transition ${
+                        pollFilter === 'GIRL'
+                          ? 'bg-dusty-rose text-white border-dusty-rose'
+                          : 'bg-dusty-rose-light/60 text-dusty-rose border-dusty-rose/30'
+                      }`}
+                    >
+                      {t(dict.filterGirl, {
+                        count: pollVotes.filter((v) => v.guess === 'GIRL').length,
+                      })}
+                    </button>
+                    {(revealed === 'BOY' || revealed === 'GIRL') && (
+                      <button
+                        type="button"
+                        onClick={() => setPollFilter('WINNERS')}
+                        className={`px-3 py-1 rounded-full text-[11px] font-semibold border transition ${
+                          pollFilter === 'WINNERS'
+                            ? 'bg-terracotta text-white border-terracotta'
+                            : 'bg-cream-100 text-terracotta border-terracotta/40 hover:bg-cream-200'
+                        }`}
+                      >
+                        {t(dict.filterWinners, { count: winnersCount })}
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="max-h-64 overflow-y-auto divide-y divide-warm-border/50 rounded-xl border border-warm-border/70 bg-cream-50/40 px-3.5">
+                    {filteredPollVotes.length === 0 ? (
+                      <p className="py-4 text-center text-xs text-charcoal-500 font-sans">
+                        {dict.votersEmptyFilter}
+                      </p>
+                    ) : (
+                      filteredPollVotes.map((vote) => {
+                        const isWinner = Boolean(revealed && vote.guess === revealed);
+                        return (
+                          <div
+                            key={vote.id}
+                            className="py-2.5 flex items-center justify-between gap-3 text-xs"
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="font-medium text-charcoal-900 truncate">
+                                {vote.voterName}
+                              </span>
+                              {isWinner && (
+                                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-terracotta/10 text-terracotta border border-terracotta/30 font-semibold shrink-0">
+                                  {dict.winnerBadge}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2.5 shrink-0">
+                              <span
+                                className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
+                                  vote.guess === 'BOY'
+                                    ? 'bg-dusty-blue-light border-dusty-blue/30 text-dusty-blue'
+                                    : 'bg-dusty-rose-light border-dusty-rose/30 text-dusty-rose'
+                                }`}
+                              >
+                                {vote.guess === 'BOY'
+                                  ? `${gendersDict.boy} 💙`
+                                  : `${gendersDict.girl} 🌸`}
+                              </span>
+                              <span className="text-[10px] font-mono text-charcoal-400">
+                                {formatDate(vote.createdAt, {
+                                  day: '2-digit',
+                                  month: '2-digit',
+                                })}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       )}
 
-      {/* 5. SORTEIO DO CHÁ (QUANDO ATIVADO) OU ATALHO DISCRETO PARA ATIVAR */}
       {event.raffleEnabled ? (
         <div className="bg-white rounded-2xl p-6 sm:p-8 border border-warm-border shadow-subtle">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <span className="text-[10px] font-mono uppercase tracking-widest text-terracotta block mb-1">
-                Sorteio entre Presenteadores
+                {dict.raffleEyebrow}
               </span>
               <h2 className="font-serif text-xl font-medium text-charcoal-900 flex items-center gap-2">
                 <Ticket className="w-4 h-4 text-terracotta" />
-                <span>{event.rafflePrize ? `Prêmio: ${event.rafflePrize}` : 'Sorteio do Chá'}</span>
+                <span>
+                  {event.rafflePrize
+                    ? t(dict.rafflePrizeTitle, { prize: event.rafflePrize })
+                    : dict.raffleDefaultTitle}
+                </span>
               </h2>
               <p className="text-xs text-charcoal-500 mt-1 font-sans">
                 {raffleWinner
-                  ? 'Sorteio realizado. O resultado é definitivo e já aparece na página pública.'
-                  : `${metrics.raffleParticipantsCount ?? 0} participante(s) concorrendo com Número da Sorte.`}
+                  ? dict.raffleDrawnSubtitle
+                  : t(dict.raffleCountSubtitle, {
+                      count: metrics.raffleParticipantsCount ?? 0,
+                    })}
               </p>
             </div>
 
@@ -685,7 +683,7 @@ export default function DashboardClient({
                     onClick={() => setConfirmDraw(true)}
                     className="py-2.5 px-4 rounded-xl text-xs font-semibold bg-charcoal-900 text-white hover:bg-charcoal-800 disabled:opacity-40 disabled:cursor-not-allowed transition shadow-subtle"
                   >
-                    Realizar Sorteio
+                    {dict.drawButton}
                   </button>
                 ) : (
                   <div className="flex items-center gap-2">
@@ -695,7 +693,7 @@ export default function DashboardClient({
                       onClick={handleDrawRaffle}
                       className="py-2.5 px-4 rounded-xl text-xs font-semibold bg-terracotta text-white hover:opacity-90 disabled:opacity-50 transition shadow-subtle"
                     >
-                      {drawingRaffle ? 'Sorteando...' : 'Confirmar (Definitivo)'}
+                      {drawingRaffle ? dict.drawingButton : dict.confirmDrawButton}
                     </button>
                     <button
                       type="button"
@@ -703,7 +701,7 @@ export default function DashboardClient({
                       onClick={() => setConfirmDraw(false)}
                       className="py-2.5 px-3 rounded-xl text-xs text-charcoal-500 bg-cream-100 hover:bg-cream-200 border border-warm-border transition"
                     >
-                      Cancelar
+                      {dict.cancelButton}
                     </button>
                   </div>
                 )}
@@ -723,7 +721,7 @@ export default function DashboardClient({
                 </div>
                 <div>
                   <span className="text-[10px] font-mono uppercase tracking-wider text-charcoal-500 block">
-                    Ganhador(a) Oficial
+                    {dict.officialWinnerLabel}
                   </span>
                   <strong className="font-serif text-base font-medium text-charcoal-900">
                     {raffleWinner.name}
@@ -744,10 +742,10 @@ export default function DashboardClient({
             </div>
             <div>
               <p className="text-xs font-semibold text-charcoal-900">
-                Quer fazer um sorteio entre quem presentear?
+                {dict.rafflePromoTitle}
               </p>
               <p className="text-[11px] text-charcoal-500 font-sans">
-                Ative o Sorteio Opcional para gerar 1 Número da Sorte automático a cada presente confirmado.
+                {dict.rafflePromoBody}
               </p>
             </div>
           </div>
@@ -755,17 +753,16 @@ export default function DashboardClient({
             href="/painel/configuracoes"
             className="text-xs font-medium text-charcoal-800 hover:text-terracotta underline underline-offset-2 shrink-0"
           >
-            Ativar em Configurações →
+            {dict.rafflePromoCta}
           </Link>
         </div>
       )}
 
-      {/* 6. EXTRATO COMPLETO DE PRESENTES E RECADOS */}
       <div className="bg-white rounded-2xl p-6 sm:p-8 border border-warm-border shadow-subtle space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <h2 className="font-serif text-xl font-medium text-charcoal-900 flex items-center gap-2">
             <Gift className="w-4 h-4 text-charcoal-500" />
-            <span>Extrato de Presentes Recebidos</span>
+            <span>{dict.ordersTitle}</span>
             <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-cream-100 border border-warm-border text-charcoal-600">
               {orders.length}
             </span>
@@ -775,7 +772,7 @@ export default function DashboardClient({
               href="/painel/recados"
               className="text-xs font-medium text-charcoal-600 hover:text-charcoal-900 underline underline-offset-2"
             >
-              Ver livro de recados
+              {dict.viewGuestbookLink}
             </Link>
           )}
         </div>
@@ -787,7 +784,7 @@ export default function DashboardClient({
               type="text"
               value={orderSearch}
               onChange={(e) => setOrderSearch(e.target.value)}
-              placeholder="Buscar por nome do convidado, presente ou recado..."
+              placeholder={dict.searchPlaceholder}
               className="w-full pl-9 pr-3.5 py-2 rounded-xl border border-warm-border bg-cream-50/50 text-xs text-charcoal-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-charcoal-900"
             />
           </div>
@@ -796,13 +793,13 @@ export default function DashboardClient({
         {orders.length === 0 ? (
           <div className="py-8 text-center bg-cream-50/50 rounded-xl border border-dashed border-warm-border">
             <p className="text-xs text-charcoal-500 font-sans">
-              Nenhum presente confirmado ainda. Compartilhe o link no WhatsApp para começar!
+              {dict.emptyOrders}
             </p>
           </div>
         ) : visibleOrders.length === 0 ? (
           <div className="py-8 text-center bg-cream-50/50 rounded-xl border border-dashed border-warm-border">
             <p className="text-xs text-charcoal-500 font-sans">
-              Nenhum presente encontrado para &ldquo;{orderSearch}&rdquo;.
+              {t(dict.emptySearchOrders, { query: orderSearch })}
             </p>
           </div>
         ) : (
@@ -814,10 +811,14 @@ export default function DashboardClient({
                   guestName: order.payerName,
                   giftTitle: order.giftTitle,
                   parentsNames: event.parentsNames,
+                  locale,
                 });
 
                 return (
-                  <div key={order.id} className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div
+                    key={order.id}
+                    className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                  >
                     <div className="min-w-0 space-y-1">
                       <div className="flex flex-wrap items-center gap-1.5">
                         <strong className="text-xs sm:text-sm font-medium text-charcoal-900">
@@ -827,13 +828,16 @@ export default function DashboardClient({
                           {order.giftTitle}
                         </span>
                         <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-stone-100 text-charcoal-600">
-                          {order.paymentMethod === 'CREDIT_CARD' ? 'Cartão' : 'Pix'}
+                          {order.paymentMethod === 'CREDIT_CARD'
+                            ? methodsDict.CARD_SHORT
+                            : methodsDict.PIX}
                         </span>
-                        {order.raffleTicketNumber !== null && order.raffleTicketNumber !== undefined && (
-                          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cream-100 border border-terracotta/30 text-terracotta font-semibold">
-                            Nº #{String(order.raffleTicketNumber).padStart(3, '0')}
-                          </span>
-                        )}
+                        {order.raffleTicketNumber !== null &&
+                          order.raffleTicketNumber !== undefined && (
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cream-100 border border-terracotta/30 text-terracotta font-semibold">
+                              Nº #{String(order.raffleTicketNumber).padStart(3, '0')}
+                            </span>
+                          )}
                         {order.pollGuess && (
                           <span
                             className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
@@ -842,7 +846,7 @@ export default function DashboardClient({
                                 : 'bg-dusty-rose-light border-dusty-rose/30 text-dusty-rose'
                             }`}
                           >
-                            {order.pollGuess === 'BOY' ? 'Menino' : 'Menina'}
+                            {order.pollGuess === 'BOY' ? gendersDict.boy : gendersDict.girl}
                           </span>
                         )}
                       </div>
@@ -853,7 +857,7 @@ export default function DashboardClient({
                       )}
                       <div className="flex flex-wrap items-center gap-3">
                         <span className="text-[10px] font-mono text-charcoal-400">
-                          {new Date(order.createdAt).toLocaleDateString('pt-BR', {
+                          {formatDate(order.createdAt, {
                             day: '2-digit',
                             month: 'short',
                             hour: '2-digit',
@@ -868,7 +872,7 @@ export default function DashboardClient({
                             className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700 hover:text-emerald-900 underline underline-offset-2"
                           >
                             <MessageCircle className="w-3 h-3" />
-                            <span>Agradecer no WhatsApp</span>
+                            <span>{dict.thankWhatsApp}</span>
                           </a>
                         )}
                       </div>
@@ -876,14 +880,14 @@ export default function DashboardClient({
 
                     <div className="text-left sm:text-right shrink-0">
                       <span className="font-mono text-xs sm:text-sm font-semibold text-charcoal-900 tabular-nums block">
-                        {formatBRL(order.netAmount)}
+                        {formatCurrency(order.netAmount)}
                       </span>
                       <span className="text-[10px] text-emerald-700 font-mono block">
-                        Líquido · Confirmado
+                        {dict.confirmedNetLabel}
                       </span>
                       {Math.abs(order.amount - order.netAmount) > 0.01 && (
                         <span className="text-[10px] text-charcoal-400 font-mono block">
-                          Pago: {formatBRL(order.amount)}
+                          {t(dict.paidLabel, { amount: formatCurrency(order.amount) })}
                         </span>
                       )}
                     </div>
@@ -900,8 +904,8 @@ export default function DashboardClient({
                   className="py-2 px-4 rounded-xl text-xs font-medium bg-cream-50 hover:bg-cream-100 text-charcoal-700 border border-warm-border transition"
                 >
                   {showAllOrders
-                    ? 'Mostrar apenas os 8 mais recentes'
-                    : `Ver todos os ${filteredOrders.length} presentes`}
+                    ? dict.showTop8
+                    : t(dict.showAllOrders, { count: filteredOrders.length })}
                 </button>
               </div>
             )}

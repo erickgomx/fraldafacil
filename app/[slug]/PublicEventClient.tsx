@@ -1,13 +1,3 @@
-/**
- * ============================================================================
- * CLIENTE DA PÁGINA PÚBLICA DO EVENTO (PublicEventClient)
- * ============================================================================
- * Centraliza a experiência do convidado na página do evento:
- * - Renderiza o Hero (`BabyHero`), Bolão (`GenderPoll`), Catálogo (`DiaperCatalog`) e Mural (`GuestbookWall`).
- * - Controla a abertura do modal de Checkout Pix (`PixCheckoutModal`).
- * - Botão flutuante/topo de compartilhamento fácil com Web Share API ou cópia para WhatsApp.
- */
-
 'use client';
 
 import { useState } from 'react';
@@ -21,7 +11,10 @@ import { Share2, Check, Ticket, Trophy, Clock } from 'lucide-react';
 import Link from 'next/link';
 import BrandLogo from '@/components/BrandLogo';
 import ThemeToggle from '@/components/ThemeToggle';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { shareEvent } from '@/lib/share';
+import { useI18n } from '@/components/LanguageProvider';
+import { eventDict } from '@/lib/i18n/dictionaries/event';
 
 interface PublicEventClientProps {
   event: {
@@ -60,6 +53,9 @@ export default function PublicEventClient({
   initialGirlVotes,
 }: PublicEventClientProps) {
   const router = useRouter();
+  const { locale, t } = useI18n();
+  const dict = eventDict[locale].publicEvent;
+
   const [selectedGift, setSelectedGift] = useState<GiftItemData | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalGuess, setModalGuess] = useState<'BOY' | 'GIRL' | null>(null);
@@ -86,6 +82,7 @@ export default function PublicEventClient({
       girlName: event.girlName,
       eventType: event.eventType,
       revealedGender: event.revealedGender,
+      locale,
     });
     if (res !== 'CANCELLED') {
       setCopiedLink(true);
@@ -95,7 +92,6 @@ export default function PublicEventClient({
 
   return (
     <div className="min-h-screen bg-cream-50 text-charcoal-900">
-      {/* Top Bar Sóbria */}
       <header className="sticky top-0 z-40 bg-cream-50/90 backdrop-blur-md border-b border-warm-border/70">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-2">
           <Link href="/" className="group shrink-0">
@@ -110,23 +106,23 @@ export default function PublicEventClient({
               {copiedLink ? (
                 <>
                   <Check className="w-3.5 h-3.5 text-stone-900" />
-                  <span className="hidden sm:inline">Link Copiado</span>
-                  <span className="sm:hidden">Copiado</span>
+                  <span className="hidden sm:inline">{dict.linkCopiedDesktop}</span>
+                  <span className="sm:hidden">{dict.linkCopiedMobile}</span>
                 </>
               ) : (
                 <>
                   <Share2 className="w-3.5 h-3.5 text-charcoal-400" />
-                  <span className="hidden sm:inline">Compartilhar Chá</span>
-                  <span className="sm:hidden">Compartilhar</span>
+                  <span className="hidden sm:inline">{dict.shareDesktop}</span>
+                  <span className="sm:hidden">{dict.shareMobile}</span>
                 </>
               )}
             </button>
+            <LanguageSwitcher size="sm" />
             <ThemeToggle size="sm" />
           </div>
         </div>
       </header>
 
-      {/* Hero */}
       <BabyHero
         parentsNames={event.parentsNames}
         babyName={event.babyName}
@@ -140,7 +136,6 @@ export default function PublicEventClient({
         eventType={event.eventType}
       />
 
-      {/* Bolão */}
       {event.eventType !== 'FRALDA' && (
         <GenderPoll
           eventId={event.id}
@@ -153,7 +148,6 @@ export default function PublicEventClient({
         />
       )}
 
-      {/* Banner Minimalista do Sorteio (quando ativado pelos pais) */}
       {event.raffleEnabled && (
         <section className="max-w-3xl mx-auto px-6 mt-8">
           {event.raffleDrawnAt && event.raffleWinnerName && event.raffleWinnerTicket ? (
@@ -164,14 +158,14 @@ export default function PublicEventClient({
                 </div>
                 <div>
                   <span className="text-[10px] font-mono uppercase tracking-widest text-terracotta block">
-                    Sorteio Realizado
+                    {dict.raffleDrawnEyebrow}
                   </span>
                   <p className="font-serif text-lg text-charcoal-900 font-medium">
-                    Parabéns a {event.raffleWinnerName}!
+                    {t(dict.raffleWinnerCongratulation, { winner: event.raffleWinnerName })}
                   </p>
                   {event.rafflePrize && (
                     <p className="text-xs text-charcoal-500 font-sans">
-                      Prêmio: {event.rafflePrize}
+                      {t(dict.rafflePrizePrefix, { prize: event.rafflePrize })}
                     </p>
                   )}
                 </div>
@@ -187,18 +181,24 @@ export default function PublicEventClient({
               </div>
               <div className="text-left">
                 <span className="text-[10px] font-mono uppercase tracking-widest text-terracotta block">
-                  Mimo Premiado
+                  {dict.raffleActiveEyebrow}
                 </span>
                 <p className="text-xs sm:text-sm text-charcoal-700 font-sans leading-relaxed">
-                  Ao enviar qualquer presente, você recebe automaticamente{' '}
-                  <strong className="font-semibold text-charcoal-900">1 Número da Sorte</strong>
+                  {dict.raffleActiveBefore}{' '}
+                  <strong className="font-semibold text-charcoal-900">
+                    {dict.raffleActiveHighlight}
+                  </strong>
                   {event.rafflePrize ? (
                     <>
                       {' '}
-                      para concorrer a <strong className="font-semibold text-charcoal-900">{event.rafflePrize}</strong>.
+                      {dict.raffleActiveWithPrize}{' '}
+                      <strong className="font-semibold text-charcoal-900">
+                        {event.rafflePrize}
+                      </strong>
+                      .
                     </>
                   ) : (
-                    ' para participar do sorteio do chá.'
+                    dict.raffleActiveWithoutPrize
                   )}
                 </p>
               </div>
@@ -207,7 +207,6 @@ export default function PublicEventClient({
         </section>
       )}
 
-      {/* Aviso de Recebimento Pendente (quando os pais ainda não conectaram o Mercado Pago) */}
       {!event.mpConnected && (
         <section className="max-w-3xl mx-auto px-6 mt-8">
           <div className="rounded-2xl bg-amber-50/90 border border-amber-200/90 p-5 flex items-start gap-3.5 shadow-subtle">
@@ -216,32 +215,26 @@ export default function PublicEventClient({
             </div>
             <div className="text-left">
               <span className="text-[10px] font-mono uppercase tracking-widest text-amber-800 block font-semibold">
-                Recebimento em Configuração
+                {dict.mpPendingTitle}
               </span>
               <p className="text-xs sm:text-sm text-amber-950/85 font-sans leading-relaxed mt-0.5">
-                Os pais ainda estão concluindo a vinculação da conta do Mercado Pago. A vitrine de presentes está em modo de visualização
-                {event.eventType !== 'FRALDA'
-                  ? ', mas você já pode deixar seu palpite gratuito no bolão acima!'
-                  : ' e os pagamentos serão liberados assim que a configuração for finalizada.'}
+                {event.eventType !== 'FRALDA' ? dict.mpPendingWithPoll : dict.mpPendingNoPoll}
               </p>
             </div>
           </div>
         </section>
       )}
 
-      {/* Catálogo de Presentes */}
       <DiaperCatalog
         items={initialItems}
         onSelectGift={(gift) => handleOpenPixModal(gift)}
       />
 
-      {/* Mural de Recados */}
       <GuestbookWall
         messages={initialMessages}
         onOpenGiftModal={() => handleOpenPixModal(null)}
       />
 
-      {/* Checkout Modal */}
       <PixCheckoutModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -262,10 +255,9 @@ export default function PublicEventClient({
         }}
       />
 
-      {/* Rodapé Discreto */}
       <footer className="mt-24 py-8 border-t border-warm-border/60 bg-cream-100/50 text-center text-xs text-charcoal-500 font-sans">
         <p>
-          Página do Chá de {event.parentsNames} — Organizado com carinho via{' '}
+          {t(dict.footerPrefix, { parents: event.parentsNames })}{' '}
           <Link href="/" className="font-serif text-charcoal-800 underline underline-offset-2">
             Fralda Online
           </Link>

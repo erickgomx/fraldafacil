@@ -16,6 +16,8 @@
 
 import { useEffect, useState } from 'react';
 import { Moon, Sun } from 'lucide-react';
+import { useI18n } from '@/components/LanguageProvider';
+import { commonDict } from '@/lib/i18n/dictionaries/common';
 
 // Propriedades do componente ThemeToggle
 interface ThemeToggleProps {
@@ -29,6 +31,8 @@ export default function ThemeToggle({
   showLabel = false,
   className = '',
 }: ThemeToggleProps) {
+  const { locale } = useI18n();
+  const tTheme = commonDict[locale].theme;
   const [isDark, setIsDark] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -96,8 +100,8 @@ export default function ThemeToggle({
     <button
       type="button"
       onClick={toggleTheme}
-      aria-label={isDark ? 'Ativar modo claro' : 'Ativar modo escuro'}
-      title={isDark ? 'Mudar para modo claro' : 'Mudar para modo escuro'}
+      aria-label={isDark ? tTheme.enableLight : tTheme.enableDark}
+      title={isDark ? tTheme.switchToLight : tTheme.switchToDark}
       className={`relative inline-flex items-center justify-center gap-2 border border-warm-border/80 hover:border-charcoal-400 bg-white/70 hover:bg-cream-100/70 text-charcoal-700 shadow-subtle backdrop-blur-md transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta active:scale-95 cursor-pointer group ${dimensions} ${className}`}
     >
       <div className="relative flex items-center justify-center">
@@ -116,7 +120,7 @@ export default function ThemeToggle({
 
       {showLabel && (
         <span className="font-sans font-medium text-xs select-none">
-          {isDark ? 'Claro' : 'Escuro'}
+          {isDark ? tTheme.light : tTheme.dark}
         </span>
       )}
     </button>

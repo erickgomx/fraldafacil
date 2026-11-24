@@ -1,25 +1,11 @@
-/**
- * ============================================================================
- * MURAL DE RECADOS E MENSAGENS DOS CONVIDADOS (GuestbookWall)
- * ============================================================================
- * Apresenta o Livro de Recados virtual com as felicitações, bênçãos e carinhos
- * deixados pelos convidados ao presentearem os pais no evento.
- *
- * Funcionalidades:
- * - Cartões estilizados com fonte serifada elegante e data formatada em pt-BR.
- * - Selo visual indicando o palpite do bolão (Menino 💙 ou Menina 🌸), caso haja.
- * - Estado de mural vazio acolhedor com chamada para ação ("Seja o primeiro a enviar").
- * - Animações suaves de entrada em cascata com Framer Motion.
- */
-
 'use client';
 
 import { motion } from 'framer-motion';
+import { useI18n } from '@/components/LanguageProvider';
+import { eventDict } from '@/lib/i18n/dictionaries/event';
 
-// Curva cúbica bezier suave para transições físicas elegantes
 const EASE = [0.22, 1, 0.36, 1] as const;
 
-// Estrutura de dados de uma mensagem deixada pelo convidado
 export interface GuestMessageData {
   id: string;
   name: string;
@@ -31,16 +17,17 @@ export interface GuestMessageData {
   } | null;
 }
 
-// Propriedades recebidas pelo mural
 interface GuestbookWallProps {
-  messages: GuestMessageData[]; // Lista de recados aprovados
-  onOpenGiftModal: () => void; // Ação para abrir o modal de escolha de presentes
+  messages: GuestMessageData[];
+  onOpenGiftModal: () => void;
 }
 
 export default function GuestbookWall({ messages, onOpenGiftModal }: GuestbookWallProps) {
+  const { locale, formatDate } = useI18n();
+  const dict = eventDict[locale].guestbook;
+
   return (
     <section className="my-16 max-w-4xl mx-auto px-6">
-      {/* Cabeçalho do Mural */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -49,17 +36,16 @@ export default function GuestbookWall({ messages, onOpenGiftModal }: GuestbookWa
         className="text-center mb-10"
       >
         <span className="text-[11px] font-mono uppercase tracking-widest text-charcoal-500 block mb-1">
-          Livro de Recados
+          {dict.eyebrow}
         </span>
         <h2 className="font-serif text-3xl sm:text-4xl text-charcoal-900 font-normal">
-          Mensagens da Família & Amigos
+          {dict.title}
         </h2>
         <p className="text-xs sm:text-sm text-charcoal-500 mt-1 font-sans">
-          Palavras de afeto deixadas pelos convidados para os pais guardarem
+          {dict.subtitle}
         </p>
       </motion.div>
 
-      {/* Estado Vazio: Quando nenhum recado foi enviado ainda */}
       {messages.length === 0 ? (
         <motion.div
           initial={{ opacity: 0, y: 16 }}
@@ -69,20 +55,19 @@ export default function GuestbookWall({ messages, onOpenGiftModal }: GuestbookWa
           className="bg-white rounded-2xl p-10 text-center border border-warm-border shadow-subtle max-w-md mx-auto"
         >
           <p className="font-serif text-lg text-charcoal-800 font-normal mb-1">
-            O mural ainda está vazio
+            {dict.emptyTitle}
           </p>
           <p className="text-xs text-charcoal-500 font-sans mb-5 max-w-xs mx-auto">
-            Seja o primeiro a enviar um mimo e deixar uma mensagem especial para a família.
+            {dict.emptySubtitle}
           </p>
           <button
             onClick={onOpenGiftModal}
             className="py-2.5 px-4 rounded-lg font-medium text-xs text-white bg-charcoal-900 hover:bg-charcoal-800 transition shadow-subtle"
           >
-            Deixar a primeira mensagem
+            {dict.emptyButton}
           </button>
         </motion.div>
       ) : (
-        /* Grid de Recados dos Amigos e Familiares */
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {messages.map((item, i) => (
             <motion.div
@@ -102,7 +87,7 @@ export default function GuestbookWall({ messages, onOpenGiftModal }: GuestbookWa
                       {item.name}
                     </h4>
                     <span className="text-[11px] font-mono text-charcoal-400">
-                      {new Date(item.createdAt).toLocaleDateString('pt-BR', {
+                      {formatDate(item.createdAt, {
                         day: '2-digit',
                         month: 'short',
                         year: 'numeric',
@@ -110,7 +95,6 @@ export default function GuestbookWall({ messages, onOpenGiftModal }: GuestbookWa
                     </span>
                   </div>
 
-                  {/* Badge de aposta do bolão no Chá Revelação */}
                   {item.order?.pollGuess && (
                     <span
                       className={`text-[10px] font-mono uppercase px-2 py-0.5 rounded border ${
@@ -119,12 +103,11 @@ export default function GuestbookWall({ messages, onOpenGiftModal }: GuestbookWa
                           : 'bg-dusty-rose-light border-dusty-rose/30 text-dusty-rose'
                       }`}
                     >
-                      {item.order.pollGuess === 'BOY' ? 'Aposta: Menino' : 'Aposta: Menina'}
+                      {item.order.pollGuess === 'BOY' ? dict.guessBoy : dict.guessGirl}
                     </span>
                   )}
                 </div>
 
-                {/* Texto do recadinho */}
                 <p className="text-xs sm:text-[13px] text-charcoal-700 leading-relaxed font-sans bg-cream-50/70 p-3.5 rounded-xl border border-warm-border/50">
                   &ldquo;{item.message}&rdquo;
                 </p>

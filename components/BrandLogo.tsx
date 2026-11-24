@@ -1,5 +1,9 @@
+'use client';
+
 import React from 'react';
 import Image from 'next/image';
+import { useI18n } from '@/components/LanguageProvider';
+import { commonDict } from '@/lib/i18n/dictionaries/common';
 
 interface BrandLogoProps {
   size?: 'sm' | 'md' | 'lg';
@@ -14,6 +18,8 @@ export default function BrandLogo({
   className = '',
   iconOnly = false,
 }: BrandLogoProps) {
+  const { locale } = useI18n();
+  const tagline = commonDict[locale].brandTagline;
   // Configurações dimensionais por tamanho com proporções equilibradas e encorpadas
   const sizeMap = {
     sm: {
@@ -74,7 +80,7 @@ export default function BrandLogo({
             <span
               className={`uppercase font-sans text-charcoal-500 dark:text-stone-400 font-medium leading-none whitespace-nowrap ${sizeMap.tagline}`}
             >
-              Chá &amp; Revelação
+              {tagline}
             </span>
           )}
         </div>

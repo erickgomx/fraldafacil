@@ -14,6 +14,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Fraunces, DM_Sans } from 'next/font/google';
 import './globals.css';
+import { LanguageProvider } from '@/components/LanguageProvider';
 
 // Configuração de Viewport acessível (permite zoom de pinça em dispositivos móveis)
 export const viewport: Viewport = {
@@ -119,7 +120,7 @@ export default function RootLayout({
             `,
           }}
         />
-        {children}
+        <LanguageProvider>{children}</LanguageProvider>
       </body>
     </html>
   );
