@@ -81,7 +81,7 @@ export default function ThemeToggle({
     // Placeholder com dimensões idênticas para evitar Content Layout Shift (CLS)
     return (
       <div
-        className={`inline-flex items-center justify-center rounded-xl border border-warm-border/60 bg-cream-50/60 opacity-0 ${
+        className={`inline-flex items-center justify-center shrink-0 rounded-xl border border-warm-border/60 bg-cream-50/60 opacity-0 ${
           size === 'sm' ? 'w-8 h-8' : 'w-9 h-9 sm:w-10 sm:h-10'
         } ${className}`}
         aria-hidden="true"
@@ -102,7 +102,7 @@ export default function ThemeToggle({
       onClick={toggleTheme}
       aria-label={isDark ? tTheme.enableLight : tTheme.enableDark}
       title={isDark ? tTheme.switchToLight : tTheme.switchToDark}
-      className={`relative inline-flex items-center justify-center gap-2 border border-warm-border/80 hover:border-charcoal-400 bg-white/70 hover:bg-cream-100/70 text-charcoal-700 shadow-subtle backdrop-blur-md transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta active:scale-95 cursor-pointer group ${dimensions} ${className}`}
+      className={`relative inline-flex items-center justify-center gap-2 shrink-0 border border-warm-border/80 hover:border-charcoal-400 bg-white/70 hover:bg-cream-100/70 text-charcoal-700 shadow-subtle backdrop-blur-md transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta active:scale-95 cursor-pointer group ${dimensions} ${className}`}
     >
       <div className="relative flex items-center justify-center">
         {isDark ? (

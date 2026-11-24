@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import {
   ArrowRight,
@@ -9,6 +10,7 @@ import {
   ShieldCheck,
   Gift,
   MessageSquareHeart,
+  Menu,
   X,
 } from 'lucide-react';
 import BrandLogo from '@/components/BrandLogo';
@@ -23,14 +25,15 @@ import { landingDict } from '@/lib/i18n/dictionaries/landing';
 export default function HomeClient() {
   const { locale } = useI18n();
   const dict = landingDict[locale];
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-cream-50 text-charcoal-900 overflow-x-hidden">
       {/* Topo / Navegação */}
       <header className="sticky top-0 z-40 bg-cream-50/85 backdrop-blur-md border-b border-warm-border/70">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center justify-between gap-2">
+        <div className="max-w-6xl mx-auto px-3.5 sm:px-6 h-16 sm:h-20 flex items-center justify-between gap-2">
           <Link href="/" className="group shrink-0">
-            <BrandLogo size="sm" className="sm:hidden" />
+            <BrandLogo size="sm" showTagline={false} className="sm:hidden" />
             <BrandLogo size="md" className="hidden sm:inline-flex" />
           </Link>
 
@@ -49,21 +52,68 @@ export default function HomeClient() {
             </Link>
             <Link
               href="/login"
-              className="text-xs sm:text-sm font-medium text-charcoal-700 hover:text-charcoal-900 px-2 sm:px-3 py-1.5 transition whitespace-nowrap"
+              className="hidden sm:inline-flex text-xs sm:text-sm font-medium text-charcoal-700 hover:text-charcoal-900 px-3 py-1.5 transition whitespace-nowrap"
             >
               {dict.nav.login}
             </Link>
             <Link
               href="/cadastro"
-              className="text-xs sm:text-sm font-semibold px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-charcoal-900 text-white hover:bg-charcoal-800 transition shadow-subtle whitespace-nowrap shrink-0 flex items-center gap-1.5"
+              className="hidden sm:flex text-xs sm:text-sm font-semibold px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-charcoal-900 text-white hover:bg-charcoal-800 transition shadow-subtle whitespace-nowrap shrink-0 items-center gap-1.5"
             >
               <span>{dict.nav.createShower}</span>
-              <ArrowRight className="w-3.5 h-3.5 text-stone-300 hidden sm:inline" aria-hidden="true" />
+              <ArrowRight className="w-3.5 h-3.5 text-stone-300" aria-hidden="true" />
             </Link>
             <LanguageSwitcher size="sm" />
-            <ThemeToggle />
+            <ThemeToggle size="sm" />
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen((prev) => !prev)}
+              aria-label={dict.nav.ariaLabel}
+              aria-expanded={mobileMenuOpen}
+              className="sm:hidden inline-flex items-center justify-center w-8 h-8 rounded-lg border border-warm-border/80 bg-white/80 text-charcoal-700 hover:bg-cream-100 transition shrink-0"
+            >
+              {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+            </button>
           </nav>
         </div>
+
+        {mobileMenuOpen && (
+          <div className="sm:hidden border-t border-warm-border/70 bg-cream-50/95 backdrop-blur-md px-4 py-3 space-y-2">
+            <div className="grid grid-cols-2 gap-2 text-center">
+              <Link
+                href="/demo"
+                onClick={() => setMobileMenuOpen(false)}
+                className="py-2 px-3 rounded-lg text-xs font-medium bg-white border border-warm-border text-charcoal-700 hover:bg-cream-100 transition"
+              >
+                {dict.nav.viewDemo}
+              </Link>
+              <Link
+                href="#taxas"
+                onClick={() => setMobileMenuOpen(false)}
+                className="py-2 px-3 rounded-lg text-xs font-medium bg-white border border-warm-border text-charcoal-700 hover:bg-cream-100 transition"
+              >
+                {dict.nav.fees}
+              </Link>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <Link
+                href="/login"
+                onClick={() => setMobileMenuOpen(false)}
+                className="py-2.5 px-3 rounded-xl text-xs font-medium text-center bg-white border border-warm-border text-charcoal-800 hover:bg-cream-100 transition"
+              >
+                {dict.nav.login}
+              </Link>
+              <Link
+                href="/cadastro"
+                onClick={() => setMobileMenuOpen(false)}
+                className="py-2.5 px-3 rounded-xl text-xs font-semibold bg-charcoal-900 text-white hover:bg-charcoal-800 transition flex items-center justify-center gap-1.5 shadow-subtle"
+              >
+                <span>{dict.nav.createShower}</span>
+                <ArrowRight className="w-3.5 h-3.5 text-stone-300" aria-hidden="true" />
+              </Link>
+            </div>
+          </div>
+        )}
       </header>
 
       <main>

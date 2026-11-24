@@ -99,7 +99,7 @@ export default function AdminShell({
       <aside className="w-full md:w-72 bg-white border-b md:border-b-0 md:border-r border-slate-200 flex flex-col justify-between shrink-0 shadow-sm">
         <div>
           {/* Logo com Selo ADM, Seletor de Idioma e Seletor de Tema */}
-          <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between gap-2">
+          <div className="p-4 sm:p-5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-2">
             <Link href="/admin" className="group shrink-0">
               <BrandLogo size="sm" showTagline={false} />
             </Link>

@@ -39,9 +39,9 @@ export default function PainelShell({
     <div className="min-h-screen bg-cream-50 flex flex-col md:flex-row text-charcoal-900 font-sans">
       <aside className="w-full md:w-64 bg-white border-r border-warm-border flex flex-col justify-between shrink-0">
         <div>
-          <div className="p-5 border-b border-warm-border flex items-center justify-between gap-2">
+          <div className="p-4 border-b border-warm-border flex flex-wrap items-center justify-between gap-2">
             <Link href="/painel" className="group shrink-0">
-              <BrandLogo size="sm" />
+              <BrandLogo size="sm" showTagline={false} />
             </Link>
             <div className="flex items-center gap-1.5 shrink-0">
               <LanguageSwitcher size="sm" />

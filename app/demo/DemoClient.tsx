@@ -94,7 +94,7 @@ export default function DemoClient() {
   };
 
   return (
-    <div className="min-h-screen bg-cream-50 text-charcoal-900 pb-24">
+    <div className="min-h-screen bg-cream-50 text-charcoal-900 pb-24 overflow-x-hidden">
       <div className="sticky top-0 z-50 bg-[#F5F1E9] border-b border-warm-border py-2 px-4 sm:px-6">
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2.5 text-center sm:text-left">
           <div className="flex items-center gap-2">
@@ -104,7 +104,7 @@ export default function DemoClient() {
             </span>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-center gap-2">
             <Link
               href="/cadastro"
               className="py-1 px-3.5 rounded-lg text-xs font-medium bg-charcoal-900 text-white hover:bg-charcoal-800 transition flex items-center gap-1.5 shadow-subtle shrink-0"

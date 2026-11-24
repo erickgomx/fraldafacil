@@ -179,8 +179,8 @@ export default function RegisterPage() {
   return (
     <>
       <BrandLoader visible={loading} fullScreen minDurationMs={500} />
-      <main className="min-h-screen bg-cream-50 text-charcoal-900 flex flex-col justify-center items-center p-6 py-12 relative">
-        <div className="absolute top-5 right-5 sm:top-6 sm:right-6 flex items-center gap-2">
+      <main className="min-h-screen bg-cream-50 text-charcoal-900 flex flex-col justify-center items-center p-6 pt-20 pb-12 sm:py-12 relative">
+        <div className="absolute top-4 right-4 sm:top-6 sm:right-6 flex items-center gap-2">
           <LanguageSwitcher size="sm" />
           <ThemeToggle size="sm" />
         </div>

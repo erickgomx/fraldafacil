@@ -91,29 +91,30 @@ export default function PublicEventClient({
   };
 
   return (
-    <div className="min-h-screen bg-cream-50 text-charcoal-900">
+    <div className="min-h-screen bg-cream-50 text-charcoal-900 overflow-x-hidden">
       <header className="sticky top-0 z-40 bg-cream-50/90 backdrop-blur-md border-b border-warm-border/70">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-2">
+        <div className="max-w-5xl mx-auto px-3.5 sm:px-6 h-16 flex items-center justify-between gap-2">
           <Link href="/" className="group shrink-0">
-            <BrandLogo size="sm" />
+            <BrandLogo size="sm" showTagline={false} className="sm:hidden" />
+            <BrandLogo size="sm" className="hidden sm:inline-flex" />
           </Link>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <button
               onClick={handleShare}
-              className="inline-flex items-center gap-1.5 py-1.5 px-3 sm:px-3.5 rounded-lg text-xs font-medium bg-white hover:bg-stone-50 border border-warm-border text-charcoal-700 shadow-subtle transition active:scale-[0.98] whitespace-nowrap shrink-0"
+              aria-label={copiedLink ? dict.linkCopiedDesktop : dict.shareDesktop}
+              title={copiedLink ? dict.linkCopiedDesktop : dict.shareDesktop}
+              className="inline-flex items-center justify-center sm:justify-start gap-1.5 w-8 h-8 px-0 sm:w-auto sm:h-auto sm:py-1.5 sm:px-3.5 rounded-lg text-xs font-medium bg-white hover:bg-stone-50 border border-warm-border text-charcoal-700 shadow-subtle transition active:scale-[0.98] whitespace-nowrap shrink-0"
             >
               {copiedLink ? (
                 <>
                   <Check className="w-3.5 h-3.5 text-stone-900" />
                   <span className="hidden sm:inline">{dict.linkCopiedDesktop}</span>
-                  <span className="sm:hidden">{dict.linkCopiedMobile}</span>
                 </>
               ) : (
                 <>
                   <Share2 className="w-3.5 h-3.5 text-charcoal-400" />
                   <span className="hidden sm:inline">{dict.shareDesktop}</span>
-                  <span className="sm:hidden">{dict.shareMobile}</span>
                 </>
               )}
             </button>

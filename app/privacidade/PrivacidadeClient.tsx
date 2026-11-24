@@ -15,16 +15,19 @@ export default function PrivacidadeClient() {
 
   return (
     <div className="min-h-screen bg-cream-50 text-charcoal-900 font-sans">
-      <header className="border-b border-warm-border bg-white/80 backdrop-blur-md sticky top-0 z-30 px-4 sm:px-6 py-4">
+      <header className="border-b border-warm-border bg-white/80 backdrop-blur-md sticky top-0 z-30 px-3.5 sm:px-6 py-3.5 sm:py-4">
         <div className="max-w-4xl mx-auto flex items-center justify-between gap-2">
-          <Link href="/" className="inline-flex items-center gap-2 group">
-            <BrandLogo size="sm" />
+          <Link href="/" className="inline-flex items-center gap-2 group shrink-0">
+            <BrandLogo size="sm" showTagline={false} className="sm:hidden" />
+            <BrandLogo size="sm" className="hidden sm:inline-flex" />
           </Link>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
             <Link
               href="/"
-              className="inline-flex items-center gap-1.5 text-xs text-charcoal-600 hover:text-charcoal-900 transition-colors font-medium"
+              aria-label={root.backHome}
+              title={root.backHome}
+              className="inline-flex items-center justify-center w-8 h-8 sm:w-auto sm:h-auto text-xs text-charcoal-600 hover:text-charcoal-900 transition-colors font-medium gap-1.5"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">{root.backHome}</span>
