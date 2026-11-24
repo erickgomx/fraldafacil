@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "lib": ["es2022", "dom"],
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "noEmit": false,
+    "rootDir": "."
+  },
+  "include": [
+    "lib/fees.ts",
+    "lib/validation.ts",
+    "lib/storage.ts",
+    "lib/email.ts",
+    "lib/webhook.ts",
+    "tests/**/*.test.ts"
+  ]
+}

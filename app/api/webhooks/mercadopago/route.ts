@@ -1,55 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import crypto from 'crypto';
 import prisma from '@/lib/prisma';
-import { approveOrder, rejectOrder } from '@/lib/orders';
-import { decryptSecret } from '@/lib/crypto';
+import { approveOrder, refundOrChargebackOrder, rejectOrder } from '@/lib/orders';
+import { fetchMpPaymentStatus } from '@/lib/mercadopago';
+import { verifyMercadoPagoWebhookSignature } from '@/lib/webhook';
 
 export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
-
-function verifyWebhookSignature(
-  xSignature: string | null,
-  requestId: string | null,
-  dataId: string,
-  secret: string
-): boolean {
-  if (!xSignature || !requestId || !secret) return false;
-
-  const parts = xSignature.split(',');
-  let ts: string | undefined;
-  let v1: string | undefined;
-
-  for (const part of parts) {
-    const [key, val] = part.split('=');
-    if (key?.trim() === 'ts') ts = val?.trim();
-    if (key?.trim() === 'v1') v1 = val?.trim();
-  }
-
-  if (!ts || !v1) return false;
-
-  // 1. Defesa Anti-Replay: Tolera no máximo 5 minutos (300.000 ms)
-  const tsNum = parseInt(ts, 10);
-  if (isNaN(tsNum)) return false;
-  const tsMs = tsNum < 1e11 ? tsNum * 1000 : tsNum;
-  if (Math.abs(Date.now() - tsMs) > 5 * 60 * 1000) {
-    console.warn('[Webhook MP] Notificação expirada ou relógio dessincronizado.');
-    return false;
-  }
-
-  // Formato oficial do Mercado Pago: id:[data.id];request-id:[x-request-id];ts:[ts];
-  const manifest = `id:${dataId};request-id:${requestId};ts:${ts};`;
-  const computedHash = crypto.createHmac('sha256', secret).update(manifest).digest('hex');
-
-  const bufComputed = Buffer.from(computedHash, 'utf8');
-  const bufReceived = Buffer.from(v1, 'utf8');
-
-  // Proteção contra erro de comprimentos distintos em crypto.timingSafeEqual
-  if (bufComputed.length !== bufReceived.length) {
-    return false;
-  }
-
-  return crypto.timingSafeEqual(bufComputed, bufReceived);
-}
 
 export async function POST(req: NextRequest) {
   try {
@@ -89,7 +45,12 @@ export async function POST(req: NextRequest) {
     if (webhookSecret && webhookSecret.trim() !== '') {
       const xSignature = req.headers.get('x-signature');
       const xRequestId = req.headers.get('x-request-id');
-      const isValid = verifyWebhookSignature(xSignature, xRequestId, cleanPaymentId, webhookSecret);
+      const isValid = verifyMercadoPagoWebhookSignature(
+        xSignature,
+        xRequestId,
+        cleanPaymentId,
+        webhookSecret
+      );
 
       if (!isValid) {
         console.warn('[Webhook MP] Notificação rejeitada por assinatura HMAC inválida ou expirada.');
@@ -105,44 +66,36 @@ export async function POST(req: NextRequest) {
       include: { event: true },
     });
 
-    // 2. Determina o melhor token para consulta (token do vendedor ou da plataforma)
-    const rawSellerToken = decryptSecret(order?.event?.mpAccessToken);
-    const preferredToken = rawSellerToken || process.env.MERCADO_PAGO_ACCESS_TOKEN;
-    const fallbackToken = process.env.MERCADO_PAGO_ACCESS_TOKEN;
+    // Se a ordem ainda não tiver mpPaymentId salvo, tenta localizar o evento pelo user_id do webhook
+    const sellerEvent =
+      order?.event ||
+      (body?.user_id
+        ? await prisma.event.findFirst({
+            where: {
+              mpUserId: String(body.user_id),
+              mpAccessToken: { not: null },
+            },
+          })
+        : null);
 
-    let paymentStatus: string | null = null;
-    let externalReference: string | undefined;
+    // 2. Consulta status oficial diretamente na API do Mercado Pago (com refresh automático + fallback legado)
+    const paymentInfo = await fetchMpPaymentStatus({
+      paymentId: cleanPaymentId,
+      eventId: sellerEvent?.id || null,
+      sellerAccessToken: sellerEvent?.mpAccessToken || null,
+      sellerRefreshToken: sellerEvent?.mpRefreshToken || null,
+      allowPlatformFallback: true,
+    });
 
-    const queryMpStatus = async (token: string) => {
-      const { MercadoPagoConfig, Payment } = await import('mercadopago');
-      const client = new MercadoPagoConfig({ accessToken: token });
-      const paymentApi = new Payment(client);
-      return await paymentApi.get({ id: cleanPaymentId });
-    };
-
-    if (preferredToken && preferredToken.trim() !== '' && !preferredToken.includes('SEU_TOKEN')) {
-      try {
-        const paymentInfo = await queryMpStatus(preferredToken);
-        paymentStatus = paymentInfo.status || 'pending';
-        externalReference = paymentInfo.external_reference;
-      } catch (err) {
-        if (fallbackToken && fallbackToken !== preferredToken && !fallbackToken.includes('SEU_TOKEN')) {
-          try {
-            const paymentInfo = await queryMpStatus(fallbackToken);
-            paymentStatus = paymentInfo.status || 'pending';
-            externalReference = paymentInfo.external_reference;
-          } catch (fallbackErr) {
-            console.error('Falha na consulta oficial Mercado Pago:', fallbackErr);
-            return NextResponse.json({ message: 'Falha ao consultar transação' }, { status: 200 });
-          }
-        } else {
-          console.error('Falha na consulta oficial Mercado Pago:', err);
-          return NextResponse.json({ message: 'Falha ao consultar transação' }, { status: 200 });
-        }
-      }
-    } else {
-      return NextResponse.json({ message: 'Webhook inativo (sem credenciais)' }, { status: 200 });
+    if (!paymentInfo || !paymentInfo.status) {
+      return NextResponse.json(
+        { message: 'Falha ao consultar transação ou credenciais indisponíveis' },
+        { status: 200 }
+      );
     }
+
+    const paymentStatus = String(paymentInfo.status).toLowerCase();
+    const externalReference = paymentInfo.external_reference;
 
     // 3. Se a ordem não havia sido encontrada antes, busca pela external_reference (orderId interno)
     if (!order && externalReference) {
@@ -165,6 +118,10 @@ export async function POST(req: NextRequest) {
         await approveOrder(order.id);
       } else if (paymentStatus === 'rejected' || paymentStatus === 'cancelled') {
         await rejectOrder(order.id);
+      } else if (paymentStatus === 'refunded') {
+        await refundOrChargebackOrder(order.id, 'REFUNDED');
+      } else if (paymentStatus === 'charged_back') {
+        await refundOrChargebackOrder(order.id, 'CHARGED_BACK');
       }
     }
 

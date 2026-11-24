@@ -11,7 +11,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Check, Plus, Trash2, X } from 'lucide-react';
+import { Check, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { DEFAULT_GIFT_IMAGE_URL, GIFT_GALLERY_OPTIONS } from '@/lib/gift-gallery';
 
 export interface AdminGiftItem {
@@ -31,7 +31,8 @@ interface PresentesClientProps {
 
 export default function PresentesClient({ eventId, initialGifts }: PresentesClientProps) {
   const [gifts, setGifts] = useState<AdminGiftItem[]>(initialGifts);
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingGift, setEditingGift] = useState<AdminGiftItem | null>(null);
   const [loading, setLoading] = useState(false);
 
   const [title, setTitle] = useState('');
@@ -81,13 +82,14 @@ export default function PresentesClient({ eventId, initialGifts }: PresentesClie
 
   const handleCategoryChange = (nextCategory: 'fraldas' | 'higiene' | 'brincadeiras') => {
     setCategory(nextCategory);
-    if (!hasPickedImage) {
+    if (!hasPickedImage && !editingGift) {
       const match = GIFT_GALLERY_OPTIONS.find((opt) => opt.category === nextCategory);
       if (match) setImageUrl(match.imageUrl);
     }
   };
 
   const resetForm = () => {
+    setEditingGift(null);
     setTitle('');
     setDescription('');
     setPrice('50');
@@ -97,35 +99,77 @@ export default function PresentesClient({ eventId, initialGifts }: PresentesClie
     setFormError(null);
   };
 
-  const handleCreateGift = async (e: React.FormEvent) => {
+  const openCreateModal = () => {
+    resetForm();
+    setIsModalOpen(true);
+  };
+
+  const openEditModal = (item: AdminGiftItem) => {
+    const validCat = (['fraldas', 'higiene', 'brincadeiras'].includes(item.category)
+      ? item.category
+      : 'fraldas') as 'fraldas' | 'higiene' | 'brincadeiras';
+    setEditingGift(item);
+    setTitle(item.title);
+    setDescription(item.description || '');
+    setPrice(String(item.price));
+    setCategory(validCat);
+    setImageUrl(item.imageUrl || DEFAULT_GIFT_IMAGE_URL);
+    setHasPickedImage(true);
+    setFormError(null);
+    setIsModalOpen(true);
+  };
+
+  const handleSaveGift = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setFormError(null);
 
+    const parsedPrice = parseFloat(String(price).replace(',', '.'));
+    if (isNaN(parsedPrice) || parsedPrice < 1 || parsedPrice > 50000) {
+      setFormError('Informe um valor válido entre R$ 1,00 e R$ 50.000,00.');
+      return;
+    }
+
+    setLoading(true);
     try {
+      const isEditing = Boolean(editingGift);
       const res = await fetch('/api/events/gifts', {
-        method: 'POST',
+        method: isEditing ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          eventId,
-          title,
-          description,
-          price: parseFloat(price),
-          category,
-          imageUrl,
-        }),
+        body: JSON.stringify(
+          isEditing
+            ? {
+                id: editingGift!.id,
+                title,
+                description: description.trim() ? description.trim() : null,
+                price: parsedPrice,
+                category,
+                imageUrl,
+              }
+            : {
+                eventId,
+                title,
+                description,
+                price: parsedPrice,
+                category,
+                imageUrl,
+              }
+        ),
       });
 
       const data = await res.json();
       if (res.ok && data.gift) {
-        setGifts((prev) => [...prev, data.gift]);
-        setIsAddModalOpen(false);
+        if (isEditing) {
+          setGifts((prev) => prev.map((g) => (g.id === editingGift!.id ? data.gift : g)));
+        } else {
+          setGifts((prev) => [...prev, data.gift]);
+        }
+        setIsModalOpen(false);
         resetForm();
       } else {
         setFormError(data.error || 'Não foi possível salvar o presente.');
       }
     } catch (err) {
-      console.error('Erro ao criar presente:', err);
+      console.error('Erro ao salvar presente:', err);
       setFormError('Erro de conexão ao salvar o presente.');
     } finally {
       setLoading(false);
@@ -144,12 +188,12 @@ export default function PresentesClient({ eventId, initialGifts }: PresentesClie
             Itens da Vitrine de Presentes
           </h1>
           <p className="text-xs text-charcoal-500 font-sans mt-0.5">
-            Gerencie quais fraldas e mimos estão visíveis para os convidados
+            Gerencie, edite ou personalize quais fraldas e mimos estão visíveis para os convidados
           </p>
         </div>
 
         <button
-          onClick={() => setIsAddModalOpen(true)}
+          onClick={openCreateModal}
           className="inline-flex items-center gap-1.5 py-2 px-3.5 rounded-lg font-medium text-xs bg-charcoal-900 text-white hover:bg-charcoal-800 transition shadow-subtle self-start sm:self-auto"
         >
           <Plus className="w-3.5 h-3.5" />
@@ -167,17 +211,28 @@ export default function PresentesClient({ eventId, initialGifts }: PresentesClie
             }`}
           >
             <div>
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-cream-100 text-charcoal-600">
+              <div className="relative h-28 w-full rounded-lg overflow-hidden bg-cream-100 mb-3 border border-warm-border/50">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={item.imageUrl || DEFAULT_GIFT_IMAGE_URL}
+                  alt={item.title}
+                  loading="lazy"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).src = DEFAULT_GIFT_IMAGE_URL;
+                  }}
+                  className="w-full h-full object-cover"
+                />
+                <span className="absolute top-2 left-2 text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-white/90 backdrop-blur-sm text-charcoal-700 border border-warm-border/60">
                   {item.category}
                 </span>
 
                 <button
+                  type="button"
                   onClick={() => handleToggleActive(item.id, item.active)}
-                  className={`text-[10px] font-mono px-2 py-0.5 rounded transition ${
+                  className={`absolute top-2 right-2 text-[10px] font-mono px-2 py-0.5 rounded transition border ${
                     item.active
-                      ? 'bg-cream-100 text-charcoal-800 border border-warm-border font-medium'
-                      : 'bg-stone-100 text-charcoal-400'
+                      ? 'bg-white/95 text-charcoal-800 border-warm-border font-medium'
+                      : 'bg-stone-100/95 text-charcoal-500 border-stone-200'
                   }`}
                 >
                   {item.active ? 'Visível' : 'Oculto'}
@@ -185,34 +240,49 @@ export default function PresentesClient({ eventId, initialGifts }: PresentesClie
               </div>
 
               <h3 className="font-serif text-sm font-medium text-charcoal-900 line-clamp-1">{item.title}</h3>
-              <p className="text-xs text-charcoal-500 mt-1 line-clamp-2 font-sans">{item.description}</p>
+              <p className="text-xs text-charcoal-500 mt-1 line-clamp-2 font-sans">
+                {item.description || 'Presente especial para a chegada do bebê.'}
+              </p>
             </div>
 
-            <div className="mt-4 pt-3 border-t border-warm-border/60 flex items-center justify-between">
+            <div className="mt-4 pt-3 border-t border-warm-border/60 flex items-center justify-between gap-2">
               <span className="font-mono text-sm font-semibold text-charcoal-900 tabular-nums">
                 R$ {item.price.toFixed(2).replace('.', ',')}
               </span>
 
-              <button
-                onClick={() => handleDelete(item.id)}
-                title="Excluir presente"
-                className="w-7 h-7 rounded text-charcoal-400 hover:text-dusty-rose flex items-center justify-center transition"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => openEditModal(item)}
+                  title="Editar presente"
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium text-charcoal-700 bg-cream-50 hover:bg-cream-100 border border-warm-border transition"
+                >
+                  <Pencil className="w-3 h-3" />
+                  <span>Editar</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleDelete(item.id)}
+                  title="Excluir presente"
+                  className="w-7 h-7 rounded-lg text-charcoal-400 hover:text-dusty-rose hover:bg-dusty-rose-light/60 flex items-center justify-center transition"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Modal de Adição */}
-      {isAddModalOpen && (
+      {/* Modal de Criação / Edição */}
+      {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-charcoal-900/40 backdrop-blur-sm animate-fade-in">
           <div className="bg-white rounded-xl p-6 sm:p-8 max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-card border border-warm-border relative">
             <button
               type="button"
               onClick={() => {
-                setIsAddModalOpen(false);
+                setIsModalOpen(false);
                 resetForm();
               }}
               className="absolute top-4 right-4 w-7 h-7 rounded-lg bg-cream-100 text-charcoal-500 flex items-center justify-center hover:bg-cream-200 transition"
@@ -220,9 +290,13 @@ export default function PresentesClient({ eventId, initialGifts }: PresentesClie
               <X className="w-4 h-4" />
             </button>
 
-            <h2 className="font-serif text-xl font-normal text-charcoal-900 mb-1">Cadastrar Presente</h2>
+            <h2 className="font-serif text-xl font-normal text-charcoal-900 mb-1">
+              {editingGift ? 'Editar Presente' : 'Cadastrar Presente'}
+            </h2>
             <p className="text-xs text-charcoal-500 mb-5 font-sans">
-              Insira o título, categoria, valor sugerido e escolha uma foto da galeria
+              {editingGift
+                ? 'Atualize o título, descrição, categoria, valor ou foto do presente'
+                : 'Insira o título, categoria, valor sugerido e escolha uma foto da galeria'}
             </p>
 
             {formError && (
@@ -231,7 +305,7 @@ export default function PresentesClient({ eventId, initialGifts }: PresentesClie
               </div>
             )}
 
-            <form onSubmit={handleCreateGift} className="space-y-4">
+            <form onSubmit={handleSaveGift} className="space-y-4">
               <div>
                 <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
                   Título do Presente *
@@ -356,7 +430,11 @@ export default function PresentesClient({ eventId, initialGifts }: PresentesClie
                 disabled={loading}
                 className="w-full py-2.5 px-4 rounded-lg font-medium text-xs bg-charcoal-900 text-white hover:bg-charcoal-800 transition shadow-subtle mt-4"
               >
-                {loading ? 'Salvando...' : 'Salvar Presente'}
+                {loading
+                  ? 'Salvando...'
+                  : editingGift
+                  ? 'Salvar Alterações'
+                  : 'Salvar Presente'}
               </button>
             </form>
           </div>

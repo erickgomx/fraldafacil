@@ -189,6 +189,7 @@ export default function DemoClient() {
       {/* BOLÃO */}
       <GenderPoll
         eventId="demo-event-id"
+        revealedGender={revealedGender}
         initialBoyVotes={boyVotes}
         initialGirlVotes={girlVotes}
         onOpenPixModalWithGuess={handleOpenWithGuessOnly}
@@ -214,6 +215,10 @@ export default function DemoClient() {
         parentsNames="Mariana & Rafael"
         selectedGift={selectedGift}
         initialGuess={modalGuess}
+        mpConnected={true}
+        isDemo={true}
+        eventType="REVELACAO"
+        revealedGender={revealedGender}
         onPaymentSuccess={() => {
           const babyGreeting =
             revealedGender === 'GIRL'

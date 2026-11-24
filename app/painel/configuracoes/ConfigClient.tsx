@@ -22,17 +22,79 @@ import {
   QrCode,
   ArrowRight,
   Loader2,
+  ImagePlus,
+  Trash2,
+  Upload,
+  HelpCircle,
 } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
+
+async function compressCoverImage(file: File): Promise<File> {
+  const MAX_DIMENSION = 1400;
+  const QUALITY = 0.82;
+
+  if (typeof window === 'undefined' || !file.type.startsWith('image/')) {
+    return file;
+  }
+
+  const objectUrl = URL.createObjectURL(file);
+  try {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const el = new Image();
+      el.onload = () => resolve(el);
+      el.onerror = () => reject(new Error('Não foi possível ler a imagem selecionada.'));
+      el.src = objectUrl;
+    });
+
+    const scale = Math.min(1, MAX_DIMENSION / Math.max(img.width || 1, img.height || 1));
+    const width = Math.max(1, Math.round(img.width * scale));
+    const height = Math.max(1, Math.round(img.height * scale));
+
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return file;
+
+    ctx.drawImage(img, 0, 0, width, height);
+
+    const toBlob = (mime: string) =>
+      new Promise<Blob | null>((resolve) => canvas.toBlob((b) => resolve(b), mime, QUALITY));
+
+    let blob = await toBlob('image/webp');
+    let ext = 'webp';
+    let outMime = 'image/webp';
+
+    if (!blob || blob.type !== 'image/webp') {
+      blob = await toBlob('image/jpeg');
+      ext = 'jpg';
+      outMime = 'image/jpeg';
+    }
+
+    if (!blob) return file;
+
+    // Se a imagem original já estiver menor e dentro do limite, preserva a menor versão
+    if (file.size <= 3 * 1024 * 1024 && blob.size > file.size && scale === 1) {
+      return file;
+    }
+
+    const baseName = file.name.replace(/\.[^.]+$/, '') || 'capa';
+    return new File([blob], `${baseName}.${ext}`, { type: outMime });
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
 
 interface ConfigClientProps {
   event: {
     id: string;
+    eventType?: string;
     parentsNames: string;
     babyName: string | null;
     boyName?: string | null;
     girlName?: string | null;
     eventDate: string;
+    coverImageUrl?: string | null;
     storyMessage: string | null;
     pixKey: string | null;
     mpConnected?: boolean;
@@ -47,6 +109,10 @@ interface ConfigClientProps {
 export default function ConfigClient({ event }: ConfigClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const initialEventType = (
+    event.eventType === 'FRALDA' || event.eventType === 'AMBOS' ? event.eventType : 'REVELACAO'
+  ) as 'REVELACAO' | 'FRALDA' | 'AMBOS';
+  const [eventType, setEventType] = useState<'REVELACAO' | 'FRALDA' | 'AMBOS'>(initialEventType);
   const [parentsNames, setParentsNames] = useState(event.parentsNames);
   const [noNameYet, setNoNameYet] = useState(!event.babyName && !event.boyName && !event.girlName);
   const [babyName, setBabyName] = useState(event.babyName || '');
@@ -60,6 +126,19 @@ export default function ConfigClient({ event }: ConfigClientProps) {
   const [raffleEnabled, setRaffleEnabled] = useState(Boolean(event.raffleEnabled));
   const [rafflePrize, setRafflePrize] = useState(event.rafflePrize || '');
   const isRaffleLocked = Boolean(event.raffleDrawnAt);
+
+  // Foto de capa (persistida separadamente via /api/events/cover)
+  const [coverImageUrl, setCoverImageUrl] = useState<string | null>(event.coverImageUrl || null);
+  const [uploadingCover, setUploadingCover] = useState(false);
+  const [removingCover, setRemovingCover] = useState(false);
+  const [coverNotice, setCoverNotice] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const coverInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Encerramento de conta LGPD
+  const [showDeleteAccount, setShowDeleteAccount] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deletingAccount, setDeletingAccount] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   const [loading, setLoading] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
@@ -102,6 +181,7 @@ export default function ConfigClient({ event }: ConfigClientProps) {
   const currentPayload = useMemo(
     () => ({
       id: event.id,
+      eventType,
       parentsNames,
       babyName: noNameYet
         ? null
@@ -119,6 +199,7 @@ export default function ConfigClient({ event }: ConfigClientProps) {
     }),
     [
       event.id,
+      eventType,
       parentsNames,
       noNameYet,
       babyName,
@@ -213,6 +294,108 @@ export default function ConfigClient({ event }: ConfigClientProps) {
       console.error(err);
     } finally {
       setDisconnecting(false);
+    }
+  };
+
+  const handleCoverFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+
+    setCoverNotice(null);
+    setUploadingCover(true);
+    try {
+      const processed = await compressCoverImage(file);
+      if (processed.size > 3 * 1024 * 1024) {
+        throw new Error('A imagem ficou acima de 3 MB mesmo após compressão. Escolha outra foto.');
+      }
+
+      const formData = new FormData();
+      formData.append('eventId', event.id);
+      formData.append('file', processed);
+
+      const res = await fetch('/api/events/cover', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || 'Não foi possível enviar a foto de capa.');
+      }
+
+      setCoverImageUrl(data.coverImageUrl || null);
+      setCoverNotice({
+        type: 'success',
+        message: 'Foto de capa atualizada com sucesso!',
+      });
+      router.refresh();
+    } catch (err: unknown) {
+      setCoverNotice({
+        type: 'error',
+        message: err instanceof Error ? err.message : 'Erro ao enviar a foto de capa.',
+      });
+    } finally {
+      setUploadingCover(false);
+    }
+  };
+
+  const handleRemoveCover = async () => {
+    if (!coverImageUrl) return;
+    if (!confirm('Remover a foto de capa atual da página do chá?')) return;
+
+    setRemovingCover(true);
+    setCoverNotice(null);
+    try {
+      const res = await fetch(`/api/events/cover?eventId=${encodeURIComponent(event.id)}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || 'Não foi possível remover a foto de capa.');
+      }
+
+      setCoverImageUrl(null);
+      setCoverNotice({
+        type: 'success',
+        message: 'Foto de capa removida.',
+      });
+      router.refresh();
+    } catch (err: unknown) {
+      setCoverNotice({
+        type: 'error',
+        message: err instanceof Error ? err.message : 'Erro ao remover foto.',
+      });
+    } finally {
+      setRemovingCover(false);
+    }
+  };
+
+  const handleDeleteAccount = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!deletePassword) {
+      setDeleteError('Informe sua senha atual para confirmar.');
+      return;
+    }
+
+    setDeletingAccount(true);
+    setDeleteError('');
+    try {
+      const res = await fetch('/api/auth/account', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: deletePassword }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || 'Não foi possível excluir a conta.');
+      }
+
+      window.location.href = '/';
+    } catch (err: unknown) {
+      setDeleteError(err instanceof Error ? err.message : 'Erro ao encerrar conta.');
+    } finally {
+      setDeletingAccount(false);
     }
   };
 
@@ -426,6 +609,27 @@ export default function ConfigClient({ event }: ConfigClientProps) {
                 <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
               </a>
             </div>
+
+            <div className="p-3.5 rounded-xl bg-cream-50/90 border border-warm-border/80 space-y-2">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-charcoal-900">
+                <HelpCircle className="w-3.5 h-3.5 text-charcoal-600 shrink-0" />
+                <span>Primeira vez conectando o Mercado Pago?</span>
+              </div>
+              <ul className="space-y-1 text-[11px] text-charcoal-600 font-sans leading-relaxed list-disc pl-4">
+                <li>
+                  Não tem conta? Você pode criar uma conta gratuita na própria tela que vai abrir usando seu CPF e e-mail (leva cerca de 2 minutos).
+                </li>
+                <li>
+                  Use preferencialmente a conta do titular que vai resgatar os valores via Pix.
+                </li>
+              </ul>
+              <a
+                href="mailto:suporte@fralda.online?subject=Ajuda%20para%20conectar%20Mercado%20Pago%20-%20Fralda%20Online"
+                className="inline-block text-[11px] font-medium text-[#007eb5] hover:underline pt-0.5"
+              >
+                Precisa de ajuda? Fale com nosso suporte
+              </a>
+            </div>
           </div>
         )}
       </div>
@@ -554,9 +758,143 @@ export default function ConfigClient({ event }: ConfigClientProps) {
         )}
       </div>
 
+      {/* BLOCO 2C: FOTO DE CAPA / ULTRASSOM */}
+      <div className="bg-white p-6 rounded-2xl border border-warm-border shadow-subtle space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <span className="text-[10px] font-mono uppercase tracking-widest text-charcoal-500 block mb-1">
+              Personalização Visual
+            </span>
+            <h2 className="font-serif text-lg text-charcoal-900 font-medium">
+              Foto de Capa ou Ultrassom
+            </h2>
+            <p className="text-xs text-charcoal-500 mt-1 font-sans leading-relaxed">
+              Aparece em destaque no topo da página do chá e na prévia do link ao compartilhar no WhatsApp.
+            </p>
+          </div>
+        </div>
+
+        {coverNotice && (
+          <div
+            className={`p-3 rounded-lg text-xs font-sans border flex items-center gap-2 ${
+              coverNotice.type === 'success'
+                ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                : 'bg-dusty-rose-light text-dusty-rose border-dusty-rose/30'
+            }`}
+          >
+            {coverNotice.type === 'success' ? (
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+            ) : (
+              <AlertCircle className="w-4 h-4 shrink-0" />
+            )}
+            <span>{coverNotice.message}</span>
+          </div>
+        )}
+
+        <input
+          ref={coverInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          onChange={handleCoverFileSelected}
+          className="hidden"
+        />
+
+        {coverImageUrl ? (
+          <div className="space-y-3">
+            <div className="relative w-full h-52 rounded-xl overflow-hidden border border-warm-border bg-cream-100">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={coverImageUrl}
+                alt={`Foto de capa de ${parentsNames}`}
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div className="flex flex-wrap items-center gap-2.5">
+              <button
+                type="button"
+                disabled={uploadingCover || removingCover}
+                onClick={() => coverInputRef.current?.click()}
+                className="py-2 px-4 rounded-xl text-xs font-medium bg-charcoal-900 text-white hover:bg-charcoal-800 transition inline-flex items-center gap-1.5 disabled:opacity-60"
+              >
+                {uploadingCover ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Otimizando e enviando...</span>
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>Trocar Foto</span>
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                disabled={uploadingCover || removingCover}
+                onClick={handleRemoveCover}
+                className="py-2 px-3.5 rounded-xl text-xs font-medium text-dusty-rose bg-white hover:bg-dusty-rose-light border border-dusty-rose/30 transition inline-flex items-center gap-1.5 disabled:opacity-60"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>{removingCover ? 'Removendo...' : 'Remover Foto'}</span>
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            type="button"
+            disabled={uploadingCover}
+            onClick={() => coverInputRef.current?.click()}
+            className="w-full py-7 px-4 rounded-xl border-2 border-dashed border-warm-border bg-cream-50/50 hover:bg-cream-100/70 transition flex flex-col items-center justify-center text-center gap-2 disabled:opacity-60"
+          >
+            <div className="w-10 h-10 rounded-xl bg-white border border-warm-border text-charcoal-700 flex items-center justify-center shadow-subtle">
+              {uploadingCover ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <ImagePlus className="w-5 h-5" />
+              )}
+            </div>
+            <div>
+              <span className="text-xs font-semibold text-charcoal-900 block">
+                {uploadingCover ? 'Otimizando e enviando imagem...' : 'Enviar Foto do Casal ou Ultrassom'}
+              </span>
+              <span className="text-[11px] text-charcoal-500 font-sans block mt-0.5">
+                JPG, PNG ou WebP · comprimida automaticamente no seu navegador
+              </span>
+            </div>
+          </button>
+        )}
+      </div>
+
       {/* BLOCO 3: INFORMAÇÕES DA PÁGINA DO CHÁ */}
       <div className="bg-white p-6 rounded-2xl border border-warm-border shadow-subtle">
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1.5">
+              Modalidade do Evento
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { id: 'REVELACAO', label: 'Chá Revelação' },
+                { id: 'FRALDA', label: 'Chá de Fralda' },
+                { id: 'AMBOS', label: 'Ambos Juntos' },
+              ].map((type) => (
+                <button
+                  key={type.id}
+                  type="button"
+                  onClick={() => setEventType(type.id as 'REVELACAO' | 'FRALDA' | 'AMBOS')}
+                  className={`py-2 px-2 text-xs font-medium rounded-lg border text-center transition ${
+                    eventType === type.id
+                      ? 'border-charcoal-900 bg-charcoal-900 text-white shadow-subtle'
+                      : 'border-warm-border bg-white text-charcoal-600 hover:bg-stone-50'
+                  }`}
+                >
+                  {type.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div>
             <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
               Nome dos Pais *
@@ -707,6 +1045,84 @@ export default function ConfigClient({ event }: ConfigClientProps) {
             </button>
           </div>
         </form>
+      </div>
+
+      {/* BLOCO 4: PRIVACIDADE E ENCERRAMENTO DE CONTA (LGPD) */}
+      <div className="bg-white p-6 rounded-2xl border border-warm-border shadow-subtle space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <span className="text-[10px] font-mono uppercase tracking-widest text-charcoal-500 block mb-1">
+              Privacidade &amp; LGPD
+            </span>
+            <h2 className="font-serif text-lg text-charcoal-900 font-medium">
+              Encerrar Conta e Excluir Dados
+            </h2>
+            <p className="text-xs text-charcoal-500 mt-1 font-sans leading-relaxed">
+              Você pode apagar definitivamente sua conta, sua página do chá, os recados e a foto de capa a qualquer momento. Esta ação é irreversível.
+            </p>
+          </div>
+
+          {!showDeleteAccount && (
+            <button
+              type="button"
+              onClick={() => {
+                setShowDeleteAccount(true);
+                setDeleteError('');
+              }}
+              className="py-2 px-3.5 rounded-xl text-xs font-medium text-dusty-rose bg-white hover:bg-dusty-rose-light border border-dusty-rose/30 transition shrink-0 self-start sm:self-center"
+            >
+              Encerrar Conta
+            </button>
+          )}
+        </div>
+
+        {showDeleteAccount && (
+          <form
+            onSubmit={handleDeleteAccount}
+            className="p-4 rounded-xl bg-dusty-rose-light/50 border border-dusty-rose/30 space-y-3"
+          >
+            <p className="text-xs text-charcoal-800 font-sans leading-relaxed">
+              Para confirmar a exclusão permanente da sua conta e do link do chá, digite sua senha atual:
+            </p>
+
+            {deleteError && (
+              <div className="p-2.5 rounded-lg bg-white border border-dusty-rose/40 text-xs text-dusty-rose font-sans">
+                {deleteError}
+              </div>
+            )}
+
+            <input
+              type="password"
+              required
+              value={deletePassword}
+              onChange={(e) => setDeletePassword(e.target.value)}
+              placeholder="Sua senha atual"
+              className="w-full px-3.5 py-2.5 rounded-lg border border-warm-border bg-white text-xs text-charcoal-900 focus:outline-none focus:ring-1 focus:ring-dusty-rose"
+            />
+
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="submit"
+                disabled={deletingAccount}
+                className="py-2 px-4 rounded-lg text-xs font-semibold bg-rose-700 hover:bg-rose-800 text-white transition disabled:opacity-60"
+              >
+                {deletingAccount ? 'Excluindo conta...' : 'Excluir minha conta permanentemente'}
+              </button>
+              <button
+                type="button"
+                disabled={deletingAccount}
+                onClick={() => {
+                  setShowDeleteAccount(false);
+                  setDeletePassword('');
+                  setDeleteError('');
+                }}
+                className="py-2 px-3.5 rounded-lg text-xs text-charcoal-600 bg-white border border-warm-border hover:bg-cream-50 transition"
+              >
+                Cancelar
+              </button>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   );

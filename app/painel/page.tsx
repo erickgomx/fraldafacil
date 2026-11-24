@@ -34,9 +34,14 @@ export default async function PainelPage() {
 
   const event = user.events[0];
 
-  // Pedidos aprovados
+  // Pedidos aprovados com nome do item escolhido
   const approvedOrders = await prisma.order.findMany({
     where: { eventId: event.id, status: 'APPROVED' },
+    include: {
+      giftItem: {
+        select: { title: true },
+      },
+    },
     orderBy: { createdAt: 'desc' },
   });
 
@@ -46,10 +51,22 @@ export default async function PainelPage() {
   const platformFee = approvedOrders.reduce((sum, order) => sum + (order.platformFee ?? (order.amount * 0.0499)), 0);
   const netAmount = totalNet;
 
-  // Bolão
-  const [boyVotes, girlVotes] = await Promise.all([
+  // Bolão, participantes e total de recados
+  const [boyVotes, girlVotes, totalMessages, pollVotes] = await Promise.all([
     prisma.pollVote.count({ where: { eventId: event.id, guess: 'BOY' } }),
     prisma.pollVote.count({ where: { eventId: event.id, guess: 'GIRL' } }),
+    prisma.guestMessage.count({ where: { eventId: event.id } }),
+    prisma.pollVote.findMany({
+      where: { eventId: event.id },
+      orderBy: { createdAt: 'desc' },
+      take: 200,
+      select: {
+        id: true,
+        voterName: true,
+        guess: true,
+        createdAt: true,
+      },
+    }),
   ]);
 
   const totalVotes = boyVotes + girlVotes;
@@ -87,16 +104,27 @@ export default async function PainelPage() {
         totalVotes,
         boyPercent,
         girlPercent,
+        totalMessages,
         raffleParticipantsCount,
       }}
-      recentOrders={approvedOrders.slice(0, 5).map((o) => ({
+      orders={approvedOrders.map((o) => ({
         id: o.id,
         amount: o.amount,
+        netAmount: o.netAmount ?? o.amount,
+        paymentMethod: o.paymentMethod,
         payerName: o.payerName,
+        payerPhone: o.payerPhone,
+        giftTitle: o.giftItem?.title || 'Presente em Dinheiro',
         pollGuess: o.pollGuess,
         raffleTicketNumber: o.raffleTicketNumber,
         createdAt: o.createdAt.toISOString(),
         payerMessage: o.payerMessage,
+      }))}
+      pollVotes={pollVotes.map((v) => ({
+        id: v.id,
+        voterName: v.voterName,
+        guess: v.guess,
+        createdAt: v.createdAt.toISOString(),
       }))}
     />
   );

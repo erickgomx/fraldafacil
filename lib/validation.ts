@@ -69,3 +69,131 @@ export function isValidEmail(email: string | null | undefined): boolean {
   const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return regex.test(email.trim());
 }
+
+export const ALLOWED_EVENT_TYPES = ['REVELACAO', 'FRALDA', 'AMBOS'] as const;
+export type EventTypeValue = (typeof ALLOWED_EVENT_TYPES)[number];
+
+export function isValidEventType(val: unknown): val is EventTypeValue {
+  return typeof val === 'string' && (ALLOWED_EVENT_TYPES as readonly string[]).includes(val);
+}
+
+export const RESERVED_SLUGS = new Set<string>([
+  'admin',
+  'api',
+  'login',
+  'logout',
+  'cadastro',
+  'register',
+  'painel',
+  'dashboard',
+  'demo',
+  'privacidade',
+  'termos',
+  'recuperar-senha',
+  'redefinir-senha',
+  'robots.txt',
+  'sitemap.xml',
+  'favicon.ico',
+  'opengraph-image',
+  'apple-icon',
+  'icon',
+  'icon.svg',
+  '_next',
+  'static',
+  'public',
+  'suporte',
+  'ajuda',
+  'sobre',
+  'contato',
+  'app',
+  'www',
+  'webhooks',
+  'webhook',
+  'checkout',
+  'pagamento',
+  'pagamentos',
+  'sorteio',
+  'health',
+  'status',
+]);
+
+/** Normaliza texto em slug URL-friendly (minúsculas, sem acentos, apenas [a-z0-9-]). */
+export function sanitizeSlug(text: string): string {
+  return text
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9-]/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+/** Verifica se o slug colide com rotas reservadas do sistema. */
+export function isReservedSlug(slug: string): boolean {
+  const normalized = slug.trim().toLowerCase();
+  return RESERVED_SLUGS.has(normalized) || normalized.startsWith('_');
+}
+
+/** Valida comprimento e disponibilidade institucional do slug. */
+export function validateSlug(slug: string): { valid: boolean; error?: string } {
+  const clean = slug.trim().toLowerCase();
+  if (clean.length < 3) {
+    return { valid: false, error: 'O link do evento deve ter pelo menos 3 caracteres.' };
+  }
+  if (clean.length > 80) {
+    return { valid: false, error: 'O link do evento deve ter no máximo 80 caracteres.' };
+  }
+  if (isReservedSlug(clean)) {
+    return {
+      valid: false,
+      error: 'Este endereço é reservado pela plataforma. Por favor, escolha outro link para o seu chá.',
+    };
+  }
+  return { valid: true };
+}
+
+/**
+ * Converte data vinda de input (`YYYY-MM-DD`) para meio-dia UTC (`12:00:00.000Z`),
+ * evitando deslocamento de -1 dia em fusos horários brasileiros (UTC-3).
+ */
+export function parseEventDateInput(value: string | Date | null | undefined): Date | null {
+  if (!value) return null;
+  if (value instanceof Date) {
+    return isNaN(value.getTime()) ? null : value;
+  }
+
+  const trimmed = String(value).trim();
+  if (!trimmed) return null;
+
+  const dateOnlyMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(trimmed);
+  if (dateOnlyMatch) {
+    const year = Number(dateOnlyMatch[1]);
+    const month = Number(dateOnlyMatch[2]);
+    const day = Number(dateOnlyMatch[3]);
+    const candidate = new Date(Date.UTC(year, month - 1, day, 12, 0, 0, 0));
+    if (
+      isNaN(candidate.getTime()) ||
+      candidate.getUTCFullYear() !== year ||
+      candidate.getUTCMonth() !== month - 1 ||
+      candidate.getUTCDate() !== day
+    ) {
+      return null;
+    }
+    return candidate;
+  }
+
+  const parsed = new Date(trimmed);
+  return isNaN(parsed.getTime()) ? null : parsed;
+}
+
+/** Formata a data do evento em pt-BR preservando o dia calendário em UTC. */
+export function formatEventDateBR(date: string | Date): string {
+  const d = date instanceof Date ? date : new Date(date);
+  if (isNaN(d.getTime())) return '';
+  return new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(d);
+}

@@ -17,6 +17,7 @@ import { useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
 import { AnimatePresence, motion, type Variants } from 'framer-motion';
 import { Calendar, Clock } from 'lucide-react';
+import { formatEventDateBR } from '@/lib/validation';
 
 // Curva suave cúbica bezier para movimento orgânico
 const EASE = [0.22, 1, 0.36, 1] as const;
@@ -92,7 +93,21 @@ export default function BabyHero({
 
   // Atualização em tempo real da contagem regressiva a cada segundo
   useEffect(() => {
-    const target = new Date(eventDate).getTime();
+    const d = new Date(eventDate);
+    if (isNaN(d.getTime())) {
+      setTimeLeft(null);
+      return;
+    }
+
+    // Usa o dia calendário UTC para evitar antecipação de -3h no fuso brasileiro
+    const target = new Date(
+      d.getUTCFullYear(),
+      d.getUTCMonth(),
+      d.getUTCDate(),
+      0,
+      0,
+      0
+    ).getTime();
 
     const updateCountdown = () => {
       const now = new Date().getTime();
@@ -311,7 +326,7 @@ export default function BabyHero({
           ) : (
             <div className="inline-flex items-center gap-2 text-xs font-mono text-charcoal-600 bg-white py-2 px-4 rounded-lg border border-warm-border shadow-subtle">
               <Calendar className="w-3.5 h-3.5 text-charcoal-500" />
-              <span>Data comemorativa: {new Date(eventDate).toLocaleDateString('pt-BR')}</span>
+              <span>Data comemorativa: {formatEventDateBR(eventDate)}</span>
             </div>
           )}
         </motion.div>

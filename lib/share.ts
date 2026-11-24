@@ -168,3 +168,29 @@ export async function shareEvent(
 
   return 'COPIED';
 }
+
+export function buildThankYouWhatsAppUrl(params: {
+  phone: string | null | undefined;
+  guestName: string;
+  giftTitle?: string | null;
+  parentsNames: string;
+}): string | null {
+  const digits = String(params.phone || '').replace(/\D/g, '');
+  if (digits.length < 10) return null;
+
+  const fullPhone =
+    digits.length === 10 || digits.length === 11 ? `55${digits}` : digits;
+
+  const firstName = (params.guestName || '').trim().split(/\s+/)[0];
+  const greeting =
+    firstName && firstName.toLowerCase() !== 'convidado'
+      ? `Oi, ${firstName}!`
+      : 'Olá!';
+  const giftPart =
+    params.giftTitle && params.giftTitle.trim()
+      ? ` pelo presente (${params.giftTitle.trim()})`
+      : ' pelo presente';
+
+  const text = `${greeting} Muito obrigado(a)${giftPart} e pelo carinho com o nosso bebê! 🤍\n\nCom carinho,\n${params.parentsNames}`;
+  return `https://api.whatsapp.com/send?phone=${fullPhone}&text=${encodeURIComponent(text)}`;
+}

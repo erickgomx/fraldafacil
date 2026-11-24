@@ -136,12 +136,13 @@ export default function AdminDashboardClient({
   metrics,
   orders,
   topEvents,
+  chartData,
 }: AdminDashboardClientProps) {
   const router = useRouter();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isExportingPDF, setIsExportingPDF] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'ALL' | 'APPROVED' | 'PENDING' | 'REJECTED'>('ALL');
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'APPROVED' | 'PENDING' | 'REJECTED' | 'REFUNDED' | 'CHARGED_BACK'>('ALL');
   const [methodFilter, setMethodFilter] = useState<'ALL' | 'PIX' | 'CREDIT_CARD'>('ALL');
   const [timePeriod, setTimePeriod] = useState<'ALL' | 'MONTH' | 'WEEK' | 'TODAY'>('ALL');
 
@@ -326,6 +327,7 @@ export default function AdminDashboardClient({
   const startOfToday = useMemo(() => new Date(now.getFullYear(), now.getMonth(), now.getDate()), [now]);
   const sevenDaysAgo = useMemo(() => new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000), [now]);
   const thirtyDaysAgo = useMemo(() => new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000), [now]);
+  const hasTruncatedAuditList = metrics.totalOrdersCount > ordersList.length;
 
   // Pedidos aprovados no período selecionado
   const approvedInPeriod = useMemo(() => {
@@ -340,12 +342,24 @@ export default function AdminDashboardClient({
   }, [ordersList, timePeriod, startOfToday, sevenDaysAgo, thirtyDaysAgo]);
 
   const periodGross = useMemo(() => {
+    if (hasTruncatedAuditList) {
+      if (timePeriod === 'TODAY') return metrics.grossToday;
+      if (timePeriod === 'WEEK') return metrics.grossWeek;
+      if (timePeriod === 'MONTH') return metrics.grossMonth;
+      return metrics.totalGross;
+    }
     return approvedInPeriod.reduce((sum, o) => sum + o.amount, 0);
-  }, [approvedInPeriod]);
+  }, [approvedInPeriod, hasTruncatedAuditList, timePeriod, metrics]);
 
   const periodEarnings = useMemo(() => {
+    if (hasTruncatedAuditList) {
+      if (timePeriod === 'TODAY') return metrics.earningsToday;
+      if (timePeriod === 'WEEK') return metrics.earningsWeek;
+      if (timePeriod === 'MONTH') return metrics.earningsMonth;
+      return metrics.totalPlatformFee;
+    }
     return approvedInPeriod.reduce((sum, o) => sum + (o.platformFee ?? o.amount * 0.0499), 0);
-  }, [approvedInPeriod]);
+  }, [approvedInPeriod, hasTruncatedAuditList, timePeriod, metrics]);
 
   // Valores calculados de acordo com o seletor de período rápido
   const currentPeriodData = useMemo(() => {
@@ -364,6 +378,10 @@ export default function AdminDashboardClient({
 
   // Geração dinâmica dos pontos do gráfico sincronizados com a lista de pedidos e o período selecionado
   const computedChartData = useMemo(() => {
+    if (hasTruncatedAuditList && (timePeriod === 'ALL' || timePeriod === 'MONTH') && chartData.length > 0) {
+      return chartData;
+    }
+
     const numDays = timePeriod === 'WEEK' ? 7 : timePeriod === 'TODAY' ? 1 : 30;
     const points: DailyChartPoint[] = [];
 
@@ -425,7 +443,7 @@ export default function AdminDashboardClient({
     }
 
     return points;
-  }, [ordersList, timePeriod, now, startOfToday]);
+  }, [ordersList, timePeriod, now, startOfToday, hasTruncatedAuditList, chartData]);
 
   // Altura máxima proporcional para as barras do gráfico
   const maxChartValue = useMemo(() => {
@@ -1349,8 +1367,15 @@ export default function AdminDashboardClient({
             </p>
           </div>
 
-          <div className="text-xs text-slate-500 font-mono">
-            Exibindo <strong>{filteredOrders.length}</strong> de {ordersList.length} pedidos
+          <div className="text-xs text-slate-500 font-mono text-right">
+            <span>
+              Exibindo <strong>{filteredOrders.length}</strong> de {ordersList.length} pedidos
+            </span>
+            {hasTruncatedAuditList && (
+              <span className="block text-[11px] text-slate-400 font-sans mt-0.5">
+                Exibindo os {ordersList.length} pedidos mais recentes de {metrics.totalOrdersCount} no total (KPIs acima refletem 100% do histórico).
+              </span>
+            )}
           </div>
         </div>
 
@@ -1403,13 +1428,19 @@ export default function AdminDashboardClient({
           <div className="sm:col-span-3">
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as 'ALL' | 'APPROVED' | 'PENDING' | 'REJECTED')}
+              onChange={(e) =>
+                setStatusFilter(
+                  e.target.value as 'ALL' | 'APPROVED' | 'PENDING' | 'REJECTED' | 'REFUNDED' | 'CHARGED_BACK'
+                )
+              }
               className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-rose-500/20"
             >
               <option value="ALL">Status: Todos</option>
               <option value="APPROVED">Apenas Aprovados</option>
               <option value="PENDING">Apenas Pendentes</option>
               <option value="REJECTED">Apenas Rejeitados / Cancelados</option>
+              <option value="REFUNDED">Apenas Estornados</option>
+              <option value="CHARGED_BACK">Apenas Contestados (Chargeback)</option>
             </select>
           </div>
 
@@ -1488,10 +1519,24 @@ export default function AdminDashboardClient({
                   </td>
                   <td className="py-3 px-3">
                     {ord.status === 'APPROVED' ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                        <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                        Aprovado
-                      </span>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                          Aprovado
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleVerifyPayment(ord.id)}
+                          disabled={verifyingId === ord.id}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-white hover:bg-slate-100 text-slate-600 border border-slate-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                          title="Sincronizar status atualizado no Mercado Pago (ex: estornos ou chargebacks)"
+                        >
+                          <RefreshCw
+                            className={`w-2.5 h-2.5 ${verifyingId === ord.id ? 'animate-spin text-rose-500' : 'text-slate-400'}`}
+                          />
+                          <span>{verifyingId === ord.id ? 'Verificando...' : 'Sincronizar'}</span>
+                        </button>
+                      </div>
                     ) : ord.status === 'PENDING' ? (
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
@@ -1511,10 +1556,20 @@ export default function AdminDashboardClient({
                           <span>{verifyingId === ord.id ? 'Verificando...' : 'Verificar'}</span>
                         </button>
                       </div>
+                    ) : ord.status === 'REFUNDED' ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+                        <XCircle className="w-3 h-3 text-amber-600" />
+                        Estornado
+                      </span>
+                    ) : ord.status === 'CHARGED_BACK' ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-100 text-rose-800 border border-rose-300">
+                        <XCircle className="w-3 h-3 text-rose-700" />
+                        Contestado
+                      </span>
                     ) : (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">
                         <XCircle className="w-3 h-3 text-rose-600" />
-                        {ord.status}
+                        {ord.status === 'REJECTED' ? 'Recusado' : ord.status}
                       </span>
                     )}
                   </td>

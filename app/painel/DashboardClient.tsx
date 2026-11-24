@@ -12,7 +12,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import confetti from 'canvas-confetti';
 import {
   Check,
@@ -25,9 +25,34 @@ import {
   Sparkles,
   ArrowRight,
   Wallet,
+  Search,
+  ChevronDown,
+  ChevronUp,
+  Users,
 } from 'lucide-react';
 import Link from 'next/link';
-import { shareEvent, buildSharePayload } from '@/lib/share';
+import { shareEvent, buildSharePayload, buildThankYouWhatsAppUrl } from '@/lib/share';
+
+interface DashboardOrderItem {
+  id: string;
+  amount: number;
+  netAmount: number;
+  paymentMethod: string;
+  payerName: string;
+  payerPhone: string | null;
+  giftTitle: string;
+  pollGuess: string | null;
+  raffleTicketNumber?: number | null;
+  createdAt: string;
+  payerMessage: string | null;
+}
+
+interface DashboardPollVote {
+  id: string;
+  voterName: string;
+  guess: string;
+  createdAt: string;
+}
 
 interface DashboardClientProps {
   event: {
@@ -58,17 +83,11 @@ interface DashboardClientProps {
     totalVotes: number;
     boyPercent: number;
     girlPercent: number;
+    totalMessages?: number;
     raffleParticipantsCount?: number;
   };
-  recentOrders: Array<{
-    id: string;
-    amount: number;
-    payerName: string;
-    pollGuess: string | null;
-    raffleTicketNumber?: number | null;
-    createdAt: string;
-    payerMessage: string | null;
-  }>;
+  orders?: DashboardOrderItem[];
+  pollVotes?: DashboardPollVote[];
 }
 
 function formatBRL(value: number) {
@@ -78,11 +97,17 @@ function formatBRL(value: number) {
 export default function DashboardClient({
   event,
   metrics,
-  recentOrders,
+  orders = [],
+  pollVotes = [],
 }: DashboardClientProps) {
   const [revealed, setRevealed] = useState<string | null>(event.revealedGender);
   const [loadingGender, setLoadingGender] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+
+  const [orderSearch, setOrderSearch] = useState('');
+  const [showAllOrders, setShowAllOrders] = useState(false);
+  const [showPollVoters, setShowPollVoters] = useState(false);
+  const [pollFilter, setPollFilter] = useState<'ALL' | 'BOY' | 'GIRL' | 'WINNERS'>('ALL');
 
   const [raffleWinner, setRaffleWinner] = useState<{
     name: string;
@@ -176,7 +201,7 @@ export default function DashboardClient({
       boyName: event.boyName,
       girlName: event.girlName,
       eventType: event.eventType,
-      revealedGender: event.revealedGender,
+      revealedGender: revealed,
     });
     if (res !== 'CANCELLED') {
       setCopiedLink(true);
@@ -191,7 +216,7 @@ export default function DashboardClient({
     boyName: event.boyName,
     girlName: event.girlName,
     eventType: event.eventType,
-    revealedGender: event.revealedGender,
+    revealedGender: revealed,
   }).whatsappUrl;
 
   const leadingTeam =
@@ -202,6 +227,36 @@ export default function DashboardClient({
       : metrics.boyPercent > metrics.girlPercent
       ? `Menino na frente (${metrics.boyPercent}%)`
       : `Menina na frente (${metrics.girlPercent}%)`;
+
+  const filteredOrders = useMemo(() => {
+    const q = orderSearch.trim().toLowerCase();
+    if (!q) return orders;
+    return orders.filter(
+      (o) =>
+        o.payerName.toLowerCase().includes(q) ||
+        o.giftTitle.toLowerCase().includes(q) ||
+        (o.payerMessage || '').toLowerCase().includes(q)
+    );
+  }, [orders, orderSearch]);
+
+  const visibleOrders = useMemo(() => {
+    if (showAllOrders || orderSearch.trim() !== '') return filteredOrders;
+    return filteredOrders.slice(0, 8);
+  }, [filteredOrders, showAllOrders, orderSearch]);
+
+  const filteredPollVotes = useMemo(() => {
+    if (pollFilter === 'BOY') return pollVotes.filter((v) => v.guess === 'BOY');
+    if (pollFilter === 'GIRL') return pollVotes.filter((v) => v.guess === 'GIRL');
+    if (pollFilter === 'WINNERS' && (revealed === 'BOY' || revealed === 'GIRL')) {
+      return pollVotes.filter((v) => v.guess === revealed);
+    }
+    return pollVotes;
+  }, [pollVotes, pollFilter, revealed]);
+
+  const winnersCount = useMemo(() => {
+    if (revealed !== 'BOY' && revealed !== 'GIRL') return 0;
+    return pollVotes.filter((v) => v.guess === revealed).length;
+  }, [pollVotes, revealed]);
 
   return (
     <div className="space-y-6">
@@ -335,23 +390,46 @@ export default function DashboardClient({
           </div>
         </div>
 
-        {/* Card 3: Bolão */}
-        <div className="bg-white p-6 rounded-2xl border border-warm-border shadow-subtle flex flex-col justify-between">
-          <div>
-            <span className="text-xs font-medium text-charcoal-600 block mb-2">
-              Palpites no Bolão
-            </span>
-            <strong className="font-serif text-3xl font-semibold text-charcoal-900 tabular-nums block">
-              {metrics.totalVotes}
-            </strong>
+        {/* Card 3: Bolão (ou Recados quando for Chá de Fralda) */}
+        {event.eventType === 'FRALDA' ? (
+          <div className="bg-white p-6 rounded-2xl border border-warm-border shadow-subtle flex flex-col justify-between">
+            <div>
+              <span className="text-xs font-medium text-charcoal-600 block mb-2">
+                Recados no Mural
+              </span>
+              <strong className="font-serif text-3xl font-semibold text-charcoal-900 tabular-nums block">
+                {metrics.totalMessages ?? 0}
+              </strong>
+            </div>
+            <div className="mt-3 pt-3 border-t border-warm-border/60 flex items-center justify-between text-[11px] font-sans">
+              <span className="text-charcoal-500">Mensagens de carinho</span>
+              <Link
+                href="/painel/recados"
+                className="font-medium text-charcoal-800 hover:text-terracotta underline underline-offset-2"
+              >
+                Ver recados
+              </Link>
+            </div>
           </div>
-          <p className="text-[11px] text-charcoal-500 mt-3 pt-3 border-t border-warm-border/60 font-sans">
-            {leadingTeam}
-          </p>
-        </div>
+        ) : (
+          <div className="bg-white p-6 rounded-2xl border border-warm-border shadow-subtle flex flex-col justify-between">
+            <div>
+              <span className="text-xs font-medium text-charcoal-600 block mb-2">
+                Palpites no Bolão
+              </span>
+              <strong className="font-serif text-3xl font-semibold text-charcoal-900 tabular-nums block">
+                {metrics.totalVotes}
+              </strong>
+            </div>
+            <p className="text-[11px] text-charcoal-500 mt-3 pt-3 border-t border-warm-border/60 font-sans">
+              {leadingTeam}
+            </p>
+          </div>
+        )}
       </div>
 
-      {/* 4. BOLÃO & MOMENTO DA REVELAÇÃO (TUDO NO MESMO LUGAR) */}
+      {/* 4. BOLÃO & MOMENTO DA REVELAÇÃO (EXIBIDO APENAS SE NÃO FOR CHÁ DE FRALDA PURO) */}
+      {event.eventType !== 'FRALDA' && (
       <div className="bg-white rounded-2xl p-6 sm:p-8 border border-warm-border shadow-subtle space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
@@ -453,7 +531,131 @@ export default function DashboardClient({
             </button>
           </div>
         </div>
+
+        {/* Lista de Participantes do Bolão */}
+        {pollVotes.length > 0 && (
+          <div className="pt-4 border-t border-warm-border/70">
+            <button
+              type="button"
+              onClick={() => setShowPollVoters((prev) => !prev)}
+              className="w-full flex items-center justify-between text-xs font-medium text-charcoal-800 hover:text-terracotta transition py-1"
+            >
+              <span className="inline-flex items-center gap-2">
+                <Users className="w-4 h-4 text-charcoal-500" />
+                <span>
+                  Ver participantes do bolão ({pollVotes.length})
+                  {revealed ? ` · ${winnersCount} acertaram!` : ''}
+                </span>
+              </span>
+              {showPollVoters ? (
+                <ChevronUp className="w-4 h-4 text-charcoal-400" />
+              ) : (
+                <ChevronDown className="w-4 h-4 text-charcoal-400" />
+              )}
+            </button>
+
+            {showPollVoters && (
+              <div className="mt-4 space-y-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPollFilter('ALL')}
+                    className={`px-3 py-1 rounded-full text-[11px] font-medium border transition ${
+                      pollFilter === 'ALL'
+                        ? 'bg-charcoal-900 text-white border-charcoal-900'
+                        : 'bg-cream-50 text-charcoal-600 border-warm-border hover:bg-cream-100'
+                    }`}
+                  >
+                    Todos ({pollVotes.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPollFilter('BOY')}
+                    className={`px-3 py-1 rounded-full text-[11px] font-medium border transition ${
+                      pollFilter === 'BOY'
+                        ? 'bg-dusty-blue text-white border-dusty-blue'
+                        : 'bg-dusty-blue-light/60 text-dusty-blue border-dusty-blue/30'
+                    }`}
+                  >
+                    Menino 💙 ({pollVotes.filter((v) => v.guess === 'BOY').length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPollFilter('GIRL')}
+                    className={`px-3 py-1 rounded-full text-[11px] font-medium border transition ${
+                      pollFilter === 'GIRL'
+                        ? 'bg-dusty-rose text-white border-dusty-rose'
+                        : 'bg-dusty-rose-light/60 text-dusty-rose border-dusty-rose/30'
+                    }`}
+                  >
+                    Menina 🌸 ({pollVotes.filter((v) => v.guess === 'GIRL').length})
+                  </button>
+                  {(revealed === 'BOY' || revealed === 'GIRL') && (
+                    <button
+                      type="button"
+                      onClick={() => setPollFilter('WINNERS')}
+                      className={`px-3 py-1 rounded-full text-[11px] font-semibold border transition ${
+                        pollFilter === 'WINNERS'
+                          ? 'bg-terracotta text-white border-terracotta'
+                          : 'bg-cream-100 text-terracotta border-terracotta/40 hover:bg-cream-200'
+                      }`}
+                    >
+                      🏆 Acertaram o palpite! ({winnersCount})
+                    </button>
+                  )}
+                </div>
+
+                <div className="max-h-64 overflow-y-auto divide-y divide-warm-border/50 rounded-xl border border-warm-border/70 bg-cream-50/40 px-3.5">
+                  {filteredPollVotes.length === 0 ? (
+                    <p className="py-4 text-center text-xs text-charcoal-500 font-sans">
+                      Nenhum palpite encontrado neste filtro.
+                    </p>
+                  ) : (
+                    filteredPollVotes.map((vote) => {
+                      const isWinner = Boolean(revealed && vote.guess === revealed);
+                      return (
+                        <div
+                          key={vote.id}
+                          className="py-2.5 flex items-center justify-between gap-3 text-xs"
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="font-medium text-charcoal-900 truncate">
+                              {vote.voterName}
+                            </span>
+                            {isWinner && (
+                              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-terracotta/10 text-terracotta border border-terracotta/30 font-semibold shrink-0">
+                                🏆 Acertou!
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2.5 shrink-0">
+                            <span
+                              className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
+                                vote.guess === 'BOY'
+                                  ? 'bg-dusty-blue-light border-dusty-blue/30 text-dusty-blue'
+                                  : 'bg-dusty-rose-light border-dusty-rose/30 text-dusty-rose'
+                              }`}
+                            >
+                              {vote.guess === 'BOY' ? 'Menino 💙' : 'Menina 🌸'}
+                            </span>
+                            <span className="text-[10px] font-mono text-charcoal-400">
+                              {new Date(vote.createdAt).toLocaleDateString('pt-BR', {
+                                day: '2-digit',
+                                month: '2-digit',
+                              })}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
+      )}
 
       {/* 5. SORTEIO DO CHÁ (QUANDO ATIVADO) OU ATALHO DISCRETO PARA ATIVAR */}
       {event.raffleEnabled ? (
@@ -558,81 +760,152 @@ export default function DashboardClient({
         </div>
       )}
 
-      {/* 6. ÚLTIMOS PRESENTES E RECADOS */}
-      <div className="bg-white rounded-2xl p-6 sm:p-8 border border-warm-border shadow-subtle">
-        <div className="flex items-center justify-between gap-4 mb-4">
+      {/* 6. EXTRATO COMPLETO DE PRESENTES E RECADOS */}
+      <div className="bg-white rounded-2xl p-6 sm:p-8 border border-warm-border shadow-subtle space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <h2 className="font-serif text-xl font-medium text-charcoal-900 flex items-center gap-2">
             <Gift className="w-4 h-4 text-charcoal-500" />
-            <span>Últimos Presentes Recebidos</span>
+            <span>Extrato de Presentes Recebidos</span>
+            <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-cream-100 border border-warm-border text-charcoal-600">
+              {orders.length}
+            </span>
           </h2>
-          {recentOrders.length > 0 && (
+          {orders.length > 0 && (
             <Link
               href="/painel/recados"
               className="text-xs font-medium text-charcoal-600 hover:text-charcoal-900 underline underline-offset-2"
             >
-              Ver todos os recados
+              Ver livro de recados
             </Link>
           )}
         </div>
 
-        {recentOrders.length === 0 ? (
+        {orders.length > 0 && (
+          <div className="relative">
+            <Search className="w-3.5 h-3.5 text-charcoal-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={orderSearch}
+              onChange={(e) => setOrderSearch(e.target.value)}
+              placeholder="Buscar por nome do convidado, presente ou recado..."
+              className="w-full pl-9 pr-3.5 py-2 rounded-xl border border-warm-border bg-cream-50/50 text-xs text-charcoal-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-charcoal-900"
+            />
+          </div>
+        )}
+
+        {orders.length === 0 ? (
           <div className="py-8 text-center bg-cream-50/50 rounded-xl border border-dashed border-warm-border">
             <p className="text-xs text-charcoal-500 font-sans">
               Nenhum presente confirmado ainda. Compartilhe o link no WhatsApp para começar!
             </p>
           </div>
-        ) : (
-          <div className="divide-y divide-warm-border/60">
-            {recentOrders.map((order) => (
-              <div key={order.id} className="py-3.5 flex items-center justify-between gap-4">
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <strong className="text-xs sm:text-sm font-medium text-charcoal-900">
-                      {order.payerName}
-                    </strong>
-                    {order.raffleTicketNumber !== null && order.raffleTicketNumber !== undefined && (
-                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cream-100 border border-warm-border text-charcoal-700">
-                        Nº #{String(order.raffleTicketNumber).padStart(3, '0')}
-                      </span>
-                    )}
-                    {order.pollGuess && (
-                      <span
-                        className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
-                          order.pollGuess === 'BOY'
-                            ? 'bg-dusty-blue-light border-dusty-blue/30 text-dusty-blue'
-                            : 'bg-dusty-rose-light border-dusty-rose/30 text-dusty-rose'
-                        }`}
-                      >
-                        {order.pollGuess === 'BOY' ? 'Menino' : 'Menina'}
-                      </span>
-                    )}
-                  </div>
-                  {order.payerMessage && (
-                    <p className="text-xs text-charcoal-500 italic mt-0.5 line-clamp-1 font-sans">
-                      &ldquo;{order.payerMessage}&rdquo;
-                    </p>
-                  )}
-                  <span className="text-[10px] font-mono text-charcoal-400">
-                    {new Date(order.createdAt).toLocaleDateString('pt-BR', {
-                      day: '2-digit',
-                      month: 'short',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </span>
-                </div>
-
-                <div className="text-right shrink-0">
-                  <span className="font-mono text-xs sm:text-sm font-semibold text-charcoal-900 tabular-nums block">
-                    {formatBRL(order.amount)}
-                  </span>
-                  <span className="text-[10px] text-emerald-700 font-mono">
-                    Confirmado
-                  </span>
-                </div>
-              </div>
-            ))}
+        ) : visibleOrders.length === 0 ? (
+          <div className="py-8 text-center bg-cream-50/50 rounded-xl border border-dashed border-warm-border">
+            <p className="text-xs text-charcoal-500 font-sans">
+              Nenhum presente encontrado para &ldquo;{orderSearch}&rdquo;.
+            </p>
           </div>
+        ) : (
+          <>
+            <div className="divide-y divide-warm-border/60">
+              {visibleOrders.map((order) => {
+                const thankYouUrl = buildThankYouWhatsAppUrl({
+                  phone: order.payerPhone,
+                  guestName: order.payerName,
+                  giftTitle: order.giftTitle,
+                  parentsNames: event.parentsNames,
+                });
+
+                return (
+                  <div key={order.id} className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="min-w-0 space-y-1">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <strong className="text-xs sm:text-sm font-medium text-charcoal-900">
+                          {order.payerName}
+                        </strong>
+                        <span className="text-[10px] font-sans px-2 py-0.5 rounded bg-cream-100 border border-warm-border text-charcoal-700">
+                          {order.giftTitle}
+                        </span>
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-stone-100 text-charcoal-600">
+                          {order.paymentMethod === 'CREDIT_CARD' ? 'Cartão' : 'Pix'}
+                        </span>
+                        {order.raffleTicketNumber !== null && order.raffleTicketNumber !== undefined && (
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cream-100 border border-terracotta/30 text-terracotta font-semibold">
+                            Nº #{String(order.raffleTicketNumber).padStart(3, '0')}
+                          </span>
+                        )}
+                        {order.pollGuess && (
+                          <span
+                            className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
+                              order.pollGuess === 'BOY'
+                                ? 'bg-dusty-blue-light border-dusty-blue/30 text-dusty-blue'
+                                : 'bg-dusty-rose-light border-dusty-rose/30 text-dusty-rose'
+                            }`}
+                          >
+                            {order.pollGuess === 'BOY' ? 'Menino' : 'Menina'}
+                          </span>
+                        )}
+                      </div>
+                      {order.payerMessage && (
+                        <p className="text-xs text-charcoal-500 italic line-clamp-2 font-sans">
+                          &ldquo;{order.payerMessage}&rdquo;
+                        </p>
+                      )}
+                      <div className="flex flex-wrap items-center gap-3">
+                        <span className="text-[10px] font-mono text-charcoal-400">
+                          {new Date(order.createdAt).toLocaleDateString('pt-BR', {
+                            day: '2-digit',
+                            month: 'short',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </span>
+                        {thankYouUrl && (
+                          <a
+                            href={thankYouUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700 hover:text-emerald-900 underline underline-offset-2"
+                          >
+                            <MessageCircle className="w-3 h-3" />
+                            <span>Agradecer no WhatsApp</span>
+                          </a>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="text-left sm:text-right shrink-0">
+                      <span className="font-mono text-xs sm:text-sm font-semibold text-charcoal-900 tabular-nums block">
+                        {formatBRL(order.netAmount)}
+                      </span>
+                      <span className="text-[10px] text-emerald-700 font-mono block">
+                        Líquido · Confirmado
+                      </span>
+                      {Math.abs(order.amount - order.netAmount) > 0.01 && (
+                        <span className="text-[10px] text-charcoal-400 font-mono block">
+                          Pago: {formatBRL(order.amount)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {filteredOrders.length > 8 && orderSearch.trim() === '' && (
+              <div className="pt-2 text-center">
+                <button
+                  type="button"
+                  onClick={() => setShowAllOrders((prev) => !prev)}
+                  className="py-2 px-4 rounded-xl text-xs font-medium bg-cream-50 hover:bg-cream-100 text-charcoal-700 border border-warm-border transition"
+                >
+                  {showAllOrders
+                    ? 'Mostrar apenas os 8 mais recentes'
+                    : `Ver todos os ${filteredOrders.length} presentes`}
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

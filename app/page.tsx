@@ -46,6 +46,14 @@ const FAQS = [
     q: 'Serve tanto para Chá Revelação quanto para Chá de Fraldas?',
     a: 'Sim! Você pode ativar o Bolão Menino vs. Menina para Chá Revelação ou usar apenas a vitrine de presentes e mural de recados se o sexo do bebê já foi revelado.',
   },
+  {
+    q: 'Quanto custa criar o chá? Existem mensalidades ou taxas escondidas?',
+    a: 'Criar e manter a página do seu chá é 100% gratuito, sem mensalidade e sem limite de presentes. Quando você recebe um presente confirmado, há a taxa da plataforma de 4,99% mais a tarifa do Mercado Pago (0,99% no Pix ou 3,99% no cartão). Você decide no painel se repassa essas taxas para o convidado — recebendo 100% do valor do presente líquido — ou se prefere absorvê-las.',
+  },
+  {
+    q: 'Posso fazer sorteio (Chá Rifa) e guardar os recados de recordação?',
+    a: 'Sim! Você pode ativar o sorteio opcional no painel para que cada presente confirmado gere automaticamente 1 Número da Sorte. Além disso, todos os recados ficam salvos no seu painel com botão de agradecimento rápido no WhatsApp e exportação completa em PDF.',
+  },
 ];
 
 export default function HomePage() {
@@ -60,6 +68,12 @@ export default function HomePage() {
           </Link>
 
           <nav className="flex items-center gap-2 sm:gap-4 shrink-0" aria-label="Navegação principal">
+            <Link
+              href="#taxas"
+              className="hidden lg:inline-flex text-xs sm:text-sm font-medium text-charcoal-600 hover:text-charcoal-900 px-2.5 py-2 transition whitespace-nowrap"
+            >
+              Taxas
+            </Link>
             <Link
               href="/demo"
               className="hidden md:inline-flex text-xs sm:text-sm font-medium text-charcoal-600 hover:text-charcoal-900 px-3 py-2 transition whitespace-nowrap"
@@ -465,6 +479,137 @@ export default function HomePage() {
           </div>
         </section>
 
+        {/* TAXAS TRANSPARENTES — Sem mensalidade, você escolhe quem assume */}
+        <section id="taxas" className="py-20 sm:py-24 px-4 sm:px-6 bg-[#FAF7F2] dark:bg-[#151311] border-b border-warm-border/60 scroll-mt-20">
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center max-w-2xl mx-auto mb-14">
+              <span className="text-xs font-mono uppercase tracking-widest text-terracotta dark:text-[#E8957D] font-semibold block mb-2.5">
+                Taxas Transparentes
+              </span>
+              <h2 className="font-serif text-3xl sm:text-4xl text-charcoal-900 dark:text-[#FAF8F5] font-normal tracking-tight mb-4">
+                Grátis para criar. Você só paga quando recebe.
+              </h2>
+              <p className="text-sm sm:text-base text-charcoal-600 dark:text-stone-300 font-sans leading-relaxed">
+                Sem mensalidade, sem fidelidade e sem surpresas. A taxa da plataforma é de 4,99% + tarifa do Mercado Pago (0,99% no Pix ou 3,99% no cartão) — e você escolhe quem assume.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              {/* Card 1: Criação gratuita */}
+              <div className="rounded-2xl bg-white dark:bg-[#1C1917] border border-warm-border dark:border-[#2D2824] p-7 shadow-subtle flex flex-col justify-between">
+                <div>
+                  <span className="inline-block text-[11px] font-mono uppercase tracking-wider text-charcoal-600 dark:text-stone-400 mb-3">
+                    Criar e usar a página
+                  </span>
+                  <div className="flex items-baseline gap-2 mb-3">
+                    <span className="font-serif text-3xl text-charcoal-900 dark:text-[#FAF8F5] font-medium">
+                      R$ 0
+                    </span>
+                    <span className="text-xs font-mono text-emerald-700 dark:text-emerald-400 font-medium">
+                      Criação gratuita
+                    </span>
+                  </div>
+                  <p className="text-sm text-charcoal-600 dark:text-stone-300 leading-relaxed font-sans mb-5">
+                    Publique sua lista sem pagar nada e sem mensalidade. Todos os recursos já vêm liberados.
+                  </p>
+                </div>
+
+                <ul className="space-y-2.5 text-xs text-charcoal-700 dark:text-stone-300 pt-4 border-t border-warm-border/60 dark:border-[#2D2824]">
+                  <li className="flex items-center gap-2">
+                    <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" aria-hidden="true" />
+                    <span>Lista pronta e personalizável</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" aria-hidden="true" />
+                    <span>Bolão Menino ou Menina + Sorteio</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" aria-hidden="true" />
+                    <span>Mural com exportação em PDF</span>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Card 2: Repassar ao convidado (Recomendado) */}
+              <div className="rounded-2xl bg-cream-100/70 dark:bg-[#201C19] border-2 border-charcoal-900 dark:border-stone-400/80 p-7 shadow-card flex flex-col justify-between relative">
+                <div>
+                  <div className="flex items-center justify-between gap-2 mb-3">
+                    <span className="text-[11px] font-mono uppercase tracking-wider text-terracotta dark:text-[#E8957D] font-semibold">
+                      Repassar ao convidado
+                    </span>
+                    <span className="text-[10px] font-mono uppercase px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300 font-semibold">
+                      Recomendado
+                    </span>
+                  </div>
+                  <h3 className="font-serif text-xl text-charcoal-900 dark:text-[#FAF8F5] mb-2.5">
+                    Receba 100% do valor líquido
+                  </h3>
+                  <p className="text-sm text-charcoal-700 dark:text-stone-300 leading-relaxed font-sans mb-5">
+                    As taxas são somadas no checkout com cálculo exato. Os pais recebem o valor integral do presente sem descontos.
+                  </p>
+                </div>
+
+                <div className="space-y-2.5 pt-4 border-t border-warm-border/70 dark:border-[#332D28] text-xs font-sans">
+                  <div className="rounded-xl bg-white dark:bg-[#171412] border border-warm-border dark:border-[#2D2824] p-3">
+                    <span className="font-mono text-[10px] uppercase text-charcoal-500 dark:text-stone-400 block mb-0.5">
+                      Exemplo no Pix · Presente R$ 100,00
+                    </span>
+                    <span className="text-charcoal-800 dark:text-stone-200 block">
+                      Convidado paga <strong>R$ 106,04</strong> → <strong>você recebe R$ 100,00 cheios</strong>
+                    </span>
+                  </div>
+                  <div className="rounded-xl bg-white dark:bg-[#171412] border border-warm-border dark:border-[#2D2824] p-3">
+                    <span className="font-mono text-[10px] uppercase text-charcoal-500 dark:text-stone-400 block mb-0.5">
+                      Exemplo no Cartão · Presente R$ 100,00
+                    </span>
+                    <span className="text-charcoal-800 dark:text-stone-200 block">
+                      Convidado paga <strong>R$ 109,35</strong> → <strong>você recebe R$ 100,00 cheios</strong>
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 3: Pais assumem as taxas */}
+              <div className="rounded-2xl bg-white dark:bg-[#1C1917] border border-warm-border dark:border-[#2D2824] p-7 shadow-subtle flex flex-col justify-between">
+                <div>
+                  <span className="inline-block text-[11px] font-mono uppercase tracking-wider text-charcoal-600 dark:text-stone-400 mb-3">
+                    Opcional · Pais assumem
+                  </span>
+                  <h3 className="font-serif text-xl text-charcoal-900 dark:text-[#FAF8F5] mb-2.5">
+                    Convidado paga o valor seco
+                  </h3>
+                  <p className="text-sm text-charcoal-600 dark:text-stone-300 leading-relaxed font-sans mb-5">
+                    Prefere absorver as taxas? O convidado paga exatamente o valor anunciado (ex: R$ 100,00) e o desconto ocorre no repasse.
+                  </p>
+                </div>
+
+                <div className="space-y-2.5 pt-4 border-t border-warm-border/60 dark:border-[#2D2824] text-xs font-sans">
+                  <div className="rounded-xl bg-cream-50 dark:bg-[#171412] border border-warm-border dark:border-[#2D2824] p-3">
+                    <span className="font-mono text-[10px] uppercase text-charcoal-500 dark:text-stone-400 block mb-0.5">
+                      No Pix (4,99% + 0,99% MP)
+                    </span>
+                    <span className="text-charcoal-800 dark:text-stone-200 block">
+                      De R$ 100,00 → <strong>você recebe R$ 94,02 líquidos</strong>
+                    </span>
+                  </div>
+                  <div className="rounded-xl bg-cream-50 dark:bg-[#171412] border border-warm-border dark:border-[#2D2824] p-3">
+                    <span className="font-mono text-[10px] uppercase text-charcoal-500 dark:text-stone-400 block mb-0.5">
+                      No Cartão (4,99% + 3,99% MP)
+                    </span>
+                    <span className="text-charcoal-800 dark:text-stone-200 block">
+                      De R$ 100,00 → <strong>você recebe R$ 91,02 líquidos</strong>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <p className="mt-6 text-center text-xs text-charcoal-600 dark:text-stone-400 font-sans">
+              Você pode alternar entre repassar ou assumir as taxas a qualquer momento nas Configurações do seu painel.
+            </p>
+          </div>
+        </section>
+
         {/* DÚVIDAS FREQUENTES — Rápido e Esclarecedor */}
         <section className="py-20 sm:py-24 px-4 sm:px-6 bg-cream-50 border-b border-warm-border/60">
           <div className="max-w-3xl mx-auto">
@@ -535,6 +680,10 @@ export default function HomePage() {
           </div>
 
           <div className="flex items-center gap-3 text-charcoal-600 text-xs">
+            <a href="mailto:suporte@fralda.online" className="hover:text-charcoal-900 transition-colors">
+              Suporte
+            </a>
+            <span className="text-charcoal-600" aria-hidden="true">·</span>
             <Link href="/termos" className="hover:text-charcoal-900 transition-colors">
               Termos de Uso
             </Link>

@@ -4,6 +4,9 @@ import prisma from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
+const BATCH_SIZE = 200;
+const MAX_BATCHES = 5;
+
 function maskCpf(cpf: string | null): string | null {
   if (!cpf) return null;
   const digits = cpf.replace(/\D/g, '');
@@ -18,6 +21,16 @@ function maskEmail(email: string | null): string {
   return `${maskedUser}@anonimizado.invalid`;
 }
 
+function isEmailAlreadyAnonymized(email: string | null): boolean {
+  if (!email) return true;
+  const normalized = email.trim().toLowerCase();
+  return (
+    normalized.endsWith('@anonimizado.invalid') ||
+    normalized.endsWith('@lgpd.invalid') ||
+    normalized === 'convidado@fralda.online'
+  );
+}
+
 /**
  * Endpoint de Execução de Manutenção e Anonimização de Dados (LGPD Art. 16).
  *
@@ -25,7 +38,7 @@ function maskEmail(email: string | null): string {
  * Executa mascaramento de dados sensíveis (CPF, telefone, e-mail) de pagamentos
  * finalizados com mais de 90 dias, mantendo os registros fiscais/contábeis seguros.
  */
-export async function POST(req: NextRequest) {
+async function handlePurge(req: NextRequest) {
   try {
     const authHeader = req.headers.get('authorization') || '';
     const cronSecret = process.env.CRON_SECRET;
@@ -58,40 +71,79 @@ export async function POST(req: NextRequest) {
 
     const cutoffDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
-    // Busca pedidos concluídos que ainda possuem CPF sem máscara
-    const candidates = await prisma.order.findMany({
-      where: {
-        createdAt: { lte: cutoffDate },
-        status: { in: ['APPROVED', 'REJECTED'] },
-        payerCpf: { not: null },
-      },
-      select: {
-        id: true,
-        payerCpf: true,
-        payerEmail: true,
-      },
-      take: 200,
-    });
-
-    const toAnonymize = candidates.filter((o) => o.payerCpf && !o.payerCpf.includes('*'));
+    const whereEligible = {
+      createdAt: { lte: cutoffDate },
+      status: { in: ['APPROVED', 'REJECTED', 'REFUNDED', 'CHARGED_BACK'] },
+      OR: [
+        {
+          AND: [
+            { payerCpf: { not: null } },
+            { NOT: { payerCpf: { contains: '*' } } },
+          ],
+        },
+        { payerPhone: { not: null } },
+        {
+          AND: [
+            { NOT: { payerEmail: { endsWith: '@anonimizado.invalid' } } },
+            { NOT: { payerEmail: { endsWith: '@lgpd.invalid' } } },
+            { NOT: { payerEmail: 'convidado@fralda.online' } },
+          ],
+        },
+      ],
+    };
 
     let processedCount = 0;
-    for (const order of toAnonymize) {
-      await prisma.order.update({
-        where: { id: order.id },
-        data: {
-          payerCpf: maskCpf(order.payerCpf),
-          payerPhone: null,
-          payerEmail: maskEmail(order.payerEmail),
+    let lastBatchCount = 0;
+
+    for (let batch = 0; batch < MAX_BATCHES; batch++) {
+      const candidates = await prisma.order.findMany({
+        where: whereEligible,
+        select: {
+          id: true,
+          payerCpf: true,
+          payerEmail: true,
+          payerPhone: true,
         },
+        orderBy: { createdAt: 'asc' },
+        take: BATCH_SIZE,
       });
-      processedCount++;
+
+      lastBatchCount = candidates.length;
+      if (candidates.length === 0) break;
+
+      for (const order of candidates) {
+        const nextCpf =
+          order.payerCpf && !order.payerCpf.includes('*')
+            ? maskCpf(order.payerCpf)
+            : order.payerCpf;
+        const nextEmail = !isEmailAlreadyAnonymized(order.payerEmail)
+          ? maskEmail(order.payerEmail)
+          : order.payerEmail;
+
+        await prisma.order.update({
+          where: { id: order.id },
+          data: {
+            payerCpf: nextCpf,
+            payerPhone: null,
+            payerEmail: nextEmail,
+          },
+        });
+        processedCount++;
+      }
+
+      if (candidates.length < BATCH_SIZE) break;
     }
+
+    const hasMore =
+      lastBatchCount === BATCH_SIZE
+        ? (await prisma.order.count({ where: whereEligible })) > 0
+        : false;
 
     return NextResponse.json({
       success: true,
       message: `Rotina LGPD executada com sucesso. ${processedCount} registros anonimizados.`,
       processedCount,
+      hasMore,
       cutoffDate: cutoffDate.toISOString(),
       daysRetention: days,
     });
@@ -102,4 +154,12 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+export async function GET(req: NextRequest) {
+  return handlePurge(req);
+}
+
+export async function POST(req: NextRequest) {
+  return handlePurge(req);
 }

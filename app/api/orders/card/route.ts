@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { randomUUID } from 'crypto';
 import prisma from '@/lib/prisma';
 import { approveOrder, rejectOrder } from '@/lib/orders';
-import { cardStatusMessage, createCardPayment, hasMercadoPagoToken } from '@/lib/mercadopago';
+import { cardStatusMessage, createCardPayment } from '@/lib/mercadopago';
 import { calculatePaymentFees } from '@/lib/fees';
-import { isValidEmail } from '@/lib/validation';
+import { cleanDigits, isValidEmail } from '@/lib/validation';
 
 export const dynamic = 'force-dynamic';
 
@@ -49,14 +49,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const tokenConfigured = hasMercadoPagoToken();
-    if (!tokenConfigured) {
-      return NextResponse.json(
-        { error: 'Pagamento com cartão indisponível no momento. Utilize o Pix.' },
-        { status: 503 }
-      );
-    }
-
     if (!card?.token || !card?.payment_method_id) {
       return NextResponse.json({ error: 'Dados do cartão incompletos.' }, { status: 400 });
     }
@@ -65,6 +57,44 @@ export async function POST(req: NextRequest) {
     if (!event) {
       return NextResponse.json({ error: 'Evento não encontrado.' }, { status: 404 });
     }
+
+    if (!event.mpConnected || !event.mpAccessToken) {
+      return NextResponse.json(
+        {
+          error:
+            'Os pais ainda estão finalizando a configuração de recebimento deste chá. Tente novamente em breve.',
+        },
+        { status: 409 }
+      );
+    }
+
+    // Se o sorteio estiver ativo, exige identificação mínima (nome + e-mail ou WhatsApp)
+    const isRaffleActive = Boolean(event.raffleEnabled && !event.raffleDrawnAt);
+    if (isRaffleActive) {
+      const trimmedName = payerName?.trim() || '';
+      const hasValidName =
+        trimmedName.length >= 2 && trimmedName.toLowerCase() !== 'convidado anônimo';
+      const cardEmail = card?.payer?.email?.trim() || '';
+      const effectiveEmailForCheck =
+        trimmedEmail ||
+        (cardEmail && cardEmail.toLowerCase() !== 'convidado@fralda.online' ? cardEmail : '');
+      const cleanPhoneDigits = cleanDigits(payerPhone);
+      const hasValidContact =
+        (effectiveEmailForCheck !== '' && isValidEmail(effectiveEmailForCheck)) ||
+        cleanPhoneDigits.length >= 10;
+
+      if (!hasValidName || !hasValidContact) {
+        return NextResponse.json(
+          {
+            error:
+              'Para concorrer ao sorteio deste chá, informe seu nome e pelo menos um e-mail ou WhatsApp de contato.',
+          },
+          { status: 400 }
+        );
+      }
+    }
+
+    const allowPollGuess = event.eventType !== 'FRALDA' && !event.revealedGender;
 
     // O valor é sempre validado pelo servidor quando há um presente do catálogo
     let baseAmount = Number(amount);
@@ -138,7 +168,7 @@ export async function POST(req: NextRequest) {
         payerPhone: payerPhone?.trim() || null,
         payerCpf: cleanCpfDigits || null,
         payerMessage: payerMessage?.trim() || null,
-        pollGuess: pollGuess === 'BOY' || pollGuess === 'GIRL' ? pollGuess : null,
+        pollGuess: allowPollGuess && (pollGuess === 'BOY' || pollGuess === 'GIRL') ? pollGuess : null,
         paymentMethod: 'CREDIT_CARD',
         status: 'PENDING',
       },
@@ -149,6 +179,7 @@ export async function POST(req: NextRequest) {
     try {
       result = await createCardPayment({
         orderId: order.id,
+        eventId: event.id,
         amount: finalChargeAmount,
         description: `${giftTitle} - ${event.parentsNames}`,
         token: card.token,
@@ -161,6 +192,7 @@ export async function POST(req: NextRequest) {
           card.payer?.identification ||
           (cleanCpfDigits ? { type: 'CPF', number: cleanCpfDigits } : undefined),
         sellerAccessToken: event.mpAccessToken || null,
+        sellerRefreshToken: event.mpRefreshToken || null,
         applicationFee: feeCalc.platformFee,
         idempotencyKey:
           typeof idempotencyKey === 'string' && idempotencyKey.length >= 8
@@ -187,7 +219,11 @@ export async function POST(req: NextRequest) {
         ...(!result.splitApplied
           ? {
               platformFee: 0,
-              netAmount: finalChargeAmount,
+              feeAmount: feeCalc.gatewayFee,
+              netAmount: Math.max(
+                0,
+                Math.round((finalChargeAmount - feeCalc.gatewayFee) * 100) / 100
+              ),
             }
           : {}),
       },

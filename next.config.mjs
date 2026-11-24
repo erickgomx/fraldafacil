@@ -17,7 +17,7 @@ const cspDirectives = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline' https://sdk.mercadopago.com https://http2.mlstatic.com https://secure.mlstatic.com https://*.mercadopago.com https://*.mercadolibre.com ${isProd ? '' : "'unsafe-eval'"}`,
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://http2.mlstatic.com https://secure.mlstatic.com",
-  "img-src 'self' data: blob: https://images.unsplash.com https://http2.mlstatic.com https://*.mlstatic.com https://*.mercadopago.com",
+  "img-src 'self' data: blob: https://images.unsplash.com https://*.supabase.co https://http2.mlstatic.com https://*.mlstatic.com https://*.mercadopago.com",
   "font-src 'self' data: https://fonts.gstatic.com https://http2.mlstatic.com",
   `connect-src 'self' https://api.mercadopago.com https://events.mercadopago.com https://api.mercadolibre.com https://*.mercadopago.com https://*.mercadopago.com.br https://*.mlstatic.com ${isProd ? '' : 'ws: wss: http: http://localhost:* ws://localhost:*'}`,
   "frame-src 'self' https://sdk.mercadopago.com https://*.mercadopago.com https://*.mercadopago.com.br https://*.mlstatic.com",
@@ -69,6 +69,10 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 'images.unsplash.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.supabase.co',
       },
     ],
   },

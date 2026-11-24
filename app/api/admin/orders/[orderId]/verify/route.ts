@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminSession } from '@/lib/auth';
 import prisma from '@/lib/prisma';
-import { approveOrder, rejectOrder } from '@/lib/orders';
-import { decryptSecret } from '@/lib/crypto';
+import { approveOrder, refundOrChargebackOrder, rejectOrder } from '@/lib/orders';
+import { fetchMpPaymentStatus, hasMercadoPagoToken } from '@/lib/mercadopago';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,24 +30,7 @@ export async function POST(
       return NextResponse.json({ error: 'Pedido não encontrado.' }, { status: 404 });
     }
 
-    if (order.status === 'APPROVED') {
-      return NextResponse.json({
-        success: true,
-        status: 'APPROVED',
-        message: 'Este pagamento já se encontra aprovado no sistema.',
-      });
-    }
-
-    const rawSellerToken = decryptSecret(order.event?.mpAccessToken);
-    const preferredToken = rawSellerToken || process.env.MERCADO_PAGO_ACCESS_TOKEN;
-    const fallbackToken = process.env.MERCADO_PAGO_ACCESS_TOKEN;
-
-    const candidateTokens = [preferredToken, fallbackToken].filter(
-      (t): t is string => Boolean(t && t.trim() !== '' && !t.includes('SEU_TOKEN'))
-    );
-    const uniqueTokens = Array.from(new Set(candidateTokens));
-
-    if (uniqueTokens.length === 0) {
+    if (!order.event?.mpAccessToken && !hasMercadoPagoToken()) {
       return NextResponse.json({
         success: false,
         status: order.status,
@@ -55,72 +38,37 @@ export async function POST(
       });
     }
 
-    let cleanPaymentId = order.mpPaymentId ? String(order.mpPaymentId).trim() : null;
-    let paymentInfo: {
-      id?: string | number;
-      status?: string;
-      status_detail?: string;
-    } | null = null;
-    let lastErrorMsg = '';
-
-    const { MercadoPagoConfig, Payment } = await import('mercadopago');
-
-    // 1. Se possuir mpPaymentId, busca diretamente pelo ID do pagamento
-    if (cleanPaymentId) {
-      for (const token of uniqueTokens) {
-        try {
-          const client = new MercadoPagoConfig({ accessToken: token });
-          const paymentApi = new Payment(client);
-          const res = await paymentApi.get({ id: cleanPaymentId });
-          if (res && res.status) {
-            paymentInfo = res;
-            break;
-          }
-        } catch (err: unknown) {
-          lastErrorMsg = err instanceof Error ? err.message : String(err);
-          console.warn(`[Admin Verify] Falha ao consultar status com token no Mercado Pago:`, err);
-        }
-      }
-    }
-
-    // 2. Se não possuir mpPaymentId ou a consulta direta falhou, tenta buscar pelo external_reference (= order.id)
-    if (!paymentInfo) {
-      for (const token of uniqueTokens) {
-        try {
-          const client = new MercadoPagoConfig({ accessToken: token });
-          const paymentApi = new Payment(client);
-          const searchRes = await paymentApi.search({
-            options: { criteria: 'desc', external_reference: order.id },
-          });
-          if (searchRes?.results && searchRes.results.length > 0) {
-            paymentInfo = searchRes.results[0];
-            cleanPaymentId = String(paymentInfo.id);
-            await prisma.order.update({
-              where: { id: order.id },
-              data: { mpPaymentId: cleanPaymentId },
-            });
-            break;
-          }
-        } catch (err: unknown) {
-          lastErrorMsg = err instanceof Error ? err.message : String(err);
-          console.warn(`[Admin Verify] Falha na busca por external_reference no Mercado Pago:`, err);
-        }
-      }
-    }
+    const paymentInfo = await fetchMpPaymentStatus({
+      paymentId: order.mpPaymentId,
+      externalReference: order.id,
+      eventId: order.eventId,
+      sellerAccessToken: order.event?.mpAccessToken || null,
+      sellerRefreshToken: order.event?.mpRefreshToken || null,
+      allowPlatformFallback: true,
+    });
 
     if (!paymentInfo || !paymentInfo.status) {
-      if (!cleanPaymentId) {
+      if (!order.mpPaymentId) {
         return NextResponse.json({
           success: false,
           status: order.status,
-          message: 'Este pedido não possui ID do Mercado Pago e não foi encontrado pelo ID do pedido no Mercado Pago.',
+          message:
+            'Este pedido não possui ID do Mercado Pago e não foi encontrado pelo ID do pedido no Mercado Pago.',
         });
       }
 
       return NextResponse.json({
         success: false,
         status: order.status,
-        message: `Não foi possível verificar no Mercado Pago. ${lastErrorMsg ? `Motivo: ${lastErrorMsg}` : ''}`,
+        message: 'Não foi possível localizar o pagamento atualizado no Mercado Pago.',
+      });
+    }
+
+    const resolvedPaymentId = paymentInfo.id ? String(paymentInfo.id) : order.mpPaymentId;
+    if (resolvedPaymentId && !order.mpPaymentId) {
+      await prisma.order.update({
+        where: { id: order.id },
+        data: { mpPaymentId: resolvedPaymentId },
       });
     }
 
@@ -128,12 +76,17 @@ export async function POST(
     const detail = paymentInfo.status_detail ? ` (${paymentInfo.status_detail})` : '';
 
     if (mpStatus === 'approved') {
-      await approveOrder(order.id);
+      if (order.status !== 'APPROVED') {
+        await approveOrder(order.id);
+      }
       return NextResponse.json({
         success: true,
         status: 'APPROVED',
         previousStatus: order.status,
-        message: `Pagamento APROVADO com sucesso no Mercado Pago! (ID MP: ${cleanPaymentId})`,
+        message:
+          order.status === 'APPROVED'
+            ? `Este pagamento permanece aprovado no Mercado Pago (ID MP: ${resolvedPaymentId || 'N/A'}).`
+            : `Pagamento APROVADO com sucesso no Mercado Pago! (ID MP: ${resolvedPaymentId || 'N/A'})`,
       });
     }
 
@@ -148,12 +101,32 @@ export async function POST(
       });
     }
 
+    if (mpStatus === 'refunded') {
+      await refundOrChargebackOrder(order.id, 'REFUNDED');
+      return NextResponse.json({
+        success: true,
+        status: 'REFUNDED',
+        previousStatus: order.status,
+        message: `Pagamento marcado como Estornado (REFUNDED) no Mercado Pago${detail}.`,
+      });
+    }
+
+    if (mpStatus === 'charged_back') {
+      await refundOrChargebackOrder(order.id, 'CHARGED_BACK');
+      return NextResponse.json({
+        success: true,
+        status: 'CHARGED_BACK',
+        previousStatus: order.status,
+        message: `Pagamento marcado como Contestado / Chargeback (CHARGED_BACK) no Mercado Pago${detail}.`,
+      });
+    }
+
     // Status pendente / em análise (pending, in_process, in_mediation, etc.)
     return NextResponse.json({
       success: true,
-      status: 'PENDING',
+      status: order.status === 'APPROVED' ? 'APPROVED' : 'PENDING',
       previousStatus: order.status,
-      message: `Pagamento continua pendente no Mercado Pago (Status: ${mpStatus}${detail}). Aguardando quitação pelo pagador.`,
+      message: `Status atual no Mercado Pago: ${mpStatus}${detail}.`,
     });
   } catch (error: unknown) {
     console.error('[Admin Verify] Erro interno:', error);

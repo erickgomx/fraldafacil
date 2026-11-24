@@ -20,16 +20,7 @@ import { Lock, Mail, ArrowRight, User, Link2, Calendar, Sparkles } from 'lucide-
 import BrandLogo from '@/components/BrandLogo';
 import BrandLoader from '@/components/BrandLoader';
 import ThemeToggle from '@/components/ThemeToggle';
-
-function sanitizeSlug(text: string): string {
-  return text
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9-]/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '');
-}
+import { sanitizeSlug, validateSlug } from '@/lib/validation';
 
 function generateSuggestedSlug({
   parentsName,
@@ -123,6 +114,12 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    const slugCheck = validateSlug(slug);
+    if (!slugCheck.valid) {
+      setError(slugCheck.error || 'Link inválido para o evento.');
+      return;
+    }
 
     if (password.length < 6) {
       setError('A senha deve conter no mínimo 6 caracteres.');
@@ -362,6 +359,11 @@ export default function RegisterPage() {
               <p className="text-[11px] text-charcoal-500 mt-1.5 font-mono">
                 Link: <span className="text-charcoal-900 font-medium">fralda.online/{slug || 'seu-link'}</span>
               </p>
+              {slug.length > 0 && !validateSlug(slug).valid && (
+                <p className="text-[11px] text-dusty-rose mt-1 font-sans">
+                  {validateSlug(slug).error}
+                </p>
+              )}
             </div>
 
             {/* Data Prevista */}

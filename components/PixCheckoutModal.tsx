@@ -11,8 +11,10 @@ import {
   QrCode,
   Loader2,
   AlertCircle,
-  UserPlus,
+  ChevronDown,
   ChevronUp,
+  Clock,
+  Ticket,
 } from 'lucide-react';
 import { GiftItemData } from './DiaperCatalog';
 import { CardPayment, initMercadoPago } from '@mercadopago/sdk-react';
@@ -35,25 +37,15 @@ interface PixCheckoutModalProps {
   initialGuess?: 'BOY' | 'GIRL' | null;
   feePayer?: 'GUEST' | 'PARENTS';
   mpConnected?: boolean;
+  mpPublicKey?: string | null;
+  isDemo?: boolean;
+  eventType?: string;
+  revealedGender?: string | null;
+  raffleEnabled?: boolean;
+  rafflePrize?: string | null;
+  raffleDrawnAt?: string | null;
   onPaymentSuccess?: () => void;
 }
-
-// Inicializa o Mercado Pago no lado do cliente apenas uma vez se a chave pública estiver disponível
-const MP_PUBLIC_KEY = process.env.NEXT_PUBLIC_MERCADO_PAGO_PUBLIC_KEY || '';
-let mpInitialized = false;
-
-function ensureMercadoPagoInitialized() {
-  if (typeof window !== 'undefined' && !mpInitialized && MP_PUBLIC_KEY && MP_PUBLIC_KEY.trim() !== '') {
-    try {
-      initMercadoPago(MP_PUBLIC_KEY, { locale: 'pt-BR' });
-      mpInitialized = true;
-    } catch (e) {
-      console.error('Erro ao inicializar SDK Mercado Pago:', e);
-    }
-  }
-}
-
-ensureMercadoPagoInitialized();
 
 export default function PixCheckoutModal({
   isOpen,
@@ -63,6 +55,14 @@ export default function PixCheckoutModal({
   selectedGift,
   initialGuess = null,
   feePayer = 'GUEST',
+  mpConnected = false,
+  mpPublicKey = null,
+  isDemo = false,
+  eventType = 'REVELACAO',
+  revealedGender = null,
+  raffleEnabled = false,
+  rafflePrize = null,
+  raffleDrawnAt = null,
   onPaymentSuccess,
 }: PixCheckoutModalProps) {
   // Meio de pagamento selecionado: PIX ou CARTÃO
@@ -72,7 +72,7 @@ export default function PixCheckoutModal({
   const [customAmount, setCustomAmount] = useState<string>(
     selectedGift ? String(selectedGift.price) : '50'
   );
-  const [isIdentified, setIsIdentified] = useState(false);
+  const [showContactFields, setShowContactFields] = useState(false);
   const [payerName, setPayerName] = useState('');
   const [payerEmail, setPayerEmail] = useState('');
   const [payerPhone, setPayerPhone] = useState('');
@@ -81,6 +81,9 @@ export default function PixCheckoutModal({
   const [pollGuess, setPollGuess] = useState<'BOY' | 'GIRL' | ''>(initialGuess || '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const showPollOption = eventType !== 'FRALDA' && !revealedGender;
+  const isRaffleActive = Boolean(raffleEnabled && !raffleDrawnAt);
 
   // Dados do Pix
   const [orderId, setOrderId] = useState<string>('');
@@ -93,8 +96,13 @@ export default function PixCheckoutModal({
   const [cardBrickReady, setCardBrickReady] = useState(false);
   const [cardProcessing, setCardProcessing] = useState(false);
   const [raffleTicketNumber, setRaffleTicketNumber] = useState<number | null>(null);
+  const [readyPublicKey, setReadyPublicKey] = useState<string>('');
 
-  const hasPublicKey = Boolean(MP_PUBLIC_KEY && MP_PUBLIC_KEY.trim() !== '');
+  const effectivePublicKey = useMemo(
+    () => (mpPublicKey && mpPublicKey.trim() !== '' ? mpPublicKey.trim() : ''),
+    [mpPublicKey]
+  );
+  const hasPublicKey = Boolean(effectivePublicKey);
 
   const handleSuccess = useCallback(() => {
     setStep('SUCCESS');
@@ -113,8 +121,18 @@ export default function PixCheckoutModal({
   }, [step, onPaymentSuccess, onClose]);
 
   useEffect(() => {
-    ensureMercadoPagoInitialized();
-  }, []);
+    if (typeof window !== 'undefined' && effectivePublicKey) {
+      try {
+        initMercadoPago(effectivePublicKey, { locale: 'pt-BR' });
+        setReadyPublicKey(effectivePublicKey);
+      } catch (e) {
+        console.error('Erro ao inicializar SDK Mercado Pago:', e);
+        setReadyPublicKey('');
+      }
+    } else {
+      setReadyPublicKey('');
+    }
+  }, [effectivePublicKey]);
 
   const wasOpenRef = useRef(false);
   useEffect(() => {
@@ -128,14 +146,14 @@ export default function PixCheckoutModal({
     } else {
       setCustomAmount('50');
     }
-    setPollGuess(initialGuess || '');
+    setPollGuess(showPollOption ? initialGuess || '' : '');
     setStep('FORM');
-    setIsIdentified(false);
+    setShowContactFields(false);
     setError('');
     setCardBrickReady(false);
     setCardProcessing(false);
     setRaffleTicketNumber(null);
-  }, [selectedGift, initialGuess, isOpen]);
+  }, [selectedGift, initialGuess, isOpen, showPollOption]);
 
   // Função unificada de checagem do status do pedido (suporta polling, reconexão de rede e checagem manual)
   const checkStatus = useCallback(
@@ -267,19 +285,47 @@ export default function PixCheckoutModal({
       return;
     }
 
-    const trimmedEmail = isIdentified ? payerEmail.trim() : '';
+    const trimmedName = payerName.trim();
+    const trimmedEmail = payerEmail.trim();
     if (trimmedEmail && !isValidEmail(trimmedEmail)) {
       setError('Por favor, informe um endereço de e-mail válido.');
       return;
     }
 
-    const digitsCpf = isIdentified ? cleanDigits(payerCpf) : '';
+    const digitsCpf = cleanDigits(payerCpf);
     if (digitsCpf && !isValidCpf(digitsCpf)) {
       setError('Por favor, informe um CPF válido.');
       return;
     }
 
+    const phoneDigits = cleanDigits(payerPhone);
+    if (isRaffleActive) {
+      if (trimmedName.length < 2 || trimmedName.toLowerCase() === 'convidado anônimo') {
+        setError('Para concorrer ao sorteio, informe seu nome ou apelido.');
+        return;
+      }
+      if ((!trimmedEmail || !isValidEmail(trimmedEmail)) && phoneDigits.length < 10) {
+        setError('Para concorrer ao sorteio, informe um e-mail ou WhatsApp válido para contato.');
+        return;
+      }
+    }
+
+    if (isDemo) {
+      handleSuccess();
+      return;
+    }
+
     if (paymentMethod === 'CARD') {
+      // Garante inicialização da chave pública do vendedor antes de montar o Brick
+      if (effectivePublicKey) {
+        try {
+          initMercadoPago(effectivePublicKey, { locale: 'pt-BR' });
+          setReadyPublicKey(effectivePublicKey);
+        } catch (err) {
+          console.error('Erro ao preparar SDK Mercado Pago:', err);
+        }
+      }
+      setCardBrickReady(false);
       // Avança para o Card Payment Brick do Mercado Pago
       setStep('CARD_BRICK');
       return;
@@ -295,12 +341,12 @@ export default function PixCheckoutModal({
           eventId,
           giftItemId: selectedGift ? selectedGift.id : null,
           amount: finalNumericAmount,
-          payerName: isIdentified && payerName.trim() ? payerName.trim() : 'Convidado Anônimo',
+          payerName: trimmedName || 'Convidado Anônimo',
           payerEmail: trimmedEmail,
-          payerPhone: isIdentified && payerPhone.trim() ? payerPhone.trim() : null,
+          payerPhone: payerPhone.trim() || null,
           payerCpf: digitsCpf || null,
-          payerMessage: isIdentified && payerMessage.trim() ? payerMessage.trim() : null,
-          pollGuess: pollGuess || null,
+          payerMessage: payerMessage.trim() || null,
+          pollGuess: showPollOption ? pollGuess || null : null,
         }),
       });
 
@@ -338,12 +384,12 @@ export default function PixCheckoutModal({
           eventId,
           giftItemId: selectedGift ? selectedGift.id : null,
           amount: finalNumericAmount,
-          payerName: isIdentified && payerName.trim() ? payerName.trim() : 'Convidado Anônimo',
-          payerEmail: isIdentified && payerEmail.trim() ? payerEmail.trim() : '',
-          payerPhone: isIdentified && payerPhone.trim() ? payerPhone.trim() : null,
-          payerCpf: isIdentified ? cleanDigits(payerCpf) : '',
-          payerMessage: isIdentified && payerMessage.trim() ? payerMessage.trim() : null,
-          pollGuess: pollGuess || null,
+          payerName: payerName.trim() || 'Convidado Anônimo',
+          payerEmail: payerEmail.trim(),
+          payerPhone: payerPhone.trim() || null,
+          payerCpf: cleanDigits(payerCpf),
+          payerMessage: payerMessage.trim() || null,
+          pollGuess: showPollOption ? pollGuess || null : null,
           card: formData,
         }),
       });
@@ -395,8 +441,8 @@ export default function PixCheckoutModal({
 
   const cardInitialization = useMemo(() => {
     const cleanCpf = cleanDigits(payerCpf);
-    const hasEmail = isIdentified && isValidEmail(payerEmail);
-    const hasCpf = isIdentified && cleanCpf.length === 11;
+    const hasEmail = isValidEmail(payerEmail);
+    const hasCpf = cleanCpf.length === 11;
 
     return {
       amount: feeCalculation.chargeAmount,
@@ -412,7 +458,7 @@ export default function PixCheckoutModal({
           : {}),
       },
     };
-  }, [feeCalculation.chargeAmount, isIdentified, payerEmail, payerCpf]);
+  }, [feeCalculation.chargeAmount, payerEmail, payerCpf]);
 
   const cardCustomization = useMemo(
     () => ({
@@ -428,14 +474,16 @@ export default function PixCheckoutModal({
   );
 
   useEffect(() => {
-    if (step !== 'CARD_BRICK' || !hasPublicKey || cardBrickReady) return;
+    if (step !== 'CARD_BRICK' || !hasPublicKey || readyPublicKey !== effectivePublicKey || cardBrickReady) {
+      return;
+    }
     const timeout = setTimeout(() => {
       setError(
         'O formulário de cartão demorou para responder. Verifique se há bloqueador de anúncios ativo ou utilize o Pix.'
       );
     }, 15000);
     return () => clearTimeout(timeout);
-  }, [step, hasPublicKey, cardBrickReady]);
+  }, [step, hasPublicKey, readyPublicKey, effectivePublicKey, cardBrickReady]);
 
   const handleManualCheck = () => {
     checkStatus(true);
@@ -462,6 +510,30 @@ export default function PixCheckoutModal({
           <X className="w-4 h-4" />
         </button>
 
+        {!isDemo && !mpConnected ? (
+          <div className="p-8 text-center">
+            <div className="w-12 h-12 rounded-full bg-amber-50 text-amber-700 mx-auto flex items-center justify-center mb-4 border border-amber-200">
+              <Clock className="w-6 h-6" />
+            </div>
+            <span className="text-[11px] font-mono uppercase tracking-widest text-amber-700 block mb-1">
+              Recebimento em Configuração
+            </span>
+            <h3 className="font-serif text-2xl text-charcoal-900 font-normal mb-2">
+              Pagamentos ainda não liberados
+            </h3>
+            <p className="text-xs sm:text-sm text-charcoal-600 max-w-sm mx-auto mb-6 leading-relaxed font-sans">
+              Os pais (<strong className="font-medium text-charcoal-800">{parentsNames}</strong>) ainda estão finalizando a conexão com o Mercado Pago para receber os presentes diretamente na conta deles.
+            </p>
+            <button
+              type="button"
+              onClick={handleClose}
+              className="py-2.5 px-6 rounded-lg font-medium text-xs bg-charcoal-900 text-white hover:bg-charcoal-800 transition shadow-subtle"
+            >
+              Voltar à página do Chá
+            </button>
+          </div>
+        ) : (
+          <>
         {/* ETAPA 1: FORMULÁRIO COM SELEÇÃO PIX / CARTÃO */}
         {step === 'FORM' && (
           <div className="p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
@@ -580,7 +652,9 @@ export default function PixCheckoutModal({
 
                 {feeCalculation.feePayer === 'GUEST' ? (
                   <div className="flex justify-between text-charcoal-500 text-[11px]">
-                    <span>Taxa de serviço & processamento ({paymentMethod === 'PIX' ? '5,98%' : '8,98%'}):</span>
+                    <span>
+                      Taxa de serviço e processamento ({feeCalculation.effectiveFeeRate.toFixed(2).replace('.', ',')}%):
+                    </span>
                     <span className="font-mono">
                       + R$ {feeCalculation.totalFee.toFixed(2).replace('.', ',')}
                     </span>
@@ -599,106 +673,45 @@ export default function PixCheckoutModal({
                 </div>
               </div>
 
-              {/* Botão / Seção Opcional: Me identificar */}
-              {!isIdentified ? (
-                <button
-                  type="button"
-                  onClick={() => setIsIdentified(true)}
-                  className="w-full py-2.5 px-3.5 rounded-xl border border-dashed border-warm-border bg-cream-50/40 hover:bg-cream-100/70 text-charcoal-700 transition flex items-center justify-between gap-2 text-left"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-lg bg-cream-100 text-charcoal-700 flex items-center justify-center shrink-0">
-                      <UserPlus className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <span className="block text-xs font-medium text-charcoal-900">
-                        Me identificar
+              {/* Dados do Convidado, Palpite e Recado */}
+              <div className="p-4 rounded-xl border border-warm-border bg-cream-50/40 space-y-4">
+                {isRaffleActive && (
+                  <div className="p-3 rounded-xl bg-cream-100/80 border border-terracotta/30 flex items-start gap-2.5">
+                    <Ticket className="w-4 h-4 text-terracotta shrink-0 mt-0.5" />
+                    <div className="text-left">
+                      <span className="block text-[11px] font-semibold text-charcoal-900">
+                        Este presente gera 1 Número da Sorte automático!
                       </span>
-                      <span className="block text-[10px] text-charcoal-500">
-                        Opcional — informe seu nome, recado ou palpite
+                      <span className="block text-[11px] text-charcoal-600 font-sans leading-relaxed">
+                        {rafflePrize
+                          ? `Prêmio: ${rafflePrize}. Informe seu nome e um contato (e-mail ou WhatsApp) para validarmos sua participação.`
+                          : 'Informe seu nome e um contato (e-mail ou WhatsApp) para validarmos sua participação.'}
                       </span>
                     </div>
                   </div>
-                  <span className="text-[11px] font-mono uppercase text-charcoal-500 shrink-0">
-                    Opcional
-                  </span>
-                </button>
-              ) : (
-                <div className="p-4 rounded-xl border border-warm-border bg-cream-50/40 space-y-4">
-                  <div className="flex items-center justify-between border-b border-warm-border/60 pb-2">
-                    <span className="text-[11px] font-mono uppercase text-charcoal-600 font-medium">
-                      Identificação (Opcional)
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setIsIdentified(false)}
-                      className="text-[11px] text-charcoal-500 hover:text-charcoal-800 flex items-center gap-1"
-                    >
-                      <ChevronUp className="w-3.5 h-3.5" />
-                      <span>Ocultar</span>
-                    </button>
-                  </div>
+                )}
 
-                  {/* Nome */}
-                  <div>
-                    <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
-                      Seu Nome
-                    </label>
-                    <input
-                      type="text"
-                      value={payerName}
-                      onChange={(e) => setPayerName(e.target.value)}
-                      placeholder="Ex: Tio Ricardo e Família"
-                      className="w-full px-3.5 py-2.5 rounded-lg border border-warm-border bg-white text-charcoal-900 text-xs focus:outline-none focus:ring-1 focus:ring-charcoal-900"
-                    />
-                  </div>
+                {/* Nome (sempre visível) */}
+                <div>
+                  <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
+                    {isRaffleActive ? 'Seu Nome ou Apelido *' : 'Seu Nome (Opcional)'}
+                  </label>
+                  <input
+                    type="text"
+                    required={isRaffleActive}
+                    value={payerName}
+                    onChange={(e) => setPayerName(e.target.value)}
+                    placeholder={
+                      isRaffleActive
+                        ? 'Ex: Tio Ricardo e Família'
+                        : 'Ex: Tio Ricardo (ou deixe vazio para anônimo)'
+                    }
+                    className="w-full px-3.5 py-2.5 rounded-lg border border-warm-border bg-white text-charcoal-900 text-xs focus:outline-none focus:ring-1 focus:ring-charcoal-900"
+                  />
+                </div>
 
-                  {/* E-mail & CPF */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
-                        Seu E-mail
-                      </label>
-                      <input
-                        type="email"
-                        value={payerEmail}
-                        onChange={(e) => setPayerEmail(e.target.value)}
-                        placeholder="seuemail@exemplo.com"
-                        className="w-full px-3.5 py-2.5 rounded-lg border border-warm-border bg-white text-charcoal-900 text-xs focus:outline-none focus:ring-1 focus:ring-charcoal-900"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
-                        Seu CPF
-                      </label>
-                      <input
-                        type="text"
-                        maxLength={14}
-                        value={payerCpf}
-                        onChange={(e) => setPayerCpf(formatCpf(e.target.value))}
-                        placeholder="000.000.000-00"
-                        className="w-full px-3.5 py-2.5 rounded-lg border border-warm-border bg-white text-charcoal-900 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-charcoal-900"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Telefone / WhatsApp */}
-                  <div>
-                    <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
-                      WhatsApp / Telefone
-                    </label>
-                    <input
-                      type="tel"
-                      maxLength={15}
-                      value={payerPhone}
-                      onChange={(e) => setPayerPhone(formatPhone(e.target.value))}
-                      placeholder="(11) 99999-9999"
-                      className="w-full px-3.5 py-2.5 rounded-lg border border-warm-border bg-white text-charcoal-900 text-xs focus:outline-none focus:ring-1 focus:ring-charcoal-900"
-                    />
-                  </div>
-
-                  {/* Palpite no Bolão */}
+                {/* Palpite no Bolão (visível apenas em Chá Revelação / Ambos antes da revelação) */}
+                {showPollOption && (
                   <div>
                     <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1.5">
                       Registrar palpite no bolão com este presente:
@@ -739,22 +752,139 @@ export default function PixCheckoutModal({
                       </button>
                     </div>
                   </div>
+                )}
 
-                  {/* Mensagem no Mural */}
-                  <div>
-                    <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
-                      Mensagem para os Pais (Aparece no Mural)
-                    </label>
-                    <textarea
-                      rows={3}
-                      value={payerMessage}
-                      onChange={(e) => setPayerMessage(e.target.value)}
-                      placeholder="Escreva aqui uma mensagem carinhosa para os pais lerem..."
-                      className="w-full px-3.5 py-2.5 rounded-lg border border-warm-border bg-white text-charcoal-900 text-xs focus:outline-none focus:ring-1 focus:ring-charcoal-900 resize-none"
-                    />
-                  </div>
+                {/* Mensagem no Mural (sempre visível) */}
+                <div>
+                  <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
+                    Mensagem para os Pais (Aparece no Mural)
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={payerMessage}
+                    onChange={(e) => setPayerMessage(e.target.value)}
+                    placeholder="Escreva aqui uma mensagem carinhosa para os pais lerem..."
+                    className="w-full px-3.5 py-2.5 rounded-lg border border-warm-border bg-white text-charcoal-900 text-xs focus:outline-none focus:ring-1 focus:ring-charcoal-900 resize-none"
+                  />
                 </div>
-              )}
+
+                {/* Contato (sempre aberto quando sorteio ativo; recolhível caso contrário) */}
+                {isRaffleActive ? (
+                  <div className="space-y-3 pt-2 border-t border-warm-border/60">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
+                          E-mail
+                        </label>
+                        <input
+                          type="email"
+                          value={payerEmail}
+                          onChange={(e) => setPayerEmail(e.target.value)}
+                          placeholder="para receber comprovante e Número da Sorte"
+                          className="w-full px-3.5 py-2.5 rounded-lg border border-warm-border bg-white text-charcoal-900 text-xs focus:outline-none focus:ring-1 focus:ring-charcoal-900"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
+                          WhatsApp / Telefone
+                        </label>
+                        <input
+                          type="tel"
+                          maxLength={15}
+                          value={payerPhone}
+                          onChange={(e) => setPayerPhone(formatPhone(e.target.value))}
+                          placeholder="(11) 99999-9999"
+                          className="w-full px-3.5 py-2.5 rounded-lg border border-warm-border bg-white text-charcoal-900 text-xs focus:outline-none focus:ring-1 focus:ring-charcoal-900"
+                        />
+                      </div>
+                    </div>
+
+                    <p className="text-[11px] text-charcoal-500 font-sans">
+                      * Informe ao menos e-mail ou WhatsApp para contato do sorteio.
+                    </p>
+
+                    <div>
+                      <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
+                        CPF (Opcional)
+                      </label>
+                      <input
+                        type="text"
+                        maxLength={14}
+                        value={payerCpf}
+                        onChange={(e) => setPayerCpf(formatCpf(e.target.value))}
+                        placeholder="000.000.000-00"
+                        className="w-full px-3.5 py-2.5 rounded-lg border border-warm-border bg-white text-charcoal-900 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-charcoal-900"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="pt-2 border-t border-warm-border/60">
+                    <button
+                      type="button"
+                      onClick={() => setShowContactFields((prev) => !prev)}
+                      className="w-full flex items-center justify-between text-left text-[11px] text-charcoal-600 hover:text-charcoal-900 py-1 transition"
+                    >
+                      <span className="font-sans">
+                        Informar e-mail, WhatsApp ou CPF{' '}
+                        <span className="text-charcoal-400">(opcional — para receber comprovante)</span>
+                      </span>
+                      {showContactFields ? (
+                        <ChevronUp className="w-3.5 h-3.5 shrink-0" />
+                      ) : (
+                        <ChevronDown className="w-3.5 h-3.5 shrink-0" />
+                      )}
+                    </button>
+
+                    {showContactFields && (
+                      <div className="mt-3 space-y-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
+                              Seu E-mail
+                            </label>
+                            <input
+                              type="email"
+                              value={payerEmail}
+                              onChange={(e) => setPayerEmail(e.target.value)}
+                              placeholder="seuemail@exemplo.com"
+                              className="w-full px-3.5 py-2.5 rounded-lg border border-warm-border bg-white text-charcoal-900 text-xs focus:outline-none focus:ring-1 focus:ring-charcoal-900"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
+                              Seu CPF
+                            </label>
+                            <input
+                              type="text"
+                              maxLength={14}
+                              value={payerCpf}
+                              onChange={(e) => setPayerCpf(formatCpf(e.target.value))}
+                              placeholder="000.000.000-00"
+                              className="w-full px-3.5 py-2.5 rounded-lg border border-warm-border bg-white text-charcoal-900 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-charcoal-900"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
+                            WhatsApp / Telefone
+                          </label>
+                          <input
+                            type="tel"
+                            maxLength={15}
+                            value={payerPhone}
+                            onChange={(e) => setPayerPhone(formatPhone(e.target.value))}
+                            placeholder="(11) 99999-9999"
+                            className="w-full px-3.5 py-2.5 rounded-lg border border-warm-border bg-white text-charcoal-900 text-xs focus:outline-none focus:ring-1 focus:ring-charcoal-900"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
 
               <button
                 type="submit"
@@ -884,7 +1014,7 @@ export default function PixCheckoutModal({
               </div>
             )}
 
-            {hasPublicKey ? (
+            {hasPublicKey && readyPublicKey === effectivePublicKey ? (
               <div className="relative min-h-[300px]">
                 {cardProcessing && (
                   <div className="absolute inset-0 bg-white/80 backdrop-blur-[1px] flex flex-col items-center justify-center z-10 text-xs text-charcoal-700">
@@ -902,6 +1032,7 @@ export default function PixCheckoutModal({
 
                 <div className={cardBrickReady ? 'opacity-100' : 'opacity-0 pointer-events-none'}>
                   <CardPayment
+                    key={effectivePublicKey}
                     initialization={cardInitialization}
                     customization={cardCustomization}
                     onSubmit={stableCardOnSubmit}
@@ -958,12 +1089,18 @@ export default function PixCheckoutModal({
               <Check className="w-6 h-6 stroke-[2.5]" />
             </div>
 
+            {isDemo && (
+              <span className="inline-block mb-3 text-[10px] font-mono uppercase tracking-wider px-2.5 py-1 rounded-full bg-cream-100 border border-warm-border text-charcoal-600">
+                Simulação Interativa (nenhum valor cobrado)
+              </span>
+            )}
+
             <h3 className="font-serif text-2xl text-charcoal-900 font-normal mb-2">
               Presente confirmado!
             </h3>
 
             <p className="text-xs sm:text-sm text-charcoal-600 max-w-sm mx-auto mb-6 leading-relaxed font-sans">
-              {isIdentified && payerMessage.trim()
+              {payerMessage.trim()
                 ? 'Muito obrigado pelo carinho com a família! Sua mensagem já está disponível no mural de recados.'
                 : 'Muito obrigado pelo carinho e pelo presente para a família!'}
             </p>
@@ -980,7 +1117,9 @@ export default function PixCheckoutModal({
                   Você já está concorrendo ao sorteio do chá!
                 </p>
                 <div className="mt-3 pt-2.5 border-t border-warm-border/70 text-[11px] font-medium text-terracotta font-sans">
-                  Guarde este número ou tire um print desta tela para acompanhar o sorteio.
+                  {isValidEmail(payerEmail)
+                    ? `Enviamos uma cópia para ${payerEmail.trim()}. Guarde também este número ou tire um print desta tela.`
+                    : 'Guarde este número ou tire um print desta tela para acompanhar o sorteio.'}
                 </div>
               </div>
             )}
@@ -992,6 +1131,8 @@ export default function PixCheckoutModal({
               Voltar à página do Chá
             </button>
           </div>
+        )}
+          </>
         )}
       </div>
     </div>

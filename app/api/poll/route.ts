@@ -24,14 +24,28 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Nome muito curto.' }, { status: 400 });
     }
 
-    // Valida se o evento existe antes de registrar voto
+    // Valida se o evento existe e permite palpites antes de registrar voto
     const event = await prisma.event.findUnique({
       where: { id: eventId },
-      select: { id: true },
+      select: { id: true, eventType: true, revealedGender: true },
     });
 
     if (!event) {
       return NextResponse.json({ error: 'Evento não encontrado.' }, { status: 404 });
+    }
+
+    if (event.eventType === 'FRALDA') {
+      return NextResponse.json(
+        { error: 'Este evento não possui bolão interativo ativo.' },
+        { status: 400 }
+      );
+    }
+
+    if (event.revealedGender) {
+      return NextResponse.json(
+        { error: 'O sexo do bebê já foi revelado! As votações do bolão foram encerradas.' },
+        { status: 409 }
+      );
     }
 
     const vote = await prisma.pollVote.create({

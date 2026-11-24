@@ -2,18 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { hashPassword, signJwt, AUTH_COOKIE_NAME, sanitizeEventPayload } from '@/lib/auth';
 import { DEFAULT_GIFT_ITEMS } from '@/lib/default-gifts';
+import { sendWelcomeEventEmail } from '@/lib/email';
+import {
+  isValidEmail,
+  isValidEventType,
+  parseEventDateInput,
+  sanitizeSlug,
+  validateSlug,
+} from '@/lib/validation';
 
 export const dynamic = 'force-dynamic';
-
-function sanitizeSlug(text: string): string {
-  return text
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9-]/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '');
-}
 
 export async function POST(req: NextRequest) {
   try {
@@ -54,11 +52,25 @@ export async function POST(req: NextRequest) {
     }
 
     const normalizedEmail = email.trim().toLowerCase();
-    const slug = sanitizeSlug(rawSlug);
-
-    if (!slug) {
+    if (!isValidEmail(normalizedEmail)) {
       return NextResponse.json(
-        { error: 'Por favor, informe um link válido para o evento.' },
+        { error: 'Por favor, informe um endereço de e-mail válido.' },
+        { status: 400 }
+      );
+    }
+
+    if (!isValidEventType(eventType)) {
+      return NextResponse.json(
+        { error: 'Modalidade de evento inválida.' },
+        { status: 400 }
+      );
+    }
+
+    const slug = sanitizeSlug(rawSlug);
+    const slugCheck = validateSlug(slug);
+    if (!slugCheck.valid) {
+      return NextResponse.json(
+        { error: slugCheck.error || 'Por favor, informe um link válido para o evento.' },
         { status: 400 }
       );
     }
@@ -88,7 +100,19 @@ export async function POST(req: NextRequest) {
     }
 
     const hashedPassword = await hashPassword(password);
-    const parsedEventDate = eventDate ? new Date(eventDate) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    let parsedEventDate: Date;
+    if (eventDate !== undefined && eventDate !== null && String(eventDate).trim() !== '') {
+      const parsed = parseEventDateInput(eventDate);
+      if (!parsed) {
+        return NextResponse.json({ error: 'Data do evento inválida.' }, { status: 400 });
+      }
+      parsedEventDate = parsed;
+    } else {
+      const defaultDateStr = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .slice(0, 10);
+      parsedEventDate = parseEventDateInput(defaultDateStr)!;
+    }
 
     let resolvedBabyName: string | null = null;
     let resolvedBoyName: string | null = null;
@@ -149,6 +173,15 @@ export async function POST(req: NextRequest) {
       email: newUser.email,
       role: newUser.role,
       tokenVersion: newUser.tokenVersion,
+    });
+
+    await sendWelcomeEventEmail({
+      to: newUser.email,
+      parentsName: newUser.name,
+      slug,
+      babyName: resolvedBabyName,
+    }).catch((err) => {
+      console.warn('[Welcome Email] Falha não bloqueante no envio de boas-vindas:', err);
     });
 
     const response = NextResponse.json(

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession, sanitizeEventPayload } from '@/lib/auth';
 import prisma from '@/lib/prisma';
+import { isValidEventType, parseEventDateInput } from '@/lib/validation';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,6 +15,7 @@ export async function PUT(req: NextRequest) {
     const body = await req.json();
     const {
       id,
+      eventType,
       parentsNames,
       babyName,
       boyName,
@@ -32,6 +34,14 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: 'ID do evento é obrigatório.' }, { status: 400 });
     }
 
+    let validEventType: string | undefined;
+    if (eventType !== undefined) {
+      if (!isValidEventType(eventType)) {
+        return NextResponse.json({ error: 'Modalidade do evento inválida.' }, { status: 400 });
+      }
+      validEventType = eventType;
+    }
+
     // Garante que o evento pertence ao usuário logado
     const existing = await prisma.event.findFirst({
       where: { id, userId: session.userId },
@@ -43,9 +53,9 @@ export async function PUT(req: NextRequest) {
 
     // Validação estrita de entradas (OWASP ASVS v4.0.3)
     let parsedEventDate: Date | undefined;
-    if (eventDate !== undefined) {
-      const d = new Date(eventDate);
-      if (isNaN(d.getTime())) {
+    if (eventDate !== undefined && eventDate !== '') {
+      const d = parseEventDateInput(eventDate);
+      if (!d) {
         return NextResponse.json({ error: 'Data do evento inválida.' }, { status: 400 });
       }
       parsedEventDate = d;
@@ -77,6 +87,7 @@ export async function PUT(req: NextRequest) {
     const updated = await prisma.event.update({
       where: { id },
       data: {
+        ...(validEventType !== undefined && { eventType: validEventType }),
         ...(parentsNames !== undefined && { parentsNames: String(parentsNames).trim().slice(0, 150) }),
         ...(babyName !== undefined && { babyName: babyName ? String(babyName).trim().slice(0, 100) : null }),
         ...(boyName !== undefined && { boyName: boyName ? String(boyName).trim().slice(0, 100) : null }),

@@ -31,6 +31,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!event) {
     return {
       title: 'Chá de Bebê - Fralda Online',
+      robots: { index: false, follow: false },
     };
   }
 
@@ -70,6 +71,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title,
     description,
+    robots: { index: false, follow: false },
     openGraph: {
       title,
       description,
@@ -135,6 +137,7 @@ export default async function PublicEventPage({ params }: Props) {
         revealedGender: event.revealedGender,
         feePayer: (event.feePayer as 'GUEST' | 'PARENTS') || 'GUEST',
         mpConnected: event.mpConnected,
+        mpPublicKey: event.mpPublicKey,
         raffleEnabled: event.raffleEnabled,
         rafflePrize: event.rafflePrize,
         raffleWinnerName: event.raffleWinnerName,

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { approveOrder, rejectOrder } from '@/lib/orders';
-import { decryptSecret } from '@/lib/crypto';
+import { approveOrder, refundOrChargebackOrder, rejectOrder } from '@/lib/orders';
+import { fetchMpPaymentStatus } from '@/lib/mercadopago';
 
 export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
@@ -60,85 +60,36 @@ export async function GET(
       if (shouldCheckMp) {
         lastMpCheckMap.set(order.id, now);
 
-        const rawSellerToken = decryptSecret(order.event?.mpAccessToken);
-        const preferredToken = rawSellerToken || process.env.MERCADO_PAGO_ACCESS_TOKEN;
-        const fallbackToken = process.env.MERCADO_PAGO_ACCESS_TOKEN;
-
-        // Lista de tokens candidatos com fallback automático
-        const candidateTokens = [preferredToken, fallbackToken].filter(
-          (t): t is string => Boolean(t && t.trim() !== '' && !t.includes('SEU_TOKEN'))
-        );
-        const uniqueTokens = Array.from(new Set(candidateTokens));
-
-        let cleanPaymentId = order.mpPaymentId ? String(order.mpPaymentId).trim() : null;
-        let paymentInfo: { id?: string | number; status?: string } | null = null;
-
-        // 1. Consulta direta pelo mpPaymentId com cache: 'no-store' para evitar Data Cache do Next.js
-        if (cleanPaymentId) {
-          for (const token of uniqueTokens) {
-            try {
-              const mpRes = await fetch(
-                `https://api.mercadopago.com/v1/payments/${encodeURIComponent(cleanPaymentId)}`,
-                {
-                  method: 'GET',
-                  headers: { Authorization: `Bearer ${token}` },
-                  cache: 'no-store',
-                }
-              );
-              if (mpRes.ok) {
-                const data = (await mpRes.json()) as { id?: string | number; status?: string };
-                if (data && data.status) {
-                  paymentInfo = data;
-                  break;
-                }
-              }
-            } catch (err: unknown) {
-              console.warn('[Order Check] Falha ao consultar pagamento por ID no Mercado Pago:', err);
-            }
-          }
-        }
-
-        // 2. Fallback: busca por external_reference (= order.id) se não houver mpPaymentId ou falhar a consulta direta
-        if (!paymentInfo) {
-          for (const token of uniqueTokens) {
-            try {
-              const searchRes = await fetch(
-                `https://api.mercadopago.com/v1/payments/search?external_reference=${encodeURIComponent(order.id)}&sort=date_created&criteria=desc`,
-                {
-                  method: 'GET',
-                  headers: { Authorization: `Bearer ${token}` },
-                  cache: 'no-store',
-                }
-              );
-              if (searchRes.ok) {
-                const searchData = (await searchRes.json()) as {
-                  results?: Array<{ id?: string | number; status?: string }>;
-                };
-                if (searchData?.results && searchData.results.length > 0) {
-                  paymentInfo = searchData.results[0];
-                  if (paymentInfo.id && !cleanPaymentId) {
-                    cleanPaymentId = String(paymentInfo.id);
-                    await prisma.order.update({
-                      where: { id: order.id },
-                      data: { mpPaymentId: cleanPaymentId },
-                    });
-                  }
-                  break;
-                }
-              }
-            } catch (err: unknown) {
-              console.warn('[Order Check] Falha ao buscar pagamento por external_reference:', err);
-            }
-          }
-        }
+        const paymentInfo = await fetchMpPaymentStatus({
+          paymentId: order.mpPaymentId,
+          externalReference: order.id,
+          eventId: order.eventId,
+          sellerAccessToken: order.event?.mpAccessToken || null,
+          sellerRefreshToken: order.event?.mpRefreshToken || null,
+          allowPlatformFallback: true,
+        });
 
         if (paymentInfo) {
-          if (paymentInfo.status === 'approved') {
+          if (paymentInfo.id && !order.mpPaymentId) {
+            await prisma.order.update({
+              where: { id: order.id },
+              data: { mpPaymentId: String(paymentInfo.id) },
+            });
+          }
+
+          const mpStatus = String(paymentInfo.status || '').toLowerCase();
+          if (mpStatus === 'approved') {
             await approveOrder(order.id);
             currentStatus = 'APPROVED';
-          } else if (paymentInfo.status === 'rejected' || paymentInfo.status === 'cancelled') {
+          } else if (mpStatus === 'rejected' || mpStatus === 'cancelled') {
             await rejectOrder(order.id);
             currentStatus = 'REJECTED';
+          } else if (mpStatus === 'refunded') {
+            await refundOrChargebackOrder(order.id, 'REFUNDED');
+            currentStatus = 'REFUNDED';
+          } else if (mpStatus === 'charged_back') {
+            await refundOrChargebackOrder(order.id, 'CHARGED_BACK');
+            currentStatus = 'CHARGED_BACK';
           }
         }
       }

@@ -11,6 +11,7 @@ interface GenderPollProps {
   eventId: string;
   boyName?: string | null;
   girlName?: string | null;
+  revealedGender?: string | null;
   initialBoyVotes?: number;
   initialGirlVotes?: number;
   onOpenPixModalWithGuess?: (guess: 'BOY' | 'GIRL') => void;
@@ -20,6 +21,7 @@ export default function GenderPoll({
   eventId,
   boyName,
   girlName,
+  revealedGender = null,
   initialBoyVotes = 0,
   initialGirlVotes = 0,
   onOpenPixModalWithGuess,
@@ -35,6 +37,7 @@ export default function GenderPoll({
   const total = boyVotes + girlVotes;
   const boyPercent = total > 0 ? Math.round((boyVotes / total) * 100) : 50;
   const girlPercent = total > 0 ? 100 - boyPercent : 50;
+  const isRevealed = Boolean(revealedGender);
 
   const handleOpenVoteModal = (guess: 'BOY' | 'GIRL') => {
     setSelectedGuess(guess);
@@ -97,10 +100,12 @@ export default function GenderPoll({
             Bolão Interativo
           </span>
           <h2 className="font-serif text-2xl sm:text-3xl text-charcoal-900 font-normal">
-            Qual é o seu palpite?
+            {isRevealed ? 'Placar Final do Bolão' : 'Qual é o seu palpite?'}
           </h2>
           <p className="text-xs text-charcoal-500 mt-1 font-sans">
-            Vote para registrar sua torcida no placar oficial do evento
+            {isRevealed
+              ? 'Votação encerrada — O resultado oficial já foi revelado!'
+              : 'Vote para registrar sua torcida no placar oficial do evento'}
           </p>
         </div>
 
@@ -137,24 +142,30 @@ export default function GenderPoll({
           </div>
         </div>
 
-        {/* Botões de Aposta Sóbrios */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <button
-            onClick={() => handleOpenVoteModal('BOY')}
-            className="py-3 px-4 rounded-xl font-medium text-xs bg-dusty-blue-light border border-dusty-blue/30 text-dusty-blue hover:bg-dusty-blue/20 hover:-translate-y-0.5 hover:shadow-card active:scale-[0.98] transition-all duration-300 flex flex-col items-center justify-center gap-0.5"
-          >
-            <span className="font-semibold">Torço por Menino 💙</span>
-            {boyName && <span className="text-[11px] font-serif italic text-dusty-blue/90">({boyName})</span>}
-          </button>
+        {/* Botões de Aposta Sóbrios (ocultos após a revelação) */}
+        {isRevealed ? (
+          <div className="p-3.5 rounded-xl bg-cream-50 border border-warm-border text-center text-xs text-charcoal-600 font-sans">
+            Votação encerrada — O resultado oficial já foi revelado!
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <button
+              onClick={() => handleOpenVoteModal('BOY')}
+              className="py-3 px-4 rounded-xl font-medium text-xs bg-dusty-blue-light border border-dusty-blue/30 text-dusty-blue hover:bg-dusty-blue/20 hover:-translate-y-0.5 hover:shadow-card active:scale-[0.98] transition-all duration-300 flex flex-col items-center justify-center gap-0.5"
+            >
+              <span className="font-semibold">Torço por Menino 💙</span>
+              {boyName && <span className="text-[11px] font-serif italic text-dusty-blue/90">({boyName})</span>}
+            </button>
 
-          <button
-            onClick={() => handleOpenVoteModal('GIRL')}
-            className="py-3 px-4 rounded-xl font-medium text-xs bg-dusty-rose-light border border-dusty-rose/30 text-dusty-rose hover:bg-dusty-rose/20 hover:-translate-y-0.5 hover:shadow-card active:scale-[0.98] transition-all duration-300 flex flex-col items-center justify-center gap-0.5"
-          >
-            <span className="font-semibold">Torço por Menina 🌸</span>
-            {girlName && <span className="text-[11px] font-serif italic text-dusty-rose/90">({girlName})</span>}
-          </button>
-        </div>
+            <button
+              onClick={() => handleOpenVoteModal('GIRL')}
+              className="py-3 px-4 rounded-xl font-medium text-xs bg-dusty-rose-light border border-dusty-rose/30 text-dusty-rose hover:bg-dusty-rose/20 hover:-translate-y-0.5 hover:shadow-card active:scale-[0.98] transition-all duration-300 flex flex-col items-center justify-center gap-0.5"
+            >
+              <span className="font-semibold">Torço por Menina 🌸</span>
+              {girlName && <span className="text-[11px] font-serif italic text-dusty-rose/90">({girlName})</span>}
+            </button>
+          </div>
+        )}
 
         <AnimatePresence>
         {hasVoted && (

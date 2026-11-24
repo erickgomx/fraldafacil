@@ -69,6 +69,9 @@ model Event {
   guestMessages   GuestMessage[]
   pollVotes       PollVote[]
   createdAt       DateTime       @default(now())
+
+  @@index([userId])
+  @@index([mpUserId])
 }
 
 model GiftItem {
@@ -83,6 +86,8 @@ model GiftItem {
   active      Boolean  @default(true)
   orders      Order[]
   createdAt   DateTime @default(now())
+
+  @@index([eventId])
 }
 
 model PollVote {
@@ -92,6 +97,8 @@ model PollVote {
   voterName String
   guess     String   // "BOY" | "GIRL"
   createdAt DateTime @default(now())
+
+  @@index([eventId])
 }
 
 model Order {
@@ -121,6 +128,9 @@ model Order {
   updatedAt      DateTime      @updatedAt
 
   @@unique([eventId, raffleTicketNumber])
+  @@index([eventId, status])
+  @@index([status, createdAt])
+  @@index([createdAt])
 }
 
 model GuestMessage {
@@ -132,4 +142,6 @@ model GuestMessage {
   name      String
   message   String
   createdAt DateTime @default(now())
+
+  @@index([eventId, createdAt])
 }

@@ -9,6 +9,7 @@
     "db:push": "prisma db push",
     "start": "next start",
     "lint": "next lint",
+    "test": "node scripts/run-tests.js",
     "make-admin": "node scripts/create-admin.js",
     "purge-data": "node scripts/purge-expired-data.js",
     "postinstall": "prisma generate"

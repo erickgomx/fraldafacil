@@ -17,7 +17,7 @@ import DiaperCatalog, { GiftItemData } from '@/components/DiaperCatalog';
 import GuestbookWall, { GuestMessageData } from '@/components/GuestbookWall';
 import PixCheckoutModal from '@/components/PixCheckoutModal';
 import { useRouter } from 'next/navigation';
-import { Share2, Check, Ticket, Trophy } from 'lucide-react';
+import { Share2, Check, Ticket, Trophy, Clock } from 'lucide-react';
 import Link from 'next/link';
 import BrandLogo from '@/components/BrandLogo';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -39,6 +39,7 @@ interface PublicEventClientProps {
     revealedGender: string | null;
     feePayer?: 'GUEST' | 'PARENTS';
     mpConnected?: boolean;
+    mpPublicKey?: string | null;
     raffleEnabled?: boolean;
     rafflePrize?: string | null;
     raffleWinnerName?: string | null;
@@ -145,6 +146,7 @@ export default function PublicEventClient({
           eventId={event.id}
           boyName={event.boyName}
           girlName={event.girlName}
+          revealedGender={event.revealedGender}
           initialBoyVotes={initialBoyVotes}
           initialGirlVotes={initialGirlVotes}
           onOpenPixModalWithGuess={handleOpenWithGuessOnly}
@@ -205,6 +207,28 @@ export default function PublicEventClient({
         </section>
       )}
 
+      {/* Aviso de Recebimento Pendente (quando os pais ainda não conectaram o Mercado Pago) */}
+      {!event.mpConnected && (
+        <section className="max-w-3xl mx-auto px-6 mt-8">
+          <div className="rounded-2xl bg-amber-50/90 border border-amber-200/90 p-5 flex items-start gap-3.5 shadow-subtle">
+            <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0">
+              <Clock className="w-4 h-4" />
+            </div>
+            <div className="text-left">
+              <span className="text-[10px] font-mono uppercase tracking-widest text-amber-800 block font-semibold">
+                Recebimento em Configuração
+              </span>
+              <p className="text-xs sm:text-sm text-amber-950/85 font-sans leading-relaxed mt-0.5">
+                Os pais ainda estão concluindo a vinculação da conta do Mercado Pago. A vitrine de presentes está em modo de visualização
+                {event.eventType !== 'FRALDA'
+                  ? ', mas você já pode deixar seu palpite gratuito no bolão acima!'
+                  : ' e os pagamentos serão liberados assim que a configuração for finalizada.'}
+              </p>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Catálogo de Presentes */}
       <DiaperCatalog
         items={initialItems}
@@ -227,6 +251,12 @@ export default function PublicEventClient({
         initialGuess={modalGuess}
         feePayer={event.feePayer || 'GUEST'}
         mpConnected={event.mpConnected}
+        mpPublicKey={event.mpPublicKey}
+        eventType={event.eventType}
+        revealedGender={event.revealedGender}
+        raffleEnabled={event.raffleEnabled}
+        rafflePrize={event.rafflePrize}
+        raffleDrawnAt={event.raffleDrawnAt}
         onPaymentSuccess={() => {
           router.refresh();
         }}

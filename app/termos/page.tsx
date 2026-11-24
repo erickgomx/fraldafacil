@@ -142,7 +142,7 @@ export default function TermsPage() {
               </div>
               <div className="flex items-start gap-2 p-2.5 rounded-lg bg-dusty-rose-light border border-dusty-rose/20 text-xs text-dusty-rose">
                 <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                <span>Utilizar cartões de crédito clonados ou dados bancários de terceiros sem consentimento (*carding*).</span>
+                <span>Utilizar cartões de crédito clonados ou dados bancários de terceiros sem consentimento (<em>carding</em>).</span>
               </div>
               <div className="flex items-start gap-2 p-2.5 rounded-lg bg-dusty-rose-light border border-dusty-rose/20 text-xs text-dusty-rose">
                 <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />

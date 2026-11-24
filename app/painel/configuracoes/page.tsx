@@ -27,11 +27,13 @@ export default async function ConfiguracoesPage() {
     <ConfigClient
       event={{
         id: event.id,
+        eventType: event.eventType,
         parentsNames: event.parentsNames,
         babyName: event.babyName,
         boyName: event.boyName,
         girlName: event.girlName,
         eventDate: event.eventDate.toISOString(),
+        coverImageUrl: event.coverImageUrl,
         storyMessage: event.storyMessage,
         pixKey: event.pixKey,
         mpConnected: event.mpConnected,

@@ -121,7 +121,7 @@ export default function PrivacyPage() {
               <span>Proteção Especial a Dados de Crianças (Artigo 14 da LGPD)</span>
             </h2>
             <p>
-              O Fralda Online reconhece a sensibilidade dos dados relativos a crianças e nascituros. Nomes prováveis ou revelados do bebê e datas previstas são inseridos **exclusivamente pelos genitores ou responsáveis legais**, os quais detêm a legitimidade e o consentimento explícito para compartilhar essas informações festivas com seu círculo de convidados.
+              O Fralda Online reconhece a sensibilidade dos dados relativos a crianças e nascituros. Nomes prováveis ou revelados do bebê e datas previstas são inseridos <strong>exclusivamente pelos genitores ou responsáveis legais</strong>, os quais detêm a legitimidade e o consentimento explícito para compartilhar essas informações festivas com seu círculo de convidados.
             </p>
             <p>
               Em nenhuma circunstância utilizamos dados de crianças para fins de marketing direcionado, criação de perfis comerciais ou cessão a terceiros.
@@ -138,7 +138,7 @@ export default function PrivacyPage() {
             <ul className="list-disc list-inside space-y-1 text-charcoal-600">
               <li><strong>Execução de Contrato (Art. 7º, V):</strong> Para criar sua página de Chá, disponibilizar os presentes e registrar os palpites no bolão.</li>
               <li><strong>Cumprimento de Obrigação Legal/Regulatória (Art. 7º, II):</strong> Para a coleta e validação do CPF nas operações de pagamento via Pix, conforme normas vigentes do Banco Central do Brasil.</li>
-              <li><strong>Legítimo Interesse e Segurança (Art. 7º, IX):</strong> Para auditoria de logs, prevenção a fraudes de cartão (*anti-carding*), ataques de negação de serviço e controle de acessos abusivos.</li>
+              <li><strong>Legítimo Interesse e Segurança (Art. 7º, IX):</strong> Para auditoria de logs, prevenção a fraudes de cartão (<em>anti-carding</em>), ataques de negação de serviço e controle de acessos abusivos.</li>
             </ul>
           </section>
 
@@ -198,7 +198,7 @@ export default function PrivacyPage() {
               <span>Segurança da Informação e Cookies</span>
             </h2>
             <p>
-              Adotamos medidas técnicas de segurança contínuas, incluindo comunicação via TLS 1.3 / HTTPS forçado, criptografia AES-256 de chaves de integração, assinaturas criptográficas de integridade e controle de taxa de requisições (*Rate Limiting*).
+              Adotamos medidas técnicas de segurança contínuas, incluindo comunicação via TLS 1.3 / HTTPS forçado, criptografia AES-256 de chaves de integração, assinaturas criptográficas de integridade e controle de taxa de requisições (<em>Rate Limiting</em>).
             </p>
             <p>
               Utilizamos apenas cookies estritamente necessários para manter sua sessão autenticada de forma segura (<code className="bg-cream-100 px-1.5 py-0.5 rounded text-xs font-mono">auth_token</code> com flags <code className="bg-cream-100 px-1.5 py-0.5 rounded text-xs font-mono">HttpOnly</code> e <code className="bg-cream-100 px-1.5 py-0.5 rounded text-xs font-mono">Secure</code>). Não utilizamos cookies de rastreamento publicitário de terceiros.

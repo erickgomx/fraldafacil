@@ -1,2 +1,8 @@
 User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /painel
+Disallow: /api
+Disallow: /redefinir-senha
+
+Sitemap: https://fralda.online/sitemap.xml
