@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { shareEvent, buildSharePayload, buildThankYouWhatsAppUrl } from '@/lib/share';
+import { localizeGiftTitle } from '@/lib/default-gifts';
 import { useI18n } from '@/components/LanguageProvider';
 import { painelDict } from '@/lib/i18n/dictionaries/painel';
 import { commonDict } from '@/lib/i18n/dictionaries/common';
@@ -229,9 +230,10 @@ export default function DashboardClient({
       (o) =>
         o.payerName.toLowerCase().includes(q) ||
         o.giftTitle.toLowerCase().includes(q) ||
+        localizeGiftTitle(o.giftTitle, locale).toLowerCase().includes(q) ||
         (o.payerMessage || '').toLowerCase().includes(q)
     );
-  }, [orders, orderSearch]);
+  }, [orders, orderSearch, locale]);
 
   const visibleOrders = useMemo(() => {
     if (showAllOrders || orderSearch.trim() !== '') return filteredOrders;
@@ -806,10 +808,11 @@ export default function DashboardClient({
           <>
             <div className="divide-y divide-warm-border/60">
               {visibleOrders.map((order) => {
+                const localizedGiftTitle = localizeGiftTitle(order.giftTitle, locale);
                 const thankYouUrl = buildThankYouWhatsAppUrl({
                   phone: order.payerPhone,
                   guestName: order.payerName,
-                  giftTitle: order.giftTitle,
+                  giftTitle: localizedGiftTitle,
                   parentsNames: event.parentsNames,
                   locale,
                 });
@@ -825,7 +828,7 @@ export default function DashboardClient({
                           {order.payerName}
                         </strong>
                         <span className="text-[10px] font-sans px-2 py-0.5 rounded bg-cream-100 border border-warm-border text-charcoal-700">
-                          {order.giftTitle}
+                          {localizedGiftTitle}
                         </span>
                         <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-stone-100 text-charcoal-600">
                           {order.paymentMethod === 'CREDIT_CARD'

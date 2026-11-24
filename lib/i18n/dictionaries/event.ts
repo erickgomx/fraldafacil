@@ -552,7 +552,7 @@ const es: EventDict = {
       brincadeiras: 'Para los padres',
     },
     defaultDescription: 'Regalo especial para la llegada del bebé.',
-    suggestedValue: 'Valor sugerido',
+    suggestedValue: 'Monto sugerido',
     giftButton: 'Regalar',
     featured: {
       badge: 'Destacado',

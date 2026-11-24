@@ -30,6 +30,7 @@ import {
 import { useI18n } from '@/components/LanguageProvider';
 import { eventDict } from '@/lib/i18n/dictionaries/event';
 import { commonDict } from '@/lib/i18n/dictionaries/common';
+import { localizeGiftTitle } from '@/lib/default-gifts';
 
 interface PixCheckoutModalProps {
   isOpen: boolean;
@@ -538,7 +539,7 @@ export default function PixCheckoutModal({
                     {dict.form.eyebrow}
                   </span>
                   <h3 className="font-serif text-2xl text-charcoal-900 font-normal">
-                    {selectedGift ? selectedGift.title : dict.form.customGiftTitle}
+                    {selectedGift ? localizeGiftTitle(selectedGift.title, locale) : dict.form.customGiftTitle}
                   </h3>
                   <p className="text-xs text-charcoal-500 mt-1 font-sans">
                     {dict.form.forShowerOf}{' '}

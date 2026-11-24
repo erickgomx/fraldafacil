@@ -760,7 +760,7 @@ const es: PainelDict = {
     fieldTitlePlaceholder: 'Ej: Pañales Talla G',
     fieldDescriptionLabel: 'Descripción Corta',
     fieldDescriptionPlaceholder: 'Ej: Para la etapa de juegos y gateo',
-    fieldPriceLabel: 'Valor (R$) *',
+    fieldPriceLabel: 'Monto (R$) *',
     fieldPricePlaceholder: '50,00',
     fieldCategoryLabel: 'Categoría',
     categories: {

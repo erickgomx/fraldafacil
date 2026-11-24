@@ -7,6 +7,7 @@ import { Calendar, Clock } from 'lucide-react';
 import { useI18n } from '@/components/LanguageProvider';
 import { eventDict } from '@/lib/i18n/dictionaries/event';
 import { commonDict } from '@/lib/i18n/dictionaries/common';
+import { localizeDefaultStoryMessage } from '@/lib/default-gifts';
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -256,7 +257,7 @@ export default function BabyHero({
               variants={rise}
               className="text-xs sm:text-sm text-charcoal-600 dark:text-stone-300 max-w-lg mx-auto leading-relaxed font-sans mb-8"
             >
-              {storyMessage || dict.defaultStory}
+              {localizeDefaultStoryMessage(storyMessage, locale) || dict.defaultStory}
             </motion.p>
           </>
         )}

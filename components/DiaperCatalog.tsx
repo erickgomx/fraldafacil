@@ -5,6 +5,7 @@ import { AnimatePresence, LayoutGroup, motion, type Variants } from 'framer-moti
 import { ArrowUpRight, Heart, Sparkles } from 'lucide-react';
 import { useI18n } from '@/components/LanguageProvider';
 import { eventDict } from '@/lib/i18n/dictionaries/event';
+import { localizeGiftContent } from '@/lib/default-gifts';
 
 export interface GiftItemData {
   id: string;
@@ -160,20 +161,30 @@ export default function DiaperCatalog({ items, onSelectGift }: DiaperCatalogProp
                 labels={dict.featured}
               />
             ) : (
-              <GiftCard
-                key={entry.item.id}
-                item={entry.item}
-                index={i}
-                onClick={() => onSelectGift(entry.item)}
-                categoryBadge={
-                  dict.categoryBadge[entry.item.category as keyof typeof dict.categoryBadge] ??
-                  entry.item.category
-                }
-                defaultDescription={dict.defaultDescription}
-                suggestedValueLabel={dict.suggestedValue}
-                giftButtonLabel={dict.giftButton}
-                formattedPrice={formatCurrency(entry.item.price)}
-              />
+              (() => {
+                const localized = localizeGiftContent(entry.item, locale);
+                const localizedItem: GiftItemData = {
+                  ...entry.item,
+                  title: localized.title,
+                  description: localized.description,
+                };
+                return (
+                  <GiftCard
+                    key={entry.item.id}
+                    item={localizedItem}
+                    index={i}
+                    onClick={() => onSelectGift(localizedItem)}
+                    categoryBadge={
+                      dict.categoryBadge[entry.item.category as keyof typeof dict.categoryBadge] ??
+                      entry.item.category
+                    }
+                    defaultDescription={dict.defaultDescription}
+                    suggestedValueLabel={dict.suggestedValue}
+                    giftButtonLabel={dict.giftButton}
+                    formattedPrice={formatCurrency(entry.item.price)}
+                  />
+                );
+              })()
             )
           )}
         </AnimatePresence>

@@ -245,3 +245,103 @@ export function getDefaultGiftItems(locale: Locale = 'pt'): DefaultGiftItem[] {
   if (locale === 'es') return DEFAULT_GIFTS_ES;
   return DEFAULT_GIFTS_PT;
 }
+
+export const DEFAULT_STORY_MESSAGES: Record<Locale, string> = {
+  pt: 'Estamos muito felizes e ansiosos pela chegada do nosso maior tesouro! Criamos esta página com muito amor para compartilhar esse momento mágico com você.',
+  en: 'We are so happy and excited for the arrival of our greatest blessing! We created this page with all our love to share this magical moment with you.',
+  es: '¡Estamos muy felices y emocionados por la llegada de nuestro mayor tesoro! Creamos esta página con mucho amor para compartir este momento mágico contigo.',
+};
+
+const BABY_HERO_FALLBACK_STORIES: readonly string[] = [
+  'Criamos este espaço para compartilhar com você a alegria dessa espera e receber seu carinho em forma de fraldas e recados.',
+  'We created this space to share the joy of waiting for our little one and receive your love through diapers and warm notes.',
+  'Creamos este espacio para compartir contigo la alegría de esta espera y recibir tu cariño en forma de pañales y mensajes.',
+];
+
+export const CASH_GIFT_TITLES: Record<Locale, string> = {
+  pt: 'Presente em Dinheiro',
+  en: 'Cash Gift',
+  es: 'Regalo en Efectivo',
+};
+
+function normalizeText(value: string): string {
+  return value.trim().toLowerCase();
+}
+
+const DEFAULT_GIFT_LISTS: readonly (readonly DefaultGiftItem[])[] = [
+  DEFAULT_GIFTS_PT,
+  DEFAULT_GIFTS_EN,
+  DEFAULT_GIFTS_ES,
+];
+
+const DEFAULT_GIFT_TITLE_INDEX = new Map<string, number>();
+for (const list of DEFAULT_GIFT_LISTS) {
+  list.forEach((item, index) => {
+    DEFAULT_GIFT_TITLE_INDEX.set(normalizeText(item.title), index);
+  });
+}
+
+const DEFAULT_GIFT_DESCRIPTION_SETS: readonly Set<string>[] = DEFAULT_GIFTS_PT.map((_, index) => {
+  return new Set(
+    DEFAULT_GIFT_LISTS.map((list) => normalizeText(list[index].description))
+  );
+});
+
+const CASH_GIFT_TITLE_SET = new Set(
+  Object.values(CASH_GIFT_TITLES).map(normalizeText)
+);
+
+const CANONICAL_STORY_SET = new Set([
+  ...Object.values(DEFAULT_STORY_MESSAGES).map(normalizeText),
+  ...BABY_HERO_FALLBACK_STORIES.map(normalizeText),
+]);
+
+export function localizeGiftTitle(title: string, locale: Locale): string {
+  if (!title) return title;
+  const normalized = normalizeText(title);
+  if (CASH_GIFT_TITLE_SET.has(normalized)) {
+    return CASH_GIFT_TITLES[locale];
+  }
+  const index = DEFAULT_GIFT_TITLE_INDEX.get(normalized);
+  if (index !== undefined) {
+    return getDefaultGiftItems(locale)[index].title;
+  }
+  return title;
+}
+
+export function localizeGiftContent(
+  gift: { title: string; description?: string | null },
+  locale: Locale
+): { title: string; description: string | null } {
+  const normalizedTitle = normalizeText(gift.title || '');
+  const index = DEFAULT_GIFT_TITLE_INDEX.get(normalizedTitle);
+
+  if (index === undefined) {
+    return {
+      title: localizeGiftTitle(gift.title, locale),
+      description: gift.description ?? null,
+    };
+  }
+
+  const targetItem = getDefaultGiftItems(locale)[index];
+  const rawDescription = gift.description ?? null;
+  const isCanonicalDescription =
+    Boolean(rawDescription && rawDescription.trim()) &&
+    DEFAULT_GIFT_DESCRIPTION_SETS[index].has(normalizeText(rawDescription!));
+
+  return {
+    title: targetItem.title,
+    description: isCanonicalDescription ? targetItem.description : rawDescription,
+  };
+}
+
+export function localizeDefaultStoryMessage(
+  storyMessage: string | null | undefined,
+  locale: Locale
+): string | null {
+  if (!storyMessage || !storyMessage.trim()) return null;
+  if (CANONICAL_STORY_SET.has(normalizeText(storyMessage))) {
+    return DEFAULT_STORY_MESSAGES[locale];
+  }
+  return storyMessage;
+}

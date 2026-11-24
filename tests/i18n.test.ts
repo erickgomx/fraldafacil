@@ -10,7 +10,13 @@ import {
   MP_LOCALE_MAP,
   type Locale,
 } from '../lib/i18n/types';
-import { getDefaultGiftItems } from '../lib/default-gifts';
+import {
+  DEFAULT_STORY_MESSAGES,
+  getDefaultGiftItems,
+  localizeDefaultStoryMessage,
+  localizeGiftContent,
+  localizeGiftTitle,
+} from '../lib/default-gifts';
 import { buildSharePayload, buildThankYouWhatsAppUrl } from '../lib/share';
 import { commonDict } from '../lib/i18n/dictionaries/common';
 import { landingDict } from '../lib/i18n/dictionaries/landing';
@@ -172,6 +178,72 @@ test('getDefaultGiftItems returns localized catalog parity across pt, en, and es
     assert.notEqual(ptGifts[i].title, enGifts[i].title);
     assert.notEqual(ptGifts[i].title, esGifts[i].title);
   }
+});
+
+test('localizeGiftContent and localizeGiftTitle translate canonical defaults bidirectionally while preserving custom text', () => {
+  const ptGifts = getDefaultGiftItems('pt');
+  const enGifts = getDefaultGiftItems('en');
+  const esGifts = getDefaultGiftItems('es');
+
+  for (let i = 0; i < ptGifts.length; i++) {
+    const ptAsEn = localizeGiftContent(ptGifts[i], 'en');
+    assert.equal(ptAsEn.title, enGifts[i].title);
+    assert.equal(ptAsEn.description, enGifts[i].description);
+
+    const ptAsEs = localizeGiftContent(ptGifts[i], 'es');
+    assert.equal(ptAsEs.title, esGifts[i].title);
+    assert.equal(ptAsEs.description, esGifts[i].description);
+
+    const enAsPt = localizeGiftContent(enGifts[i], 'pt');
+    assert.equal(enAsPt.title, ptGifts[i].title);
+    assert.equal(enAsPt.description, ptGifts[i].description);
+  }
+
+  const defaultTitleCustomDesc = localizeGiftContent(
+    { title: ptGifts[0].title, description: 'Descrição personalizada dos pais' },
+    'en'
+  );
+  assert.equal(defaultTitleCustomDesc.title, enGifts[0].title);
+  assert.equal(defaultTitleCustomDesc.description, 'Descrição personalizada dos pais');
+
+  const customGift = localizeGiftContent(
+    { title: 'Berço Portátil do João', description: 'Mimo especial da vovó' },
+    'es'
+  );
+  assert.equal(customGift.title, 'Berço Portátil do João');
+  assert.equal(customGift.description, 'Mimo especial da vovó');
+
+  assert.equal(localizeGiftTitle('Presente em Dinheiro', 'en'), 'Cash Gift');
+  assert.equal(localizeGiftTitle('Presente em Dinheiro', 'es'), 'Regalo en Efectivo');
+  assert.equal(localizeGiftTitle('Cash Gift', 'pt'), 'Presente em Dinheiro');
+  assert.equal(localizeGiftTitle('Regalo en Efectivo', 'pt'), 'Presente em Dinheiro');
+});
+
+test('localizeDefaultStoryMessage translates canonical default stories and preserves custom messages', () => {
+  assert.equal(localizeDefaultStoryMessage(DEFAULT_STORY_MESSAGES.pt, 'en'), DEFAULT_STORY_MESSAGES.en);
+  assert.equal(localizeDefaultStoryMessage(DEFAULT_STORY_MESSAGES.pt, 'es'), DEFAULT_STORY_MESSAGES.es);
+  assert.equal(localizeDefaultStoryMessage(DEFAULT_STORY_MESSAGES.en, 'pt'), DEFAULT_STORY_MESSAGES.pt);
+
+  assert.equal(
+    localizeDefaultStoryMessage(
+      'Criamos este espaço para compartilhar com você a alegria dessa espera e receber seu carinho em forma de fraldas e recados.',
+      'es'
+    ),
+    DEFAULT_STORY_MESSAGES.es
+  );
+
+  assert.equal(
+    localizeDefaultStoryMessage('Texto escrito manualmente pelos pais', 'en'),
+    'Texto escrito manualmente pelos pais'
+  );
+  assert.equal(localizeDefaultStoryMessage('   ', 'en'), null);
+  assert.equal(localizeDefaultStoryMessage(null, 'es'), null);
+});
+
+test('suggested gift value labels are localized across pt, en, and es', () => {
+  assert.equal(eventDict.pt.catalog.suggestedValue, 'Valor sugerido');
+  assert.equal(eventDict.en.catalog.suggestedValue, 'Suggested value');
+  assert.equal(eventDict.es.catalog.suggestedValue, 'Monto sugerido');
 });
 
 test('buildSharePayload and buildThankYouWhatsAppUrl localize messages across pt, en, and es', () => {

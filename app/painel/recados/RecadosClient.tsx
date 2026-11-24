@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Download, Loader2, MessageCircle, Trash2 } from 'lucide-react';
 import { buildThankYouWhatsAppUrl } from '@/lib/share';
+import { localizeGiftTitle } from '@/lib/default-gifts';
 import { useI18n } from '@/components/LanguageProvider';
 import { painelDict } from '@/lib/i18n/dictionaries/painel';
 
@@ -143,7 +144,8 @@ export default function RecadosClient({ event, initialMessages }: RecadosClientP
       for (const item of messages) {
         const cleanMsg = sanitizePdfText(item.message) || dict.pdf.emptyMsg;
         const cleanName = sanitizePdfText(item.name) || dict.pdf.guestFallback;
-        const cleanGift = sanitizePdfText(item.giftTitle) || dict.pdf.giftFallback;
+        const cleanGift =
+          sanitizePdfText(localizeGiftTitle(item.giftTitle, locale)) || dict.pdf.giftFallback;
         const dateLabel = formatDate(item.createdAt, {
           day: '2-digit',
           month: 'short',
@@ -281,10 +283,11 @@ export default function RecadosClient({ event, initialMessages }: RecadosClientP
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {messages.map((m) => {
+            const localizedGiftTitle = localizeGiftTitle(m.giftTitle, locale);
             const thankYouUrl = buildThankYouWhatsAppUrl({
               phone: m.payerPhone,
               guestName: m.name,
-              giftTitle: m.giftTitle,
+              giftTitle: localizedGiftTitle,
               parentsNames: event.parentsNames,
               locale,
             });
@@ -350,7 +353,7 @@ export default function RecadosClient({ event, initialMessages }: RecadosClientP
                       {m.paymentMethod === 'CREDIT_CARD'
                         ? dict.giftViaCard
                         : dict.giftViaPix}{' '}
-                      <strong className="font-medium text-charcoal-700">{m.giftTitle}</strong>
+                      <strong className="font-medium text-charcoal-700">{localizedGiftTitle}</strong>
                     </span>
                     <span className="font-mono text-xs font-semibold text-charcoal-900 tabular-nums shrink-0">
                       {formatCurrency(m.amount)}

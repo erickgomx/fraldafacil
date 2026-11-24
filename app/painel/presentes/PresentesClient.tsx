@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Check, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { DEFAULT_GIFT_IMAGE_URL, getGiftGalleryOptions } from '@/lib/gift-gallery';
+import { localizeGiftContent } from '@/lib/default-gifts';
 import { useI18n } from '@/components/LanguageProvider';
 import { painelDict } from '@/lib/i18n/dictionaries/painel';
 
@@ -104,9 +105,10 @@ export default function PresentesClient({ eventId, initialGifts }: PresentesClie
     const validCat = (['fraldas', 'higiene', 'brincadeiras'].includes(item.category)
       ? item.category
       : 'fraldas') as 'fraldas' | 'higiene' | 'brincadeiras';
+    const localizedGift = localizeGiftContent(item, locale);
     setEditingGift(item);
-    setTitle(item.title);
-    setDescription(item.description || '');
+    setTitle(localizedGift.title);
+    setDescription(localizedGift.description || '');
     setPrice(String(item.price));
     setCategory(validCat);
     setImageUrl(item.imageUrl || DEFAULT_GIFT_IMAGE_URL);
@@ -197,7 +199,9 @@ export default function PresentesClient({ eventId, initialGifts }: PresentesClie
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {gifts.map((item) => (
+        {gifts.map((item) => {
+          const localizedGift = localizeGiftContent(item, locale);
+          return (
           <div
             key={item.id}
             className={`bg-white rounded-xl p-4 border transition flex flex-col justify-between ${
@@ -209,7 +213,7 @@ export default function PresentesClient({ eventId, initialGifts }: PresentesClie
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={item.imageUrl || DEFAULT_GIFT_IMAGE_URL}
-                  alt={item.title}
+                  alt={localizedGift.title}
                   loading="lazy"
                   onError={(e) => {
                     (e.currentTarget as HTMLImageElement).src = DEFAULT_GIFT_IMAGE_URL;
@@ -234,10 +238,10 @@ export default function PresentesClient({ eventId, initialGifts }: PresentesClie
               </div>
 
               <h3 className="font-serif text-sm font-medium text-charcoal-900 line-clamp-1">
-                {item.title}
+                {localizedGift.title}
               </h3>
               <p className="text-xs text-charcoal-500 mt-1 line-clamp-2 font-sans">
-                {item.description || dict.defaultDescription}
+                {localizedGift.description || dict.defaultDescription}
               </p>
             </div>
 
@@ -268,7 +272,8 @@ export default function PresentesClient({ eventId, initialGifts }: PresentesClie
               </div>
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
 
       {isModalOpen && (
