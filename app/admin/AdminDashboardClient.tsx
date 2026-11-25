@@ -14,13 +14,6 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import {
-  TrendingUp,
-  DollarSign,
-  Wallet,
-  CreditCard,
-  QrCode,
-  Calendar,
-  Users,
   CheckCircle2,
   Clock,
   XCircle,
@@ -29,8 +22,6 @@ import {
   FileText,
   RefreshCw,
   ExternalLink,
-  ShieldCheck,
-  Baby,
   MessageCircle,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -826,55 +817,47 @@ export default function AdminDashboardClient({
   };
 
   return (
-    <div className="space-y-8 pb-12">
-      {/* Top Header Minimalista e Controles */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+    <div className="space-y-6 pb-12">
+      {/* Cabeçalho e recorte de período */}
+      <section className="bg-white rounded-2xl p-5 sm:p-7 border border-warm-border shadow-subtle">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
           <div>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium text-slate-600 bg-slate-100 border border-slate-200">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                {copy.header.badge}
-              </span>
-              <span className="text-xs text-slate-400">•</span>
-              <span className="text-xs text-slate-500">
-                {admin.name} <span className="text-slate-400">({admin.email})</span>
-              </span>
-            </div>
-            <h1 className="text-xl sm:text-2xl font-serif font-semibold text-slate-900 tracking-tight">
+            <h1 className="font-serif text-2xl sm:text-3xl font-medium text-charcoal-900">
               {copy.header.title}
             </h1>
-            <p className="text-xs sm:text-sm text-slate-500 mt-0.5 max-w-2xl">
+            <p className="text-sm text-charcoal-500 mt-1 max-w-2xl">
               {copy.header.subtitle}
             </p>
           </div>
 
-          {/* Botões de Ação */}
-          <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
             <button
+              type="button"
               onClick={handleRefresh}
               disabled={isRefreshing}
-              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium shadow-2xs transition disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-warm-border bg-white hover:bg-cream-100 text-charcoal-800 text-xs sm:text-sm font-medium transition disabled:opacity-50"
             >
               <RefreshCw
-                className={`w-3.5 h-3.5 text-slate-500 ${isRefreshing ? 'animate-spin' : ''}`}
+                className={`w-3.5 h-3.5 text-charcoal-500 ${isRefreshing ? 'animate-spin' : ''}`}
               />
               <span>{isRefreshing ? copy.header.refreshing : copy.header.refresh}</span>
             </button>
 
             <button
+              type="button"
               onClick={handleExportCSV}
-              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium shadow-2xs transition"
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-warm-border bg-white hover:bg-cream-100 text-charcoal-800 text-xs sm:text-sm font-medium transition"
               title={copy.header.exportCsvTitle}
             >
-              <Download className="w-3.5 h-3.5 text-slate-500" />
+              <Download className="w-3.5 h-3.5 text-charcoal-500" />
               <span>{copy.header.exportCsv}</span>
             </button>
 
             <button
+              type="button"
               onClick={handleExportPDF}
               disabled={isExportingPDF}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium shadow-xs transition disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-charcoal-900 hover:bg-charcoal-800 text-white text-xs sm:text-sm font-medium transition disabled:opacity-50"
               title={copy.header.exportPdfTitle}
             >
               <FileText className="w-3.5 h-3.5" />
@@ -883,165 +866,104 @@ export default function AdminDashboardClient({
           </div>
         </div>
 
-        {/* Barra de Filtro de Período Rápido */}
-        <div className="mt-6 pt-6 border-t border-slate-100 flex flex-wrap items-center justify-between gap-4">
-          <span className="text-xs font-medium text-slate-500 flex items-center gap-1.5">
-            <Calendar className="w-3.5 h-3.5 text-slate-400" />
+        <div className="mt-5 pt-5 border-t border-warm-border/70 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <span className="text-xs font-medium text-charcoal-500">
             {copy.header.periodRangeLabel}
           </span>
 
-          <div className="inline-flex p-1 bg-slate-100 rounded-xl text-xs font-medium">
-            <button
-              onClick={() => setTimePeriod('ALL')}
-              className={`px-3 py-1.5 rounded-lg transition ${
-                timePeriod === 'ALL'
-                  ? 'bg-white text-slate-900 font-semibold shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              {copy.header.periods.ALL}
-            </button>
-            <button
-              onClick={() => setTimePeriod('MONTH')}
-              className={`px-3 py-1.5 rounded-lg transition ${
-                timePeriod === 'MONTH'
-                  ? 'bg-white text-slate-900 font-semibold shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              {copy.header.periods.MONTH}
-            </button>
-            <button
-              onClick={() => setTimePeriod('WEEK')}
-              className={`px-3 py-1.5 rounded-lg transition ${
-                timePeriod === 'WEEK'
-                  ? 'bg-white text-slate-900 font-semibold shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              {copy.header.periods.WEEK}
-            </button>
-            <button
-              onClick={() => setTimePeriod('TODAY')}
-              className={`px-3 py-1.5 rounded-lg transition ${
-                timePeriod === 'TODAY'
-                  ? 'bg-white text-slate-900 font-semibold shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              {copy.header.periods.TODAY}
-            </button>
+          <div className="grid grid-cols-2 sm:inline-flex gap-1 p-1 bg-cream-100 rounded-xl border border-warm-border/60 w-full sm:w-auto">
+            {(['ALL', 'MONTH', 'WEEK', 'TODAY'] as const).map((period) => {
+              const isSelected = timePeriod === period;
+              return (
+                <button
+                  key={period}
+                  type="button"
+                  onClick={() => setTimePeriod(period)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium text-center transition ${
+                    isSelected
+                      ? 'bg-charcoal-900 text-white font-semibold'
+                      : 'text-charcoal-600 hover:text-charcoal-900'
+                  }`}
+                >
+                  {copy.header.periods[period]}
+                </button>
+              );
+            })}
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Grid de Cards Financeiros */}
-      <div id="relatorios-financeiros" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Card 1: Total Arrecadado Bruto */}
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs hover:border-slate-300 transition-colors">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">
-              {t(copy.kpis.totalRaisedWithPeriod, { period: currentPeriodData.label })}
-            </span>
-            <div className="w-8 h-8 rounded-xl bg-amber-50 border border-amber-100 text-amber-700 flex items-center justify-center">
-              <DollarSign className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="text-2xl font-bold font-serif text-slate-900 tracking-tight">
+      {/* Faixa unificada de resumo financeiro */}
+      <section
+        id="relatorios-financeiros"
+        className="bg-white rounded-2xl border border-warm-border shadow-subtle grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 lg:divide-x divide-warm-border"
+      >
+        <div className="p-5 sm:p-6">
+          <span className="text-xs font-medium text-charcoal-500 block">
+            {t(copy.kpis.totalRaisedWithPeriod, { period: currentPeriodData.label })}
+          </span>
+          <strong className="font-serif text-2xl sm:text-3xl font-semibold text-charcoal-900 tabular-nums block mt-1.5">
             {formatBRL(currentPeriodData.gross)}
-          </div>
-          <div className="mt-3 flex items-center justify-between text-xs text-slate-500 pt-3 border-t border-slate-100">
-            <span>{copy.kpis.averageTicketLabel}</span>
-            <strong className="text-slate-700 font-mono">{formatBRL(metrics.averageTicket)}</strong>
-          </div>
+          </strong>
+          <p className="text-xs text-charcoal-500 mt-1.5">
+            {copy.kpis.averageTicketLabel}{' '}
+            <span className="font-medium text-charcoal-800 tabular-nums">
+              {formatBRL(metrics.averageTicket)}
+            </span>
+          </p>
         </div>
 
-        {/* Card 2: Lucro / Ganhos da Plataforma */}
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs hover:border-slate-300 transition-colors">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-1.5">
-              <span className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">
-                {copy.kpis.platformEarnings}
-              </span>
-              <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
-                {copy.kpis.platformFeeRate}
-              </span>
-            </div>
-            <div className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-700 flex items-center justify-center">
-              <TrendingUp className="w-4 h-4" />
-            </div>
+        <div className="p-5 sm:p-6 sm:border-l lg:border-l-0 border-warm-border">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs font-medium text-charcoal-500">
+              {copy.kpis.platformEarnings}
+            </span>
+            <span className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+              {copy.kpis.platformFeeRate}
+            </span>
           </div>
-          <div className="text-2xl font-bold font-serif text-slate-900 tracking-tight">
+          <strong className="font-serif text-2xl sm:text-3xl font-semibold text-emerald-700 tabular-nums block mt-1.5">
             {formatBRL(currentPeriodData.earnings)}
-          </div>
-          <div className="mt-3 flex items-center justify-between text-xs text-slate-500 pt-3 border-t border-slate-100">
-            <span>{copy.kpis.netProfitLabel}</span>
-            <span className="text-emerald-600 font-medium font-mono">
-              {copy.kpis.autoSplitLabel}
-            </span>
-          </div>
+          </strong>
+          <p className="text-xs text-charcoal-500 mt-1.5">{copy.kpis.netProfitLabel}</p>
         </div>
 
-        {/* Card 3: Repassado aos Pais */}
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs hover:border-slate-300 transition-colors">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">
-              {copy.kpis.parentsNet}
-            </span>
-            <div className="w-8 h-8 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-700 flex items-center justify-center">
-              <Wallet className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="text-2xl font-bold font-serif text-slate-900 tracking-tight">
+        <div className="p-5 sm:p-6 sm:border-t lg:border-t-0 border-warm-border">
+          <span className="text-xs font-medium text-charcoal-500 block">
+            {copy.kpis.parentsNet}
+          </span>
+          <strong className="font-serif text-2xl sm:text-3xl font-semibold text-charcoal-900 tabular-nums block mt-1.5">
             {formatBRL(metrics.totalParentsNet)}
-          </div>
-          <div className="mt-3 flex items-center justify-between text-xs text-slate-500 pt-3 border-t border-slate-100">
-            <span>{copy.kpis.netPayoutLabel}</span>
-            <strong className="text-indigo-700 font-medium font-mono">
-              {copy.kpis.parentsNetPercent}
-            </strong>
-          </div>
+          </strong>
+          <p className="text-xs text-charcoal-500 mt-1.5">{copy.kpis.netPayoutLabel}</p>
         </div>
 
-        {/* Card 4: Taxas Gateway (Mercado Pago) */}
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs hover:border-slate-300 transition-colors">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-              {copy.kpis.gatewayFee}
-            </span>
-            <div className="w-9 h-9 rounded-2xl bg-slate-100 border border-slate-200 text-slate-700 flex items-center justify-center">
-              <CreditCard className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="text-2xl sm:text-3xl font-bold font-serif text-slate-900 tracking-tight">
+        <div className="p-5 sm:p-6 sm:border-t sm:border-l lg:border-t-0 lg:border-l-0 border-warm-border">
+          <span className="text-xs font-medium text-charcoal-500 block">
+            {copy.kpis.gatewayFee}
+          </span>
+          <strong className="font-serif text-2xl sm:text-3xl font-semibold text-charcoal-900 tabular-nums block mt-1.5">
             {formatBRL(metrics.totalGatewayFee)}
-          </div>
-          <div className="mt-3 flex items-center justify-between text-xs text-slate-500 pt-3 border-t border-slate-100">
-            <span>{copy.kpis.gatewayRatesLabel}</span>
-            <span className="text-slate-600 font-mono text-[11px]">
-              {copy.kpis.processingLabel}
-            </span>
-          </div>
+          </strong>
+          <p className="text-xs text-charcoal-500 mt-1.5">{copy.kpis.gatewayRatesLabel}</p>
         </div>
-      </div>
+      </section>
 
-      {/* Grid de Indicadores de Conversão e Plataforma */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        {/* Painel 1: Conversão de Pedidos */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-sm text-slate-900 flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+      {/* Indicadores operacionais sem caixas aninhadas */}
+      <section className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        {/* Conversão de pedidos */}
+        <div className="bg-white border border-warm-border rounded-2xl p-5 sm:p-6 shadow-subtle flex flex-col justify-between gap-4">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="font-serif text-lg font-medium text-charcoal-900">
               {copy.panels.funnelTitle}
-            </h3>
-            <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
+            </h2>
+            <span className="text-xs font-medium text-charcoal-500 tabular-nums">
               {t(copy.panels.funnelApprovedPct, { pct: metrics.conversionRate.toFixed(1) })}
             </span>
           </div>
 
-          <div className="space-y-3">
-            {/* Barra de Progresso Tridimensional */}
-            <div className="h-3.5 w-full bg-slate-100 rounded-full flex overflow-hidden">
+          <div className="space-y-4">
+            <div className="h-2.5 w-full bg-cream-100 rounded-full flex overflow-hidden">
               <div
                 style={{
                   width: `${
@@ -1077,104 +999,107 @@ export default function AdminDashboardClient({
               />
             </div>
 
-            <div className="grid grid-cols-3 gap-2 pt-2 text-center text-xs">
-              <div className="p-2 rounded-xl bg-emerald-50/60 border border-emerald-100">
-                <span className="text-emerald-700 font-semibold block text-base font-mono">
+            <div className="grid grid-cols-3 gap-2 pt-1 divide-x divide-warm-border/70">
+              <div className="pr-2 min-w-0">
+                <div className="flex items-center gap-1.5 text-xs text-charcoal-500 min-w-0">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                  <span className="truncate">{copy.panels.funnelApproved}</span>
+                </div>
+                <strong className="font-serif text-xl font-medium text-charcoal-900 tabular-nums block mt-1">
                   {metrics.approvedOrdersCount}
-                </span>
-                <span className="text-[11px] text-emerald-800">{copy.panels.funnelApproved}</span>
+                </strong>
               </div>
-              <div className="p-2 rounded-xl bg-amber-50/60 border border-amber-100">
-                <span className="text-amber-700 font-semibold block text-base font-mono">
+              <div className="px-2 min-w-0">
+                <div className="flex items-center gap-1.5 text-xs text-charcoal-500 min-w-0">
+                  <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
+                  <span className="truncate">{copy.panels.funnelPending}</span>
+                </div>
+                <strong className="font-serif text-xl font-medium text-charcoal-900 tabular-nums block mt-1">
                   {metrics.pendingOrdersCount}
-                </span>
-                <span className="text-[11px] text-amber-800">{copy.panels.funnelPending}</span>
+                </strong>
               </div>
-              <div className="p-2 rounded-xl bg-rose-50/60 border border-rose-100">
-                <span className="text-rose-700 font-semibold block text-base font-mono">
+              <div className="pl-2 min-w-0">
+                <div className="flex items-center gap-1.5 text-xs text-charcoal-500 min-w-0">
+                  <span className="w-2 h-2 rounded-full bg-rose-400 shrink-0" />
+                  <span className="truncate">{copy.panels.funnelCanceled}</span>
+                </div>
+                <strong className="font-serif text-xl font-medium text-charcoal-900 tabular-nums block mt-1">
                   {metrics.rejectedOrdersCount}
-                </span>
-                <span className="text-[11px] text-rose-800">{copy.panels.funnelCanceled}</span>
+                </strong>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Painel 2: Métodos de Pagamento e Split */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-          <h3 className="font-semibold text-sm text-slate-900 mb-4 flex items-center gap-2">
-            <QrCode className="w-4 h-4 text-indigo-600" />
+        {/* Métodos de pagamento e taxa */}
+        <div className="bg-white border border-warm-border rounded-2xl p-5 sm:p-6 shadow-subtle">
+          <h2 className="font-serif text-lg font-medium text-charcoal-900 mb-3">
             {copy.panels.methodsTitle}
-          </h3>
+          </h2>
 
-          <div className="space-y-4 text-xs">
-            {/* Pix vs Cartão */}
-            <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="flex items-center gap-1.5 font-medium text-slate-700">
-                  <QrCode className="w-3.5 h-3.5 text-teal-600" />
-                  {t(copy.panels.methodsPix, { count: metrics.pixOrdersCount })}
-                </span>
-                <strong className="font-mono text-slate-900">
-                  {formatBRL(metrics.pixGrossAmount)}
-                </strong>
-              </div>
-              <div className="flex items-center justify-between pt-1 border-t border-slate-200/60">
-                <span className="flex items-center gap-1.5 font-medium text-slate-700">
-                  <CreditCard className="w-3.5 h-3.5 text-blue-600" />
-                  {t(copy.panels.methodsCard, { count: metrics.cardOrdersCount })}
-                </span>
-                <strong className="font-mono text-slate-900">
-                  {formatBRL(metrics.cardGrossAmount)}
-                </strong>
-              </div>
+          <div className="divide-y divide-warm-border/70 text-xs sm:text-sm">
+            <div className="py-2.5 flex items-center justify-between gap-2">
+              <span className="text-charcoal-600">
+                {t(copy.panels.methodsPix, { count: metrics.pixOrdersCount })}
+              </span>
+              <strong className="font-medium text-charcoal-900 tabular-nums">
+                {formatBRL(metrics.pixGrossAmount)}
+              </strong>
             </div>
 
-            {/* Split: Convidado vs Pais */}
-            <div className="flex items-center justify-between pt-1 text-slate-600">
-              <span>{copy.panels.methodsFeeGuest}</span>
-              <strong className="text-slate-900 font-mono">
+            <div className="py-2.5 flex items-center justify-between gap-2">
+              <span className="text-charcoal-600">
+                {t(copy.panels.methodsCard, { count: metrics.cardOrdersCount })}
+              </span>
+              <strong className="font-medium text-charcoal-900 tabular-nums">
+                {formatBRL(metrics.cardGrossAmount)}
+              </strong>
+            </div>
+
+            <div className="py-2.5 flex items-center justify-between gap-2">
+              <span className="text-charcoal-600">{copy.panels.methodsFeeGuest}</span>
+              <strong className="font-medium text-charcoal-900 tabular-nums">
                 {t(copy.panels.methodsOrdersCount, { count: metrics.guestFeeCount })}
               </strong>
             </div>
-            <div className="flex items-center justify-between text-slate-600">
-              <span>{copy.panels.methodsFeeParents}</span>
-              <strong className="text-slate-900 font-mono">
+
+            <div className="pt-2.5 flex items-center justify-between gap-2">
+              <span className="text-charcoal-600">{copy.panels.methodsFeeParents}</span>
+              <strong className="font-medium text-charcoal-900 tabular-nums">
                 {t(copy.panels.methodsOrdersCount, { count: metrics.parentsFeeCount })}
               </strong>
             </div>
           </div>
         </div>
 
-        {/* Painel 3: Base e Comunidade */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-          <h3 className="font-semibold text-sm text-slate-900 mb-4 flex items-center gap-2">
-            <Users className="w-4 h-4 text-rose-600" />
+        {/* Base da plataforma */}
+        <div className="bg-white border border-warm-border rounded-2xl p-5 sm:p-6 shadow-subtle flex flex-col justify-between">
+          <h2 className="font-serif text-lg font-medium text-charcoal-900 mb-4">
             {copy.panels.communityTitle}
-          </h3>
+          </h2>
 
-          <div className="grid grid-cols-2 gap-3 text-xs">
-            <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100">
-              <span className="text-slate-500 block mb-0.5">{copy.panels.communityUsers}</span>
-              <strong className="text-xl font-semibold font-serif text-slate-900 block tabular-nums">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-4">
+            <div>
+              <span className="text-xs text-charcoal-500 block">{copy.panels.communityUsers}</span>
+              <strong className="font-serif text-2xl font-medium text-charcoal-900 tabular-nums block mt-0.5">
                 {metrics.totalUsers}
               </strong>
             </div>
 
-            <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100">
-              <span className="text-slate-500 block mb-0.5">{copy.panels.communityEvents}</span>
-              <strong className="text-xl font-semibold font-serif text-slate-900 block tabular-nums">
+            <div>
+              <span className="text-xs text-charcoal-500 block">{copy.panels.communityEvents}</span>
+              <strong className="font-serif text-2xl font-medium text-charcoal-900 tabular-nums block mt-0.5">
                 {metrics.totalEvents}
               </strong>
             </div>
 
-            <div className="p-3 rounded-2xl bg-emerald-50/50 border border-emerald-100">
-              <span className="text-emerald-700 block mb-0.5">
+            <div className="pt-3 border-t border-warm-border/70">
+              <span className="text-xs text-charcoal-500 block">
                 {copy.panels.communityMpConnected}
               </span>
-              <strong className="text-base font-bold text-emerald-900 block font-mono">
-                {metrics.mpConnectedCount}
-                <span className="text-[10px] font-normal text-emerald-600 ml-1">
+              <strong className="font-serif text-xl font-medium text-emerald-700 tabular-nums block mt-0.5">
+                {metrics.mpConnectedCount}{' '}
+                <span className="font-sans text-xs font-normal text-charcoal-500">
                   (
                   {metrics.totalEvents > 0
                     ? Math.round((metrics.mpConnectedCount / metrics.totalEvents) * 100)
@@ -1184,141 +1109,144 @@ export default function AdminDashboardClient({
               </strong>
             </div>
 
-            <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100">
-              <span className="text-slate-500 block mb-0.5">
+            <div className="pt-3 border-t border-warm-border/70">
+              <span className="text-xs text-charcoal-500 block">
                 {copy.panels.communityMessagesAndPolls}
               </span>
-              <strong className="text-base font-bold text-slate-900 block font-mono">
+              <strong className="font-serif text-xl font-medium text-charcoal-900 tabular-nums block mt-0.5">
                 {metrics.totalGuestMessages} / {metrics.totalPollVotes}
               </strong>
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Gráfico de Evolução Financeira Diária */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-sm">
+      {/* Gráfico de evolução de arrecadação */}
+      <section
+        id="evolucao-receita"
+        className="bg-white border border-warm-border rounded-2xl p-5 sm:p-7 shadow-subtle"
+      >
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
-            <h3 className="font-serif font-bold text-lg text-slate-900">
+            <h2 className="font-serif text-lg sm:text-xl font-medium text-charcoal-900">
               {t(copy.chart.title, { period: currentPeriodData.label })}
-            </h3>
-            <p className="text-xs text-slate-500">{copy.chart.subtitle}</p>
+            </h2>
+            <p className="text-xs sm:text-sm text-charcoal-500 mt-0.5">{copy.chart.subtitle}</p>
           </div>
           <div className="flex flex-wrap items-center gap-4 text-xs font-medium">
-            <span className="flex items-center gap-1.5 text-slate-700">
-              <span className="w-3 h-3 rounded-md bg-amber-500" />
+            <span className="flex items-center gap-1.5 text-charcoal-700">
+              <span className="w-2.5 h-2.5 rounded-sm bg-amber-500" />
               {t(copy.chart.legendGross, { amount: formatBRL(currentPeriodData.gross) })}
             </span>
             <span className="flex items-center gap-1.5 text-emerald-700">
-              <span className="w-3 h-3 rounded-md bg-emerald-600" />
+              <span className="w-2.5 h-2.5 rounded-sm bg-emerald-600" />
               {t(copy.chart.legendEarnings, { amount: formatBRL(currentPeriodData.earnings) })}
             </span>
           </div>
         </div>
 
-        {/* Gráfico de Barras com Linhas Guia e Eixo X Separado */}
         <div className="relative pt-2">
           {/* Linhas de grade de fundo */}
-          <div className="absolute inset-x-0 top-6 h-48 flex flex-col justify-between pointer-events-none opacity-40">
-            <div className="border-b border-dashed border-slate-200 w-full flex justify-end">
-              <span className="text-[10px] font-mono text-slate-400 -mt-2.5 bg-white px-1">
+          <div className="absolute inset-x-0 top-6 h-48 flex flex-col justify-between pointer-events-none opacity-60">
+            <div className="border-b border-dashed border-warm-border w-full flex justify-end">
+              <span className="text-[11px] tabular-nums text-charcoal-400 -mt-2.5 bg-white px-1">
                 {formatBRL(maxChartValue)}
               </span>
             </div>
-            <div className="border-b border-dashed border-slate-200 w-full flex justify-end">
-              <span className="text-[10px] font-mono text-slate-400 -mt-2.5 bg-white px-1">
+            <div className="border-b border-dashed border-warm-border w-full flex justify-end">
+              <span className="text-[11px] tabular-nums text-charcoal-400 -mt-2.5 bg-white px-1">
                 {formatBRL(maxChartValue / 2)}
               </span>
             </div>
-            <div className="border-b border-dashed border-slate-200 w-full flex justify-end">
-              <span className="text-[10px] font-mono text-slate-400 -mt-2.5 bg-white px-1">
+            <div className="border-b border-dashed border-warm-border w-full flex justify-end">
+              <span className="text-[11px] tabular-nums text-charcoal-400 -mt-2.5 bg-white px-1">
                 {formatBRL(0)}
               </span>
             </div>
           </div>
 
-          {/* Área das Barras */}
-          <div className="relative h-48 flex items-end gap-1.5 sm:gap-2.5 overflow-x-auto pt-6 pb-0 border-b border-slate-200">
-            {computedChartData.map((pt, idx) => {
-              const maxBarHeight = 150;
-              const grossHeight =
-                pt.gross > 0
-                  ? Math.max(8, Math.round((pt.gross / maxChartValue) * maxBarHeight))
-                  : 4;
-              const earningsHeight =
-                pt.earnings > 0
-                  ? Math.max(4, Math.round((pt.earnings / maxChartValue) * maxBarHeight))
-                  : 2;
+          <div className="overflow-x-auto pb-1">
+            <div className={computedChartData.length > 10 ? 'min-w-[600px]' : 'w-full'}>
+              {/* Área das barras */}
+              <div className="relative h-48 flex items-end gap-1.5 sm:gap-2.5 pt-6 pb-0 border-b border-warm-border">
+                {computedChartData.map((pt, idx) => {
+                  const maxBarHeight = 150;
+                  const grossHeight =
+                    pt.gross > 0
+                      ? Math.max(8, Math.round((pt.gross / maxChartValue) * maxBarHeight))
+                      : 4;
+                  const earningsHeight =
+                    pt.earnings > 0
+                      ? Math.max(4, Math.round((pt.earnings / maxChartValue) * maxBarHeight))
+                      : 2;
 
-              return (
-                <div
-                  key={idx}
-                  className="flex-1 min-w-[20px] h-full flex items-end justify-center group relative z-10"
-                >
-                  {/* Tooltip Hover */}
-                  <div className="absolute bottom-full mb-3 hidden group-hover:flex flex-col items-center z-30 pointer-events-none whitespace-nowrap">
-                    <div className="bg-slate-900 text-white rounded-xl p-2.5 shadow-xl text-[11px] space-y-1">
-                      <p className="font-semibold border-b border-slate-700 pb-1">{pt.label}</p>
-                      <p className="text-amber-300 font-mono">
-                        {t(copy.chart.tooltipGross, { amount: formatBRL(pt.gross) })}
-                      </p>
-                      <p className="text-emerald-400 font-mono">
-                        {t(copy.chart.tooltipEarnings, { amount: formatBRL(pt.earnings) })}
-                      </p>
-                      <p className="text-slate-300">
-                        {t(copy.chart.tooltipOrders, { count: pt.orders })}
-                      </p>
+                  return (
+                    <div
+                      key={idx}
+                      className="flex-1 min-w-[16px] h-full flex items-end justify-center group relative z-10"
+                    >
+                      <div className="absolute bottom-full mb-3 hidden group-hover:flex flex-col items-center z-30 pointer-events-none whitespace-nowrap">
+                        <div className="bg-charcoal-900 text-white rounded-xl p-2.5 shadow-lg text-xs space-y-1">
+                          <p className="font-semibold border-b border-charcoal-700 pb-1">{pt.label}</p>
+                          <p className="text-amber-300 tabular-nums">
+                            {t(copy.chart.tooltipGross, { amount: formatBRL(pt.gross) })}
+                          </p>
+                          <p className="text-emerald-300 tabular-nums">
+                            {t(copy.chart.tooltipEarnings, { amount: formatBRL(pt.earnings) })}
+                          </p>
+                          <p className="text-stone-300">
+                            {t(copy.chart.tooltipOrders, { count: pt.orders })}
+                          </p>
+                        </div>
+                        <div className="w-2 h-2 bg-charcoal-900 rotate-45 -mt-1" />
+                      </div>
+
+                      <div className="w-full flex items-end justify-center gap-0.5 sm:gap-1">
+                        <div
+                          style={{ height: `${grossHeight}px` }}
+                          className={`w-full max-w-[10px] sm:max-w-[14px] rounded-t-sm transition-all duration-200 ${
+                            pt.gross > 0
+                              ? 'bg-amber-400 group-hover:bg-amber-500'
+                              : 'bg-cream-200 group-hover:bg-cream-300'
+                          }`}
+                        />
+                        <div
+                          style={{ height: `${earningsHeight}px` }}
+                          className={`w-full max-w-[6px] sm:max-w-[10px] rounded-t-sm transition-all duration-200 ${
+                            pt.earnings > 0
+                              ? 'bg-emerald-600 group-hover:bg-emerald-500'
+                              : 'bg-cream-200 group-hover:bg-cream-300'
+                          }`}
+                        />
+                      </div>
                     </div>
-                    <div className="w-2 h-2 bg-slate-900 rotate-45 -mt-1" />
-                  </div>
-
-                  {/* Barras Lado a Lado */}
-                  <div className="w-full flex items-end justify-center gap-0.5 sm:gap-1">
-                    <div
-                      style={{ height: `${grossHeight}px` }}
-                      className={`w-full max-w-[10px] sm:max-w-[14px] rounded-t-sm transition-all duration-200 ${
-                        pt.gross > 0
-                          ? 'bg-amber-400 group-hover:bg-amber-500 shadow-xs'
-                          : 'bg-slate-100 group-hover:bg-slate-200'
-                      }`}
-                    />
-                    <div
-                      style={{ height: `${earningsHeight}px` }}
-                      className={`w-full max-w-[6px] sm:max-w-[10px] rounded-t-sm transition-all duration-200 ${
-                        pt.earnings > 0
-                          ? 'bg-emerald-600 group-hover:bg-emerald-500 shadow-xs'
-                          : 'bg-slate-100 group-hover:bg-slate-200'
-                      }`}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Rótulos do Eixo X */}
-          <div className="flex items-center gap-1.5 sm:gap-2.5 pt-2">
-            {computedChartData.map((pt, idx) => (
-              <div key={idx} className="flex-1 min-w-[20px] text-center">
-                {idx % labelInterval === 0 ? (
-                  <span className="text-[10px] font-mono text-slate-400 block truncate">
-                    {pt.label}
-                  </span>
-                ) : (
-                  <span className="text-[10px] font-mono block opacity-0 select-none">--</span>
-                )}
+                  );
+                })}
               </div>
-            ))}
+
+              {/* Rótulos do eixo X */}
+              <div className="flex items-center gap-1.5 sm:gap-2.5 pt-2">
+                {computedChartData.map((pt, idx) => (
+                  <div key={idx} className="flex-1 min-w-[16px] text-center">
+                    {idx % labelInterval === 0 ? (
+                      <span className="text-[11px] tabular-nums text-charcoal-400 block truncate">
+                        {pt.label}
+                      </span>
+                    ) : (
+                      <span className="text-[11px] block opacity-0 select-none">--</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
 
-          {/* Feedback se não houver faturamento aprovado no período */}
           {currentPeriodData.gross === 0 && (
-            <div className="text-center py-4 text-xs text-slate-400 mt-2 bg-slate-50/50 rounded-xl border border-slate-100">
+            <div className="text-center py-4 px-3 text-xs text-charcoal-500 mt-3 bg-cream-50 rounded-xl border border-warm-border/70">
               {copy.chart.emptyPeriodPrefix}{' '}
-              <strong>{currentPeriodData.label.toLowerCase()}</strong>.
+              <strong className="text-charcoal-700">{currentPeriodData.label.toLowerCase()}</strong>.
               {ordersList.some((o) => o.status === 'PENDING') && (
-                <span className="ml-1 text-amber-600 font-medium">
+                <span className="ml-1 text-amber-700 font-medium">
                   {t(copy.chart.pendingNotice, {
                     count: ordersList.filter((o) => o.status === 'PENDING').length,
                   })}
@@ -1327,28 +1255,30 @@ export default function AdminDashboardClient({
             </div>
           )}
         </div>
-      </div>
+      </section>
 
-      {/* Tabela de Top Eventos / Chás com Maior Arrecadação */}
-      <div id="top-eventos" className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-sm">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+      {/* Ranking dos chás */}
+      <section
+        id="top-eventos"
+        className="bg-white border border-warm-border rounded-2xl shadow-subtle overflow-hidden"
+      >
+        <div className="px-5 sm:px-6 py-4 sm:py-5 border-b border-warm-border/70 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div>
-            <h3 className="font-serif font-bold text-lg text-slate-900 flex items-center gap-2">
-              <Baby className="w-5 h-5 text-indigo-600" />
+            <h2 className="font-serif text-lg sm:text-xl font-medium text-charcoal-900">
               {copy.topEvents.title}
-            </h3>
-            <p className="text-xs text-slate-500">{copy.topEvents.subtitle}</p>
+            </h2>
+            <p className="text-xs sm:text-sm text-charcoal-500 mt-0.5">{copy.topEvents.subtitle}</p>
           </div>
-          <span className="text-xs text-slate-400 font-mono">
+          <span className="text-xs text-charcoal-500 tabular-nums shrink-0">
             {t(copy.topEvents.monitoredCount, { count: topEvents.length })}
           </span>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+          <table className="w-full min-w-[680px] text-left text-xs sm:text-sm">
             <thead>
-              <tr className="border-b border-slate-200 text-slate-400 font-semibold uppercase tracking-wider">
-                <th className="py-3 px-3">{copy.topEvents.columns.rank}</th>
+              <tr className="border-b border-warm-border/70 text-xs font-medium text-charcoal-500 bg-cream-50/50">
+                <th className="py-3 px-4">{copy.topEvents.columns.rank}</th>
                 <th className="py-3 px-4">{copy.topEvents.columns.event}</th>
                 <th className="py-3 px-4">{copy.topEvents.columns.type}</th>
                 <th className="py-3 px-4">{copy.topEvents.columns.mp}</th>
@@ -1357,14 +1287,14 @@ export default function AdminDashboardClient({
                 <th className="py-3 px-4 text-right">{copy.topEvents.columns.earnings}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-slate-700">
+            <tbody className="divide-y divide-warm-border/60 text-charcoal-700">
               {topEvents.slice(0, 10).map((ev, index) => (
-                <tr key={ev.id} className="hover:bg-slate-50/80 transition-colors">
-                  <td className="py-3.5 px-3 font-mono font-bold text-slate-400">
-                    {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}º`}
+                <tr key={ev.id} className="hover:bg-cream-50/60 transition-colors">
+                  <td className="py-3.5 px-4 font-medium text-charcoal-400 tabular-nums">
+                    {index + 1}
                   </td>
                   <td className="py-3.5 px-4">
-                    <div className="font-semibold text-slate-900 flex items-center gap-1.5">
+                    <div className="font-medium text-charcoal-900 flex items-center gap-1.5">
                       <span>
                         {ev.babyName
                           ? t(copy.topEvents.showerOfBaby, { name: ev.babyName })
@@ -1374,40 +1304,40 @@ export default function AdminDashboardClient({
                         href={`/${ev.slug}`}
                         target="_blank"
                         title={copy.topEvents.viewPublicPage}
-                        className="text-slate-400 hover:text-slate-700 inline-flex items-center"
+                        className="text-charcoal-400 hover:text-terracotta inline-flex items-center"
                       >
-                        <ExternalLink className="w-3 h-3" />
+                        <ExternalLink className="w-3.5 h-3.5" />
                       </Link>
                     </div>
-                    <span className="text-[11px] text-slate-400 block font-mono">
-                      /{ev.slug} • {ev.ownerEmail}
+                    <span className="text-xs text-charcoal-400 block">
+                      /{ev.slug} · {ev.ownerEmail}
                     </span>
                   </td>
-                  <td className="py-3.5 px-4">
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 text-slate-700">
+                  <td className="py-3.5 px-4 whitespace-nowrap">
+                    <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-cream-100 text-charcoal-700">
                       {translateEventType(ev.eventType)}
                     </span>
                   </td>
-                  <td className="py-3.5 px-4">
+                  <td className="py-3.5 px-4 whitespace-nowrap">
                     {ev.mpConnected ? (
-                      <span className="inline-flex items-center gap-1 text-[11px] text-emerald-700 font-medium">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                      <span className="inline-flex items-center gap-1.5 text-xs text-emerald-700 font-medium">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500" />
                         {copy.topEvents.mpConnected}
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 text-[11px] text-amber-700 font-medium">
-                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                      <span className="inline-flex items-center gap-1.5 text-xs text-amber-700 font-medium">
+                        <span className="w-2 h-2 rounded-full bg-amber-500" />
                         {copy.topEvents.mpPending}
                       </span>
                     )}
                   </td>
-                  <td className="py-3.5 px-4 font-mono">
+                  <td className="py-3.5 px-4 text-xs text-charcoal-600 tabular-nums whitespace-nowrap">
                     {t(copy.topEvents.ordersSuffix, { count: ev.ordersCount })}
                   </td>
-                  <td className="py-3.5 px-4 font-bold text-slate-900 font-mono">
+                  <td className="py-3.5 px-4 font-semibold text-charcoal-900 tabular-nums whitespace-nowrap">
                     {formatBRL(ev.grossRaised)}
                   </td>
-                  <td className="py-3.5 px-4 text-right font-bold text-emerald-600 font-mono">
+                  <td className="py-3.5 px-4 text-right font-semibold text-emerald-700 tabular-nums whitespace-nowrap">
                     {formatBRL(ev.platformEarnings)}
                   </td>
                 </tr>
@@ -1415,7 +1345,7 @@ export default function AdminDashboardClient({
 
               {topEvents.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="text-center py-8 text-slate-400">
+                  <td colSpan={7} className="text-center py-8 text-sm text-charcoal-400">
                     {copy.topEvents.empty}
                   </td>
                 </tr>
@@ -1423,31 +1353,30 @@ export default function AdminDashboardClient({
             </tbody>
           </table>
         </div>
-      </div>
+      </section>
 
-      {/* Auditoria Geral de Pedidos / Transações do Site */}
-      <div
+      {/* Auditoria geral de pedidos */}
+      <section
         id="transacoes-gerais"
-        className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-sm space-y-6"
+        className="bg-white border border-warm-border rounded-2xl shadow-subtle overflow-hidden"
       >
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="px-5 sm:px-6 py-4 sm:py-5 border-b border-warm-border/70 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
           <div>
-            <h3 className="font-serif font-bold text-lg text-slate-900 flex items-center gap-2">
-              <ShieldCheck className="w-5 h-5 text-rose-600" />
+            <h2 className="font-serif text-lg sm:text-xl font-medium text-charcoal-900">
               {copy.audit.title}
-            </h3>
-            <p className="text-xs text-slate-500">{copy.audit.subtitle}</p>
+            </h2>
+            <p className="text-xs sm:text-sm text-charcoal-500 mt-0.5">{copy.audit.subtitle}</p>
           </div>
 
-          <div className="text-xs text-slate-500 font-mono text-right">
-            <span>
+          <div className="text-xs text-charcoal-500 md:text-right">
+            <span className="tabular-nums font-medium text-charcoal-700">
               {t(copy.audit.showingCount, {
                 shown: filteredOrders.length,
                 total: ordersList.length,
               })}
             </span>
             {hasTruncatedAuditList && (
-              <span className="block text-[11px] text-slate-400 font-sans mt-0.5">
+              <span className="block text-xs text-charcoal-400 mt-0.5">
                 {t(copy.audit.truncatedNotice, {
                   loaded: ordersList.length,
                   total: metrics.totalOrdersCount,
@@ -1457,158 +1386,154 @@ export default function AdminDashboardClient({
           </div>
         </div>
 
-        {/* Banner de Feedback de Verificação */}
-        {feedback && (
-          <div
-            className={`p-3.5 rounded-2xl border flex items-center justify-between gap-3 text-xs transition-all ${
-              feedback.type === 'success'
-                ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
-                : feedback.type === 'info'
-                  ? 'bg-blue-50 border-blue-200 text-blue-800'
-                  : 'bg-rose-50 border-rose-200 text-rose-800'
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              {feedback.type === 'success' ? (
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-              ) : feedback.type === 'info' ? (
-                <Clock className="w-4 h-4 text-blue-600 shrink-0" />
-              ) : (
-                <XCircle className="w-4 h-4 text-rose-600 shrink-0" />
-              )}
-              <span className="font-medium">{feedback.message}</span>
+        <div className="px-5 sm:px-6 py-4 border-b border-warm-border/60 bg-cream-50/40 space-y-4">
+          {feedback && (
+            <div
+              className={`p-3.5 rounded-xl border flex items-center justify-between gap-3 text-xs sm:text-sm transition-all ${
+                feedback.type === 'success'
+                  ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                  : feedback.type === 'info'
+                    ? 'bg-blue-50 border-blue-200 text-blue-800'
+                    : 'bg-rose-50 border-rose-200 text-rose-800'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                {feedback.type === 'success' ? (
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                ) : feedback.type === 'info' ? (
+                  <Clock className="w-4 h-4 text-blue-600 shrink-0" />
+                ) : (
+                  <XCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                )}
+                <span className="font-medium">{feedback.message}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setFeedback(null)}
+                className="text-charcoal-400 hover:text-charcoal-700 p-1 text-base font-bold leading-none cursor-pointer"
+              >
+                ×
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={() => setFeedback(null)}
-              className="text-slate-400 hover:text-slate-600 p-1 text-sm font-bold leading-none cursor-pointer"
-            >
-              ×
-            </button>
-          </div>
-        )}
+          )}
 
-        {/* Barra de Filtros e Busca em Tempo Real */}
-        <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
-          {/* Campo de Busca */}
-          <div className="sm:col-span-6 relative">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder={copy.audit.searchPlaceholder}
-              className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500"
-            />
-          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+            <div className="sm:col-span-6 relative">
+              <Search className="w-4 h-4 text-charcoal-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder={copy.audit.searchPlaceholder}
+                className="w-full pl-10 pr-4 py-2 rounded-xl border border-warm-border bg-white text-charcoal-900 placeholder:text-charcoal-400 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-charcoal-900/10 focus:border-charcoal-400"
+              />
+            </div>
 
-          {/* Filtro de Status */}
-          <div className="sm:col-span-3">
-            <select
-              value={statusFilter}
-              onChange={(e) =>
-                setStatusFilter(
-                  e.target.value as
-                    | 'ALL'
-                    | 'APPROVED'
-                    | 'PENDING'
-                    | 'REJECTED'
-                    | 'REFUNDED'
-                    | 'CHARGED_BACK'
-                )
-              }
-              className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-rose-500/20"
-            >
-              <option value="ALL">{copy.audit.statusOptions.ALL}</option>
-              <option value="APPROVED">{copy.audit.statusOptions.APPROVED}</option>
-              <option value="PENDING">{copy.audit.statusOptions.PENDING}</option>
-              <option value="REJECTED">{copy.audit.statusOptions.REJECTED}</option>
-              <option value="REFUNDED">{copy.audit.statusOptions.REFUNDED}</option>
-              <option value="CHARGED_BACK">{copy.audit.statusOptions.CHARGED_BACK}</option>
-            </select>
-          </div>
+            <div className="sm:col-span-3">
+              <select
+                value={statusFilter}
+                onChange={(e) =>
+                  setStatusFilter(
+                    e.target.value as
+                      | 'ALL'
+                      | 'APPROVED'
+                      | 'PENDING'
+                      | 'REJECTED'
+                      | 'REFUNDED'
+                      | 'CHARGED_BACK'
+                  )
+                }
+                className="w-full px-3 py-2 rounded-xl border border-warm-border text-xs sm:text-sm bg-white text-charcoal-800 focus:outline-none focus:ring-2 focus:ring-charcoal-900/10 focus:border-charcoal-400"
+              >
+                <option value="ALL">{copy.audit.statusOptions.ALL}</option>
+                <option value="APPROVED">{copy.audit.statusOptions.APPROVED}</option>
+                <option value="PENDING">{copy.audit.statusOptions.PENDING}</option>
+                <option value="REJECTED">{copy.audit.statusOptions.REJECTED}</option>
+                <option value="REFUNDED">{copy.audit.statusOptions.REFUNDED}</option>
+                <option value="CHARGED_BACK">{copy.audit.statusOptions.CHARGED_BACK}</option>
+              </select>
+            </div>
 
-          {/* Filtro de Método */}
-          <div className="sm:col-span-3">
-            <select
-              value={methodFilter}
-              onChange={(e) =>
-                setMethodFilter(e.target.value as 'ALL' | 'PIX' | 'CREDIT_CARD')
-              }
-              className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-rose-500/20"
-            >
-              <option value="ALL">{copy.audit.methodOptions.ALL}</option>
-              <option value="PIX">{copy.audit.methodOptions.PIX}</option>
-              <option value="CREDIT_CARD">{copy.audit.methodOptions.CREDIT_CARD}</option>
-            </select>
+            <div className="sm:col-span-3">
+              <select
+                value={methodFilter}
+                onChange={(e) =>
+                  setMethodFilter(e.target.value as 'ALL' | 'PIX' | 'CREDIT_CARD')
+                }
+                className="w-full px-3 py-2 rounded-xl border border-warm-border text-xs sm:text-sm bg-white text-charcoal-800 focus:outline-none focus:ring-2 focus:ring-charcoal-900/10 focus:border-charcoal-400"
+              >
+                <option value="ALL">{copy.audit.methodOptions.ALL}</option>
+                <option value="PIX">{copy.audit.methodOptions.PIX}</option>
+                <option value="CREDIT_CARD">{copy.audit.methodOptions.CREDIT_CARD}</option>
+              </select>
+            </div>
           </div>
         </div>
 
-        {/* Tabela de Transações */}
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+          <table className="w-full min-w-[820px] text-left text-xs">
             <thead>
-              <tr className="border-b border-slate-200 text-slate-400 font-semibold uppercase tracking-wider">
-                <th className="py-3 px-3">{copy.audit.columns.date}</th>
-                <th className="py-3 px-3">{copy.audit.columns.event}</th>
-                <th className="py-3 px-3">{copy.audit.columns.payer}</th>
-                <th className="py-3 px-3">{copy.audit.columns.method}</th>
-                <th className="py-3 px-3">{copy.audit.columns.gross}</th>
-                <th className="py-3 px-3">{copy.audit.columns.fee}</th>
-                <th className="py-3 px-3">{copy.audit.columns.net}</th>
-                <th className="py-3 px-3">{copy.audit.columns.status}</th>
-                <th className="py-3 px-3 text-right">{copy.audit.columns.message}</th>
+              <tr className="border-b border-warm-border/70 text-xs font-medium text-charcoal-500 bg-cream-50/50">
+                <th className="py-3 px-3.5">{copy.audit.columns.date}</th>
+                <th className="py-3 px-3.5">{copy.audit.columns.event}</th>
+                <th className="py-3 px-3.5">{copy.audit.columns.payer}</th>
+                <th className="py-3 px-3.5">{copy.audit.columns.method}</th>
+                <th className="py-3 px-3.5">{copy.audit.columns.gross}</th>
+                <th className="py-3 px-3.5">{copy.audit.columns.fee}</th>
+                <th className="py-3 px-3.5">{copy.audit.columns.net}</th>
+                <th className="py-3 px-3.5">{copy.audit.columns.status}</th>
+                <th className="py-3 px-3.5 text-right">{copy.audit.columns.message}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-slate-700">
+            <tbody className="divide-y divide-warm-border/60 text-charcoal-700">
               {filteredOrders.map((ord) => (
-                <tr key={ord.id} className="hover:bg-slate-50/70 transition-colors">
-                  <td className="py-3 px-3 font-mono text-[11px] text-slate-500 whitespace-nowrap">
+                <tr key={ord.id} className="hover:bg-cream-50/60 transition-colors">
+                  <td className="py-3.5 px-3.5 text-charcoal-500 tabular-nums whitespace-nowrap">
                     {formatDateTime(ord.createdAt)}
                   </td>
-                  <td className="py-3 px-3">
+                  <td className="py-3.5 px-3.5">
                     <Link
                       href={`/${ord.eventSlug}`}
                       target="_blank"
-                      className="font-medium text-slate-900 hover:text-rose-600 inline-flex items-center gap-1 group"
+                      className="font-medium text-charcoal-900 hover:text-terracotta inline-flex items-center gap-1 group"
                     >
-                      <span className="truncate max-w-[120px]">
+                      <span className="truncate max-w-[130px]">
                         {ord.babyName || ord.parentsNames}
                       </span>
-                      <ExternalLink className="w-3 h-3 text-slate-400 group-hover:text-rose-500" />
+                      <ExternalLink className="w-3 h-3 text-charcoal-400 group-hover:text-terracotta" />
                     </Link>
-                    <span className="text-[10px] text-slate-400 block font-mono">
+                    <span className="text-[11px] text-charcoal-400 block">
                       /{ord.eventSlug}
                     </span>
                   </td>
-                  <td className="py-3 px-3">
-                    <span className="font-semibold text-slate-900 block truncate max-w-[140px]">
+                  <td className="py-3.5 px-3.5">
+                    <span className="font-medium text-charcoal-900 block truncate max-w-[140px]">
                       {ord.payerName}
                     </span>
-                    <span className="text-[10px] text-slate-400 block truncate max-w-[140px]">
+                    <span className="text-[11px] text-charcoal-400 block truncate max-w-[140px]">
                       {ord.payerEmail}
                     </span>
                   </td>
-                  <td className="py-3 px-3">
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-700">
+                  <td className="py-3.5 px-3.5 whitespace-nowrap">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-cream-100 text-charcoal-700">
                       {ord.paymentMethod === 'PIX'
                         ? copy.audit.methods.PIX
                         : copy.audit.methods.CREDIT_CARD}
                     </span>
                   </td>
-                  <td className="py-3 px-3 font-mono font-bold text-slate-900">
+                  <td className="py-3.5 px-3.5 font-semibold text-charcoal-900 tabular-nums whitespace-nowrap">
                     {formatBRL(ord.amount)}
                   </td>
-                  <td className="py-3 px-3 font-mono font-semibold text-emerald-600">
+                  <td className="py-3.5 px-3.5 font-medium text-emerald-700 tabular-nums whitespace-nowrap">
                     {formatBRL(ord.platformFee)}
                   </td>
-                  <td className="py-3 px-3 font-mono text-slate-600">
+                  <td className="py-3.5 px-3.5 text-charcoal-600 tabular-nums whitespace-nowrap">
                     {formatBRL(ord.netAmount)}
                   </td>
-                  <td className="py-3 px-3">
+                  <td className="py-3.5 px-3.5">
                     {ord.status === 'APPROVED' ? (
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
                           <CheckCircle2 className="w-3 h-3 text-emerald-600" />
                           {copy.audit.statuses.APPROVED}
                         </span>
@@ -1616,12 +1541,12 @@ export default function AdminDashboardClient({
                           type="button"
                           onClick={() => handleVerifyPayment(ord.id)}
                           disabled={verifyingId === ord.id}
-                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-white hover:bg-slate-100 text-slate-600 border border-slate-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-white hover:bg-cream-100 text-charcoal-600 border border-warm-border transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                           title={copy.audit.actions.syncTitle}
                         >
                           <RefreshCw
                             className={`w-2.5 h-2.5 ${
-                              verifyingId === ord.id ? 'animate-spin text-rose-500' : 'text-slate-400'
+                              verifyingId === ord.id ? 'animate-spin text-terracotta' : 'text-charcoal-400'
                             }`}
                           />
                           <span>
@@ -1633,7 +1558,7 @@ export default function AdminDashboardClient({
                       </div>
                     ) : ord.status === 'PENDING' ? (
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-amber-50 text-amber-700 border border-amber-200">
                           <Clock className="w-3 h-3 text-amber-600" />
                           {copy.audit.statuses.PENDING}
                         </span>
@@ -1641,12 +1566,12 @@ export default function AdminDashboardClient({
                           type="button"
                           onClick={() => handleVerifyPayment(ord.id)}
                           disabled={verifyingId === ord.id}
-                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 shadow-xs hover:border-slate-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-white hover:bg-cream-100 text-charcoal-800 border border-warm-border transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                           title={copy.audit.actions.verifyTitle}
                         >
                           <RefreshCw
                             className={`w-2.5 h-2.5 ${
-                              verifyingId === ord.id ? 'animate-spin text-rose-500' : 'text-slate-500'
+                              verifyingId === ord.id ? 'animate-spin text-terracotta' : 'text-charcoal-500'
                             }`}
                           />
                           <span>
@@ -1657,32 +1582,32 @@ export default function AdminDashboardClient({
                         </button>
                       </div>
                     ) : ord.status === 'REFUNDED' ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-amber-50 text-amber-800 border border-amber-200">
                         <XCircle className="w-3 h-3 text-amber-600" />
                         {copy.audit.statuses.REFUNDED}
                       </span>
                     ) : ord.status === 'CHARGED_BACK' ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-100 text-rose-800 border border-rose-300">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-rose-100 text-rose-800 border border-rose-300">
                         <XCircle className="w-3 h-3 text-rose-700" />
                         {copy.audit.statuses.CHARGED_BACK}
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-rose-50 text-rose-700 border border-rose-200">
                         <XCircle className="w-3 h-3 text-rose-600" />
                         {translateOrderStatus(ord.status)}
                       </span>
                     )}
                   </td>
-                  <td className="py-3 px-3 text-right">
+                  <td className="py-3.5 px-3.5 text-right">
                     {ord.payerMessage ? (
                       <span
                         title={ord.payerMessage}
-                        className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-help"
+                        className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-cream-100 text-charcoal-600 hover:bg-cream-200 cursor-help"
                       >
                         <MessageCircle className="w-3.5 h-3.5" />
                       </span>
                     ) : (
-                      <span className="text-slate-300 text-center">-</span>
+                      <span className="text-charcoal-300 text-center">-</span>
                     )}
                   </td>
                 </tr>
@@ -1690,7 +1615,7 @@ export default function AdminDashboardClient({
 
               {filteredOrders.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="text-center py-8 text-slate-400">
+                  <td colSpan={9} className="text-center py-8 text-sm text-charcoal-400">
                     {copy.audit.empty}
                   </td>
                 </tr>
@@ -1698,7 +1623,7 @@ export default function AdminDashboardClient({
             </tbody>
           </table>
         </div>
-      </div>
+      </section>
     </div>
   );
 }
