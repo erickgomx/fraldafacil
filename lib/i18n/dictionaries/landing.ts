@@ -12,12 +12,12 @@ const pt = {
     titlePrefix: 'Ganhe fraldas dos convidados.',
     titleHighlight: 'Receba o valor no Pix.',
     subtitle:
-      'Crie uma página linda em 2 minutos e compartilhe no WhatsApp. Seus convidados escolhem pacotes de fraldas na vitrine e você recebe o dinheiro para comprar o tamanho certo quando o bebê precisar.',
+      'Crie uma página linda em 2 minutos e compartilhe no WhatsApp. Seus convidados escolhem pacotes de fraldas, participam do bolão ou de um sorteio premiado, e você recebe o valor no Pix para comprar o tamanho certo quando o bebê precisar.',
     primaryCta: 'Criar Página do meu Bebê',
     secondaryCta: 'Ver Página de Exemplo',
     pills: [
       'Sem estoque parado em casa',
-      'Convidado não baixa app',
+      'Bolão + sorteio (Chá Rifa) inclusos',
       'Saque direto para seu Pix',
     ],
   },
@@ -29,7 +29,7 @@ const pt = {
     teamBoy: '💙 Team Menino',
     teamGirl: '🩷 Team Menina',
     giftTitle: 'Pacote Mega Fraldas Tam. M',
-    giftSubtitle: 'Convidado presenteia via Pix',
+    giftSubtitle: 'Presente via Pix · ganha Nº da Sorte',
     giftPrice: 'R$ 85,00',
     giftAction: 'Presentear →',
     toastSender: 'Tia Camila enviou 1 pacote + recado',
@@ -56,7 +56,7 @@ const pt = {
       bullets: [
         'Você recebe o valor em dinheiro no Pix e compra quando precisar',
         'Vitrine pronta com valores reais para o convidado escolher com gosto',
-        'Bolão interativo e mural de recados para unir toda a família',
+        'Bolão interativo, sorteio com Número da Sorte e mural de recados',
       ],
     },
   },
@@ -125,8 +125,17 @@ const pt = {
       boyLabel: 'Menino · 58%',
       girlLabel: '42% · Menina',
     },
+    cardRaffle: {
+      tag: '03 · SORTEIO OPCIONAL (CHÁ RIFA)',
+      title: 'Sorteie um prêmio entre quem presentear',
+      description:
+        'Quer incentivar ainda mais a participação? Ative o sorteio no painel para que cada presente confirmado gere automaticamente 1 Número da Sorte, e sorteie o ganhador com 1 clique.',
+      prizeLabel: 'Prêmio: Vale-Presente de R$ 200',
+      prizeHint: '1 presente confirmado = 1 bilhete automático',
+      ticketSample: 'Nº #027',
+    },
     card3: {
-      tag: '03 · RECORDAÇÃO PARA SEMPRE',
+      tag: '04 · RECORDAÇÃO PARA SEMPRE',
       title: 'Mural de mensagens carinhosas da família',
       description:
         'Cada presente confirmado publica automaticamente o recado do convidado no mural da página. Uma lembrança afetuosa de quem esteve presente desde o início.',
@@ -236,6 +245,10 @@ const pt = {
     simulatorLabel: 'Simulador do Chá:',
     revealBoy: 'Revelar: Menino',
     revealGirl: 'Revelar: Menina',
+    drawRaffle: 'Simular Sorteio',
+    raffleDrawnBadge: 'Sorteado (#012)',
+    rafflePrize: 'Vale-Presente de R$ 200',
+    raffleWinnerName: 'Tia Camila & Tio Bruno',
     reset: 'Resetar',
     resetTitle: 'Voltar ao início',
     storyMessage:
@@ -290,12 +303,12 @@ const en: LandingDict = {
     titlePrefix: 'Receive diapers from guests.',
     titleHighlight: 'Get the money straight via Pix.',
     subtitle:
-      'Create a beautiful page in 2 minutes and share it on WhatsApp. Your guests pick diaper packs from your registry and you receive the funds to buy the exact size when your baby needs it.',
+      'Create a beautiful page in 2 minutes and share it on WhatsApp. Your guests pick diaper packs, join the guessing poll or an optional prize raffle, and you receive the funds via Pix to buy the exact size when your baby needs it.',
     primaryCta: 'Create My Baby’s Page',
     secondaryCta: 'See Example Page',
     pills: [
       'No boxes piling up at home',
-      'No app download for guests',
+      'Guessing poll + lucky raffle included',
       'Instant transfer to your account',
     ],
   },
@@ -307,7 +320,7 @@ const en: LandingDict = {
     teamBoy: '💙 Team Boy',
     teamGirl: '🩷 Team Girl',
     giftTitle: 'Mega Diaper Pack Size M',
-    giftSubtitle: 'Guest sends gift via Pix',
+    giftSubtitle: 'Gift via Pix · gets Lucky Number',
     giftPrice: 'R$ 85.00',
     giftAction: 'Gift now →',
     toastSender: 'Aunt Camila sent 1 pack + note',
@@ -334,7 +347,7 @@ const en: LandingDict = {
       bullets: [
         'You receive the cash value via Pix and buy whenever needed',
         'Ready-made showcase with realistic items guests love picking',
-        'Interactive guessing poll and guestbook bringing everyone together',
+        'Interactive guessing poll, Lucky Number raffle, and family guestbook',
       ],
     },
   },
@@ -403,8 +416,17 @@ const en: LandingDict = {
       boyLabel: 'Boy · 58%',
       girlLabel: '42% · Girl',
     },
+    cardRaffle: {
+      tag: '03 · OPTIONAL PRIZE RAFFLE',
+      title: 'Raffle a prize among gift givers',
+      description:
+        'Want to make gifting even more fun? Enable the optional raffle in your dashboard so every confirmed gift automatically generates 1 Lucky Number, then draw the winner in 1 click.',
+      prizeLabel: 'Prize: R$ 200 Gift Card',
+      prizeHint: '1 confirmed gift = 1 automatic ticket',
+      ticketSample: 'No. #027',
+    },
     card3: {
-      tag: '03 · KEEPSAKE MEMORIES',
+      tag: '04 · KEEPSAKE MEMORIES',
       title: 'Warm family guestbook wall',
       description:
         'Every confirmed gift automatically posts the guest’s note onto your event wall—a heartwarming keepsake from everyone who celebrated with you.',
@@ -514,6 +536,10 @@ const en: LandingDict = {
     simulatorLabel: 'Shower Simulator:',
     revealBoy: 'Reveal: Boy',
     revealGirl: 'Reveal: Girl',
+    drawRaffle: 'Simulate Raffle',
+    raffleDrawnBadge: 'Winner (#012)',
+    rafflePrize: 'R$ 200 Gift Card',
+    raffleWinnerName: 'Aunt Camila & Uncle Bruno',
     reset: 'Reset',
     resetTitle: 'Back to start',
     storyMessage:
@@ -567,12 +593,12 @@ const es: LandingDict = {
     titlePrefix: 'Recibe pañales de tus invitados.',
     titleHighlight: 'Cobra el valor directo por Pix.',
     subtitle:
-      'Crea una hermosa página en 2 minutos y compártela por WhatsApp. Tus invitados eligen paquetes de pañales en la vitrina y tú recibes el dinero para comprar la talla exacta cuando el bebé lo necesite.',
+      'Crea una hermosa página en 2 minutos y compártela por WhatsApp. Tus invitados eligen paquetes de pañales, participan en la porra o en un sorteo con premio, y tú recibes el dinero por Pix para comprar la talla exacta cuando el bebé lo necesite.',
     primaryCta: 'Crear Página de mi Bebé',
     secondaryCta: 'Ver Página de Ejemplo',
     pills: [
       'Sin cajas acumuladas en casa',
-      'El invitado no descarga apps',
+      'Porra + sorteo (Baby Rifa) incluidos',
       'Retiro directo a tu cuenta',
     ],
   },
@@ -584,7 +610,7 @@ const es: LandingDict = {
     teamBoy: '💙 Team Niño',
     teamGirl: '🩷 Team Niña',
     giftTitle: 'Pack Mega Pañales Talla M',
-    giftSubtitle: 'Invitado regala vía Pix',
+    giftSubtitle: 'Regalo vía Pix · gana Nº de la Suerte',
     giftPrice: 'R$ 85,00',
     giftAction: 'Regalar →',
     toastSender: 'Tía Camila envió 1 paquete + nota',
@@ -611,7 +637,7 @@ const es: LandingDict = {
       bullets: [
         'Recibes el dinero vía Pix y compras cuando realmente lo necesites',
         'Vitrina lista con precios reales para que el invitado elija con gusto',
-        'Porra interactiva y muro de mensajes para unir a toda la familia',
+        'Porra interactiva, sorteo con Número de la Suerte y muro de mensajes',
       ],
     },
   },
@@ -680,8 +706,17 @@ const es: LandingDict = {
       boyLabel: 'Niño · 58%',
       girlLabel: '42% · Niña',
     },
+    cardRaffle: {
+      tag: '03 · SORTEO OPCIONAL (BABY RIFA)',
+      title: 'Sortea un premio entre quienes regalen',
+      description:
+        '¿Quieres animar aún más a tus invitados? Activa el sorteo en tu panel para que cada regalo confirmado genere automáticamente 1 Número de la Suerte, y sortea al ganador en 1 clic.',
+      prizeLabel: 'Premio: Tarjeta de Regalo de R$ 200',
+      prizeHint: '1 regalo confirmado = 1 boleto automático',
+      ticketSample: 'N.º #027',
+    },
     card3: {
-      tag: '03 · RECUERDO PARA SIEMPRE',
+      tag: '04 · RECUERDO PARA SIEMPRE',
       title: 'Muro de mensajes cariñosos de la familia',
       description:
         'Cada regalo confirmado publica automáticamente el mensaje del invitado en el muro de tu página. Un recuerdo inolvidable de quienes estuvieron desde el inicio.',
@@ -791,6 +826,10 @@ const es: LandingDict = {
     simulatorLabel: 'Simulador del Evento:',
     revealBoy: 'Revelar: Niño',
     revealGirl: 'Revelar: Niña',
+    drawRaffle: 'Simular Sorteo',
+    raffleDrawnBadge: 'Sorteado (#012)',
+    rafflePrize: 'Tarjeta de Regalo de R$ 200',
+    raffleWinnerName: 'Tía Camila & Tío Bruno',
     reset: 'Reiniciar',
     resetTitle: 'Volver al inicio',
     storyMessage:

@@ -8,12 +8,13 @@ import DiaperCatalog, { GiftItemData } from '@/components/DiaperCatalog';
 import GuestbookWall, { GuestMessageData } from '@/components/GuestbookWall';
 import PixCheckoutModal from '@/components/PixCheckoutModal';
 import Link from 'next/link';
-import { ArrowRight, Eye, RefreshCw } from 'lucide-react';
+import { ArrowRight, Eye, RefreshCw, Ticket, Trophy } from 'lucide-react';
 import { getDefaultGiftItems } from '@/lib/default-gifts';
 import ThemeToggle from '@/components/ThemeToggle';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { useI18n } from '@/components/LanguageProvider';
 import { landingDict } from '@/lib/i18n/dictionaries/landing';
+import { eventDict } from '@/lib/i18n/dictionaries/event';
 
 const INITIAL_DEMO_META: Array<{ id: string; hoursAgo: number; guess: 'BOY' | 'GIRL'; amount: number }> = [
   { id: 'msg-1', hoursAgo: 2, guess: 'BOY', amount: 80.0 },
@@ -23,13 +24,15 @@ const INITIAL_DEMO_META: Array<{ id: string; hoursAgo: number; guess: 'BOY' | 'G
 ];
 
 export default function DemoClient() {
-  const { locale } = useI18n();
+  const { locale, t } = useI18n();
   const dict = landingDict[locale].demo;
+  const publicDict = eventDict[locale].publicEvent;
 
   const [selectedGift, setSelectedGift] = useState<GiftItemData | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalGuess, setModalGuess] = useState<'BOY' | 'GIRL' | null>(null);
   const [revealedGender, setRevealedGender] = useState<string | null>(null);
+  const [demoRaffleDrawn, setDemoRaffleDrawn] = useState(false);
   const [customMessages, setCustomMessages] = useState<GuestMessageData[]>([]);
   const [boyVotes, setBoyVotes] = useState(38);
   const [girlVotes, setGirlVotes] = useState(24);
@@ -93,6 +96,15 @@ export default function DemoClient() {
     }
   };
 
+  const handleSimulateRaffleDraw = () => {
+    setDemoRaffleDrawn(true);
+    confetti({
+      particleCount: 90,
+      spread: 70,
+      colors: ['#C2765B', '#4A6B82', '#B86B77', '#FAF8F5'],
+    });
+  };
+
   return (
     <div className="min-h-screen bg-cream-50 text-charcoal-900 pb-24 overflow-x-hidden">
       <div className="sticky top-0 z-50 bg-[#F5F1E9] border-b border-warm-border py-2 px-4 sm:px-6">
@@ -125,8 +137,9 @@ export default function DemoClient() {
             <span>{dict.simulatorLabel}</span>
           </div>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-1.5">
             <button
+              type="button"
               onClick={() => handleToggleReveal('BOY')}
               className={`py-1 px-2.5 rounded text-[11px] font-medium transition ${
                 revealedGender === 'BOY'
@@ -138,6 +151,7 @@ export default function DemoClient() {
             </button>
 
             <button
+              type="button"
               onClick={() => handleToggleReveal('GIRL')}
               className={`py-1 px-2.5 rounded text-[11px] font-medium transition ${
                 revealedGender === 'GIRL'
@@ -148,9 +162,26 @@ export default function DemoClient() {
               {dict.revealGirl}
             </button>
 
-            {revealedGender && (
+            <button
+              type="button"
+              onClick={handleSimulateRaffleDraw}
+              className={`py-1 px-2.5 rounded text-[11px] font-medium transition inline-flex items-center gap-1 ${
+                demoRaffleDrawn
+                  ? 'bg-terracotta text-white'
+                  : 'bg-cream-100 text-terracotta border border-terracotta/30 hover:bg-terracotta/10'
+              }`}
+            >
+              <Ticket className="w-3 h-3" />
+              <span>{demoRaffleDrawn ? dict.raffleDrawnBadge : dict.drawRaffle}</span>
+            </button>
+
+            {(revealedGender || demoRaffleDrawn) && (
               <button
-                onClick={() => handleToggleReveal(null)}
+                type="button"
+                onClick={() => {
+                  handleToggleReveal(null);
+                  setDemoRaffleDrawn(false);
+                }}
                 className="py-1 px-2 rounded text-[11px] font-mono text-charcoal-500 hover:text-charcoal-800 flex items-center gap-1"
                 title={dict.resetTitle}
               >
@@ -182,6 +213,51 @@ export default function DemoClient() {
         onOpenPixModalWithGuess={handleOpenWithGuessOnly}
       />
 
+      <section className="max-w-3xl mx-auto px-6 mt-8">
+        {demoRaffleDrawn ? (
+          <div className="rounded-2xl bg-white border border-warm-border shadow-subtle p-5 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
+            <div className="flex items-center gap-3.5">
+              <div className="w-10 h-10 rounded-xl bg-terracotta/10 text-terracotta flex items-center justify-center shrink-0">
+                <Trophy className="w-5 h-5" />
+              </div>
+              <div>
+                <span className="text-[10px] font-mono uppercase tracking-widest text-terracotta block">
+                  {publicDict.raffleDrawnEyebrow}
+                </span>
+                <p className="font-serif text-lg text-charcoal-900 font-medium">
+                  {t(publicDict.raffleWinnerCongratulation, { winner: dict.raffleWinnerName })}
+                </p>
+                <p className="text-xs text-charcoal-500 font-sans">
+                  {t(publicDict.rafflePrizePrefix, { prize: dict.rafflePrize })}
+                </p>
+              </div>
+            </div>
+            <span className="px-3.5 py-1.5 rounded-lg bg-charcoal-900 text-white font-mono text-xs font-semibold tabular-nums shrink-0">
+              Nº #012
+            </span>
+          </div>
+        ) : (
+          <div className="rounded-2xl bg-white/90 border border-warm-border shadow-subtle p-5 flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-cream-100 border border-warm-border text-terracotta flex items-center justify-center shrink-0">
+              <Ticket className="w-5 h-5" />
+            </div>
+            <div className="text-left">
+              <span className="text-[10px] font-mono uppercase tracking-widest text-terracotta block">
+                {publicDict.raffleActiveEyebrow}
+              </span>
+              <p className="text-xs sm:text-sm text-charcoal-700 font-sans leading-relaxed">
+                {publicDict.raffleActiveBefore}{' '}
+                <strong className="font-semibold text-charcoal-900">
+                  {publicDict.raffleActiveHighlight}
+                </strong>{' '}
+                {publicDict.raffleActiveWithPrize}{' '}
+                <strong className="font-semibold text-charcoal-900">{dict.rafflePrize}</strong>.
+              </p>
+            </div>
+          </div>
+        )}
+      </section>
+
       <DiaperCatalog
         items={demoGifts}
         onSelectGift={(gift) => handleOpenGiftModal(gift)}
@@ -203,6 +279,9 @@ export default function DemoClient() {
         isDemo={true}
         eventType="REVELACAO"
         revealedGender={revealedGender}
+        raffleEnabled={true}
+        rafflePrize={dict.rafflePrize}
+        raffleDrawnAt={demoRaffleDrawn ? 'demo-drawn' : null}
         onPaymentSuccess={() => {
           const messageText =
             revealedGender === 'GIRL'

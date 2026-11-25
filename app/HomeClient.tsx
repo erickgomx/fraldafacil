@@ -10,6 +10,7 @@ import {
   ShieldCheck,
   Gift,
   MessageSquareHeart,
+  Ticket,
   Menu,
   X,
 } from 'lucide-react';
@@ -415,18 +416,51 @@ export default function HomeClient() {
                 </div>
               </div>
 
-              <div className="md:col-span-12 rounded-2xl bg-cream-50 border border-warm-border p-7 sm:p-8 grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
-                <div className="md:col-span-7">
+              <div className="md:col-span-6 rounded-2xl bg-cream-50 border border-warm-border p-7 sm:p-8 flex flex-col justify-between">
+                <div>
+                  <span className="text-xs font-mono text-charcoal-600 block mb-3">
+                    {dict.pillars.cardRaffle.tag}
+                  </span>
+                  <h3 className="font-serif text-2xl text-charcoal-900 mb-3">
+                    {dict.pillars.cardRaffle.title}
+                  </h3>
+                  <p className="text-sm text-charcoal-600 leading-relaxed mb-6">
+                    {dict.pillars.cardRaffle.description}
+                  </p>
+                </div>
+
+                <div className="bg-white rounded-xl p-4 border border-warm-border flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-9 h-9 rounded-lg bg-cream-100 border border-warm-border text-terracotta flex items-center justify-center shrink-0">
+                      <Ticket className="w-4 h-4" aria-hidden="true" />
+                    </div>
+                    <div className="min-w-0">
+                      <span className="block text-xs font-semibold text-charcoal-900 truncate">
+                        {dict.pillars.cardRaffle.prizeLabel}
+                      </span>
+                      <span className="block text-[11px] text-charcoal-500 truncate">
+                        {dict.pillars.cardRaffle.prizeHint}
+                      </span>
+                    </div>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-lg bg-charcoal-900 text-white font-mono text-xs font-semibold tabular-nums shrink-0">
+                    {dict.pillars.cardRaffle.ticketSample}
+                  </span>
+                </div>
+              </div>
+
+              <div className="md:col-span-6 rounded-2xl bg-cream-50 border border-warm-border p-7 sm:p-8 flex flex-col justify-between">
+                <div>
                   <span className="text-xs font-mono text-charcoal-600 block mb-3">{dict.pillars.card3.tag}</span>
                   <h3 className="font-serif text-2xl text-charcoal-900 mb-3">
                     {dict.pillars.card3.title}
                   </h3>
-                  <p className="text-sm text-charcoal-600 leading-relaxed">
+                  <p className="text-sm text-charcoal-600 leading-relaxed mb-6">
                     {dict.pillars.card3.description}
                   </p>
                 </div>
 
-                <div className="md:col-span-5 bg-white rounded-xl p-5 border border-warm-border shadow-subtle">
+                <div className="bg-white rounded-xl p-5 border border-warm-border shadow-subtle">
                   <div className="flex items-center gap-2 text-xs font-medium text-charcoal-900 mb-2">
                     <MessageSquareHeart className="w-4 h-4 text-terracotta" aria-hidden="true" />
                     <span>{dict.pillars.card3.author}</span>

@@ -32,7 +32,7 @@ const pt = {
       mpCta: 'Conectar conta',
       customizeTitle: 'Conferir foto, data e lista de presentes',
       customizeDesc:
-        'Sua lista já começa com sugestões prontas. Você pode trocar valores, ocultar itens ou colocar uma foto de capa.',
+        'Sua lista já começa com sugestões prontas. Você pode trocar valores, colocar uma foto de capa ou ativar um sorteio entre convidados.',
       customizeCtaPage: 'Editar página',
       customizeCtaGifts: 'Ver presentes',
       shareTitle: 'Mandar o convite para a família',
@@ -86,6 +86,15 @@ const pt = {
     raffle: {
       titleWithPrize: 'Sorteio entre convidados · Prêmio: {prize}',
       titleDefault: 'Sorteio entre convidados',
+      optionalBadge: 'Opcional · Desativado',
+      activeBadge: 'Ativo na página',
+      drawnBadge: 'Sorteio realizado',
+      inactiveDescription:
+        'Você pode fazer estilo Chá Rifa e sortear um brinde entre quem enviar presente. Cada presente confirmado gera 1 Número da Sorte automático e você sorteia o ganhador aqui com 1 clique.',
+      prizeInputPlaceholder: 'Qual será o prêmio? Ex: Pix de R$ 150 ou Cesta (opcional)',
+      enableNowButton: 'Ativar sorteio',
+      enablingButton: 'Ativando...',
+      editSettingsLink: 'Editar ou desativar',
       drawnSubtitle:
         'Sorteio realizado. O resultado é definitivo e já aparece na página pública.',
       participantsSubtitle:
@@ -380,7 +389,7 @@ const en: PainelDict = {
       mpCta: 'Connect account',
       customizeTitle: 'Review photo, date, and gift list',
       customizeDesc:
-        'Your registry comes pre-filled with suggestions. Feel free to edit prices, hide items, or upload a cover photo.',
+        'Your registry comes pre-filled with suggestions. Edit prices, upload a cover photo, or enable a prize raffle for guests.',
       customizeCtaPage: 'Edit page',
       customizeCtaGifts: 'View gifts',
       shareTitle: 'Share the invite with family',
@@ -434,6 +443,15 @@ const en: PainelDict = {
     raffle: {
       titleWithPrize: 'Gift givers raffle · Prize: {prize}',
       titleDefault: 'Gift givers raffle',
+      optionalBadge: 'Optional · Off',
+      activeBadge: 'Active on page',
+      drawnBadge: 'Winner drawn',
+      inactiveDescription:
+        'Run a prize raffle among guests who send a gift. Every confirmed gift automatically generates 1 Lucky Number, and you draw the winner right here in 1 click.',
+      prizeInputPlaceholder: 'What is the prize? E.g.: R$ 150 Pix or Gift Basket (optional)',
+      enableNowButton: 'Enable raffle',
+      enablingButton: 'Enabling...',
+      editSettingsLink: 'Edit or disable',
       drawnSubtitle:
         'Raffle drawn. The result is final and already visible on your public page.',
       participantsSubtitle:
@@ -726,7 +744,7 @@ const es: PainelDict = {
       mpCta: 'Conectar cuenta',
       customizeTitle: 'Revisar foto, fecha y lista de regalos',
       customizeDesc:
-        'Tu lista ya viene con sugerencias listas. Puedes editar montos, ocultar ítems o subir una foto de portada.',
+        'Tu lista ya viene con sugerencias listas. Puedes editar montos, subir una foto de portada o activar un sorteo entre invitados.',
       customizeCtaPage: 'Editar página',
       customizeCtaGifts: 'Ver regalos',
       shareTitle: 'Enviar la invitación a la familia',
@@ -780,6 +798,15 @@ const es: PainelDict = {
     raffle: {
       titleWithPrize: 'Sorteo entre invitados · Premio: {prize}',
       titleDefault: 'Sorteo entre invitados',
+      optionalBadge: 'Opcional · Desactivado',
+      activeBadge: 'Activo en la página',
+      drawnBadge: 'Sorteo realizado',
+      inactiveDescription:
+        'Puedes hacer estilo Baby Rifa y sortear un premio entre quienes envíen regalo. Cada regalo confirmado genera 1 Número de la Suerte automático y sorteas al ganador aquí en 1 clic.',
+      prizeInputPlaceholder: '¿Cuál será el premio? Ej: Pix de R$ 150 o Canasta (opcional)',
+      enableNowButton: 'Activar sorteo',
+      enablingButton: 'Activando...',
+      editSettingsLink: 'Editar o desactivar',
       drawnSubtitle:
         'Sorteo realizado. El resultado es definitivo y ya aparece en tu página pública.',
       participantsSubtitle:

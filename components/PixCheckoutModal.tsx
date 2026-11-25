@@ -295,7 +295,7 @@ export default function PixCheckoutModal({
     }
 
     const phoneDigits = cleanDigits(payerPhone);
-    if (isRaffleActive) {
+    if (isRaffleActive && !isDemo) {
       if (trimmedName.length < 2 || trimmedName.toLowerCase() === 'convidado anônimo') {
         setError(dict.errors.raffleNeedName);
         return;
@@ -307,6 +307,9 @@ export default function PixCheckoutModal({
     }
 
     if (isDemo) {
+      if (isRaffleActive) {
+        setRaffleTicketNumber(Math.floor(15 + Math.random() * 80));
+      }
       handleSuccess();
       return;
     }
@@ -703,7 +706,7 @@ export default function PixCheckoutModal({
                       </label>
                       <input
                         type="text"
-                        required={isRaffleActive}
+                        required={isRaffleActive && !isDemo}
                         value={payerName}
                         onChange={(e) => setPayerName(e.target.value)}
                         placeholder={

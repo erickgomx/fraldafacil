@@ -12,6 +12,7 @@ import {
   ChevronDown,
   ChevronUp,
   Users,
+  Ticket,
 } from 'lucide-react';
 import Link from 'next/link';
 import { shareEvent, buildSharePayload, buildThankYouWhatsAppUrl } from '@/lib/share';
@@ -115,6 +116,37 @@ export default function DashboardClient({
   const [confirmDraw, setConfirmDraw] = useState(false);
   const [drawingRaffle, setDrawingRaffle] = useState(false);
   const [raffleError, setRaffleError] = useState('');
+  const [isRaffleEnabled, setIsRaffleEnabled] = useState(Boolean(event.raffleEnabled));
+  const [currentRafflePrize, setCurrentRafflePrize] = useState(event.rafflePrize || '');
+  const [enablingRaffle, setEnablingRaffle] = useState(false);
+
+  const handleQuickEnableRaffle = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setEnablingRaffle(true);
+    setRaffleError('');
+    try {
+      const trimmedPrize = currentRafflePrize.trim() || null;
+      const res = await fetch('/api/events', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: event.id,
+          raffleEnabled: true,
+          rafflePrize: trimmedPrize,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || dict.raffle.drawErrorFallback);
+      }
+      setCurrentRafflePrize(trimmedPrize || '');
+      setIsRaffleEnabled(true);
+    } catch (err: unknown) {
+      setRaffleError(err instanceof Error ? err.message : dict.raffle.drawUnknownError);
+    } finally {
+      setEnablingRaffle(false);
+    }
+  };
 
   const handleDrawRaffle = async () => {
     setDrawingRaffle(true);
@@ -780,84 +812,132 @@ export default function DashboardClient({
         </section>
       )}
 
-      {/* Sorteio (quando ativado nos ajustes) */}
-      {event.raffleEnabled && (
-        <section className="bg-white rounded-2xl p-5 sm:p-7 border border-warm-border shadow-subtle space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
+      {/* Sorteio entre convidados (sempre visível para deixar claro e permitir ativar em 1 clique) */}
+      <section className="bg-white rounded-2xl p-5 sm:p-7 border border-warm-border shadow-subtle space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+          <div className="space-y-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <Ticket className="w-4 h-4 text-terracotta shrink-0" aria-hidden="true" />
               <h2 className="font-serif text-lg sm:text-xl font-medium text-charcoal-900">
-                {event.rafflePrize
-                  ? t(dict.raffle.titleWithPrize, { prize: event.rafflePrize })
+                {isRaffleEnabled && currentRafflePrize.trim()
+                  ? t(dict.raffle.titleWithPrize, { prize: currentRafflePrize.trim() })
                   : dict.raffle.titleDefault}
               </h2>
-              <p className="text-xs sm:text-sm text-charcoal-500 mt-0.5">
-                {raffleWinner
-                  ? dict.raffle.drawnSubtitle
-                  : t(dict.raffle.participantsSubtitle, {
-                      count: metrics.raffleParticipantsCount ?? 0,
-                    })}
-              </p>
-            </div>
-
-            {!raffleWinner && (
-              <div className="shrink-0">
-                {!confirmDraw ? (
-                  <button
-                    type="button"
-                    disabled={!metrics.raffleParticipantsCount}
-                    onClick={() => setConfirmDraw(true)}
-                    className="py-2.5 px-4 rounded-xl text-xs sm:text-sm font-semibold bg-charcoal-900 text-white hover:bg-charcoal-800 disabled:opacity-40 disabled:cursor-not-allowed transition shadow-subtle"
-                  >
-                    {dict.raffle.drawButton}
-                  </button>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      disabled={drawingRaffle}
-                      onClick={handleDrawRaffle}
-                      className="py-2.5 px-4 rounded-xl text-xs sm:text-sm font-semibold bg-terracotta text-white hover:opacity-90 disabled:opacity-50 transition shadow-subtle"
-                    >
-                      {drawingRaffle ? dict.raffle.drawingButton : dict.raffle.confirmDrawButton}
-                    </button>
-                    <button
-                      type="button"
-                      disabled={drawingRaffle}
-                      onClick={() => setConfirmDraw(false)}
-                      className="py-2.5 px-3 rounded-xl text-xs sm:text-sm text-charcoal-600 bg-cream-100 hover:bg-cream-200 border border-warm-border transition"
-                    >
-                      {dict.raffle.cancelButton}
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {raffleError && <p className="text-xs text-rose-600">{raffleError}</p>}
-
-          {raffleWinner && (
-            <div className="p-4 rounded-xl bg-cream-50 border border-warm-border flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-terracotta/10 text-terracotta flex items-center justify-center shrink-0">
-                  <Trophy className="w-5 h-5" />
-                </div>
-                <div>
-                  <span className="text-xs text-charcoal-500 block">
-                    {dict.raffle.winnerLabel}
-                  </span>
-                  <strong className="font-serif text-base font-medium text-charcoal-900">
-                    {raffleWinner.name}
-                  </strong>
-                </div>
-              </div>
-              <span className="px-3 py-1.5 rounded-lg bg-charcoal-900 text-white text-xs font-semibold tabular-nums">
-                #{String(raffleWinner.ticketNumber).padStart(3, '0')}
+              <span
+                className={`text-[11px] font-medium px-2.5 py-0.5 rounded-full border ${
+                  !isRaffleEnabled
+                    ? 'bg-cream-100 text-charcoal-600 border-warm-border'
+                    : raffleWinner
+                    ? 'bg-charcoal-900 text-white border-charcoal-900'
+                    : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                }`}
+              >
+                {!isRaffleEnabled
+                  ? dict.raffle.optionalBadge
+                  : raffleWinner
+                  ? dict.raffle.drawnBadge
+                  : dict.raffle.activeBadge}
               </span>
             </div>
+
+            <p className="text-xs sm:text-sm text-charcoal-500 leading-relaxed">
+              {!isRaffleEnabled
+                ? dict.raffle.inactiveDescription
+                : raffleWinner
+                ? dict.raffle.drawnSubtitle
+                : t(dict.raffle.participantsSubtitle, {
+                    count: metrics.raffleParticipantsCount ?? 0,
+                  })}
+            </p>
+          </div>
+
+          {isRaffleEnabled && !raffleWinner && (
+            <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+              <Link
+                href="/painel/configuracoes?tab=extras"
+                className="text-xs font-medium text-charcoal-600 hover:text-terracotta underline underline-offset-2"
+              >
+                {dict.raffle.editSettingsLink}
+              </Link>
+
+              {!confirmDraw ? (
+                <button
+                  type="button"
+                  disabled={!metrics.raffleParticipantsCount}
+                  onClick={() => setConfirmDraw(true)}
+                  className="py-2.5 px-4 rounded-xl text-xs sm:text-sm font-semibold bg-charcoal-900 text-white hover:bg-charcoal-800 disabled:opacity-40 disabled:cursor-not-allowed transition shadow-subtle"
+                >
+                  {dict.raffle.drawButton}
+                </button>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    disabled={drawingRaffle}
+                    onClick={handleDrawRaffle}
+                    className="py-2.5 px-4 rounded-xl text-xs sm:text-sm font-semibold bg-terracotta text-white hover:opacity-90 disabled:opacity-50 transition shadow-subtle"
+                  >
+                    {drawingRaffle ? dict.raffle.drawingButton : dict.raffle.confirmDrawButton}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={drawingRaffle}
+                    onClick={() => setConfirmDraw(false)}
+                    className="py-2.5 px-3 rounded-xl text-xs sm:text-sm text-charcoal-600 bg-cream-100 hover:bg-cream-200 border border-warm-border transition"
+                  >
+                    {dict.raffle.cancelButton}
+                  </button>
+                </div>
+              )}
+            </div>
           )}
-        </section>
-      )}
+        </div>
+
+        {!isRaffleEnabled && (
+          <form
+            onSubmit={handleQuickEnableRaffle}
+            className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 pt-1"
+          >
+            <input
+              type="text"
+              value={currentRafflePrize}
+              onChange={(e) => setCurrentRafflePrize(e.target.value)}
+              placeholder={dict.raffle.prizeInputPlaceholder}
+              className="flex-1 px-3.5 py-2.5 rounded-xl border border-warm-border bg-cream-50/40 text-xs sm:text-sm text-charcoal-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-charcoal-900"
+            />
+            <button
+              type="submit"
+              disabled={enablingRaffle}
+              className="py-2.5 px-5 rounded-xl text-xs sm:text-sm font-semibold bg-charcoal-900 text-white hover:bg-charcoal-800 disabled:opacity-50 transition shadow-subtle shrink-0"
+            >
+              {enablingRaffle ? dict.raffle.enablingButton : dict.raffle.enableNowButton}
+            </button>
+          </form>
+        )}
+
+        {raffleError && <p className="text-xs text-rose-600">{raffleError}</p>}
+
+        {isRaffleEnabled && raffleWinner && (
+          <div className="p-4 rounded-xl bg-cream-50 border border-warm-border flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-terracotta/10 text-terracotta flex items-center justify-center shrink-0">
+                <Trophy className="w-5 h-5" />
+              </div>
+              <div>
+                <span className="text-xs text-charcoal-500 block">
+                  {dict.raffle.winnerLabel}
+                </span>
+                <strong className="font-serif text-base font-medium text-charcoal-900">
+                  {raffleWinner.name}
+                </strong>
+              </div>
+            </div>
+            <span className="px-3 py-1.5 rounded-lg bg-charcoal-900 text-white text-xs font-semibold tabular-nums">
+              #{String(raffleWinner.ticketNumber).padStart(3, '0')}
+            </span>
+          </div>
+        )}
+      </section>
 
       {/* Lista de presentes recebidos */}
       <section className="bg-white rounded-2xl p-5 sm:p-7 border border-warm-border shadow-subtle space-y-4">
@@ -1013,19 +1093,6 @@ export default function DashboardClient({
           </>
         )}
       </section>
-
-      {/* Dica discreta sobre sorteio quando desativado */}
-      {!event.raffleEnabled && (
-        <p className="text-center text-xs text-charcoal-500 pb-2">
-          {dict.raffle.enableHint}{' '}
-          <Link
-            href="/painel/configuracoes?tab=extras"
-            className="text-charcoal-800 font-medium underline underline-offset-2 hover:text-terracotta"
-          >
-            {dict.raffle.enableLink}
-          </Link>
-        </p>
-      )}
     </div>
   );
 }
