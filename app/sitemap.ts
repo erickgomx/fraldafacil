@@ -1,11 +1,14 @@
 import type { MetadataRoute } from 'next';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const defaultBase = 'https://fralda.online';
-  const envBase = process.env.NEXT_PUBLIC_APP_URL;
+  const defaultBase = 'https://www.fralda.online';
+  const envBase = (process.env.NEXT_PUBLIC_APP_URL || '').trim().replace(/\/$/, '');
   const baseUrl =
-    envBase && !envBase.includes('localhost') && !envBase.includes('vercel.app')
-      ? envBase.replace(/\/$/, '')
+    envBase &&
+    !envBase.includes('localhost') &&
+    !envBase.includes('vercel.app') &&
+    envBase !== 'https://fralda.online'
+      ? envBase
       : defaultBase;
 
   const now = new Date();

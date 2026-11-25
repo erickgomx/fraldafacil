@@ -40,15 +40,27 @@ const sans = DM_Sans({
   display: 'swap',
 });
 
+const rawAppUrl = (process.env.NEXT_PUBLIC_APP_URL || '').trim().replace(/\/$/, '');
+const canonicalSiteUrl =
+  rawAppUrl &&
+  !rawAppUrl.includes('localhost') &&
+  !rawAppUrl.includes('vercel.app') &&
+  rawAppUrl !== 'https://fralda.online'
+    ? rawAppUrl
+    : 'https://www.fralda.online';
+
 // Metadados canônicos de SEO, OpenGraph e Favicon
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://fralda.online'),
+  metadataBase: new URL(canonicalSiteUrl),
+  alternates: {
+    canonical: '/',
+  },
   title: {
     default: 'Fralda Online — Chá de Bebê, Fralda & Revelação com Pix',
     template: '%s | Fralda Online',
   },
   description:
-    'A plataforma elegante para futuros pais receberem fraldas em dinheiro via Pix e engajarem a família com o bolão do bebê.',
+    'Crie grátis a página do seu Chá de Bebê ou Revelação em 2 minutos. Lista de fraldas, bolão interativo, sorteio premiado e recebimento direto no Pix.',
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: '32x32' },
@@ -64,33 +76,17 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Fralda Online — Chá de Bebê, Fralda & Revelação com Pix',
     description:
-      'A plataforma elegante para futuros pais receberem fraldas em dinheiro via Pix e engajarem a família com o bolão do bebê.',
-    url: '/',
+      'Crie grátis a página do seu Chá de Bebê ou Revelação em 2 minutos. Lista de fraldas, bolão interativo, sorteio premiado e recebimento direto no Pix.',
+    url: canonicalSiteUrl,
     siteName: 'Fralda Online',
     locale: 'pt_BR',
     type: 'website',
-    images: [
-      {
-        url: '/opengraph-image',
-        width: 1200,
-        height: 630,
-        alt: 'Fralda Online — Chá de Bebê, Fralda & Revelação com Pix',
-      },
-    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Fralda Online — Chá de Bebê, Fralda & Revelação com Pix',
     description:
-      'A plataforma elegante para futuros pais receberem fraldas em dinheiro via Pix e engajarem a família com o bolão do bebê.',
-    images: [
-      {
-        url: '/opengraph-image',
-        width: 1200,
-        height: 630,
-        alt: 'Fralda Online — Chá de Bebê, Fralda & Revelação com Pix',
-      },
-    ],
+      'Crie grátis a página do seu Chá de Bebê ou Revelação em 2 minutos. Lista de fraldas, bolão interativo, sorteio premiado e recebimento direto no Pix.',
   },
 };
 
