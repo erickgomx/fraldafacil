@@ -7,19 +7,19 @@ import {
   AlertCircle,
   ShieldCheck,
   Unlink,
-  CreditCard,
-  QrCode,
   ArrowRight,
   Loader2,
   ImagePlus,
   Trash2,
   Upload,
-  HelpCircle,
+  Check,
 } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useI18n } from '@/components/LanguageProvider';
 import { painelDict } from '@/lib/i18n/dictionaries/painel';
 import { commonDict } from '@/lib/i18n/dictionaries/common';
+
+type ConfigTab = 'page' | 'payments' | 'extras';
 
 async function compressCoverImage(file: File, readErrorMsg: string): Promise<File> {
   const MAX_DIMENSION = 1400;
@@ -105,9 +105,42 @@ export default function ConfigClient({ event }: ConfigClientProps) {
   const eventTypesShort = commonDict[locale].eventTypes.short;
   const orJoiner = locale === 'en' ? 'or' : locale === 'es' ? 'o' : 'ou';
 
+  const initialTab: ConfigTab = (() => {
+    const paramTab = searchParams?.get('tab');
+    if (
+      paramTab === 'payments' ||
+      searchParams?.get('oauth_success') === 'true' ||
+      Boolean(searchParams?.get('error'))
+    ) {
+      return 'payments';
+    }
+    if (paramTab === 'extras') return 'extras';
+    if (paramTab === 'page') return 'page';
+    return event.mpConnected ? 'page' : 'payments';
+  })();
+
+  const [activeTab, setActiveTab] = useState<ConfigTab>(initialTab);
+
+  useEffect(() => {
+    if (!searchParams) return;
+    const paramTab = searchParams.get('tab');
+    if (
+      paramTab === 'payments' ||
+      searchParams.get('oauth_success') === 'true' ||
+      Boolean(searchParams.get('error'))
+    ) {
+      setActiveTab('payments');
+    } else if (paramTab === 'extras') {
+      setActiveTab('extras');
+    } else if (paramTab === 'page') {
+      setActiveTab('page');
+    }
+  }, [searchParams]);
+
   const initialEventType = (
     event.eventType === 'FRALDA' || event.eventType === 'AMBOS' ? event.eventType : 'REVELACAO'
   ) as 'REVELACAO' | 'FRALDA' | 'AMBOS';
+
   const [eventType, setEventType] = useState<'REVELACAO' | 'FRALDA' | 'AMBOS'>(initialEventType);
   const [parentsNames, setParentsNames] = useState(event.parentsNames);
   const [noNameYet, setNoNameYet] = useState(!event.babyName && !event.boyName && !event.girlName);
@@ -126,7 +159,10 @@ export default function ConfigClient({ event }: ConfigClientProps) {
   const [coverImageUrl, setCoverImageUrl] = useState<string | null>(event.coverImageUrl || null);
   const [uploadingCover, setUploadingCover] = useState(false);
   const [removingCover, setRemovingCover] = useState(false);
-  const [coverNotice, setCoverNotice] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [coverNotice, setCoverNotice] = useState<{
+    type: 'success' | 'error';
+    message: string;
+  } | null>(null);
   const coverInputRef = useRef<HTMLInputElement | null>(null);
 
   const [showDeleteAccount, setShowDeleteAccount] = useState(false);
@@ -163,17 +199,28 @@ export default function ConfigClient({ event }: ConfigClientProps) {
     }
   }, [searchParams, dict]);
 
-  const currentPayload = useMemo(
-    () => ({
+  const currentPayload = useMemo(() => {
+    const resolvedBoy = noNameYet || eventType === 'FRALDA' ? null : boyName.trim() || null;
+    const resolvedGirl = noNameYet || eventType === 'FRALDA' ? null : girlName.trim() || null;
+
+    let resolvedBaby: string | null = null;
+    if (!noNameYet) {
+      if (eventType === 'FRALDA') {
+        resolvedBaby = babyName.trim() || null;
+      } else if (resolvedBoy && resolvedGirl) {
+        resolvedBaby = `${resolvedBoy} ${orJoiner} ${resolvedGirl}`;
+      } else {
+        resolvedBaby = resolvedBoy || resolvedGirl || babyName.trim() || null;
+      }
+    }
+
+    return {
       id: event.id,
       eventType,
       parentsNames,
-      babyName: noNameYet
-        ? null
-        : babyName.trim() ||
-          (boyName && girlName ? `${boyName.trim()} ${orJoiner} ${girlName.trim()}` : null),
-      boyName: noNameYet ? null : boyName.trim() || null,
-      girlName: noNameYet ? null : girlName.trim() || null,
+      babyName: resolvedBaby,
+      boyName: resolvedBoy,
+      girlName: resolvedGirl,
       eventDate: eventDate || undefined,
       storyMessage,
       pixKey,
@@ -182,25 +229,24 @@ export default function ConfigClient({ event }: ConfigClientProps) {
         raffleEnabled,
         rafflePrize: raffleEnabled ? rafflePrize : null,
       }),
-    }),
-    [
-      event.id,
-      eventType,
-      parentsNames,
-      noNameYet,
-      babyName,
-      boyName,
-      girlName,
-      orJoiner,
-      eventDate,
-      storyMessage,
-      pixKey,
-      feePayer,
-      isRaffleLocked,
-      raffleEnabled,
-      rafflePrize,
-    ]
-  );
+    };
+  }, [
+    event.id,
+    eventType,
+    parentsNames,
+    noNameYet,
+    babyName,
+    boyName,
+    girlName,
+    orJoiner,
+    eventDate,
+    storyMessage,
+    pixKey,
+    feePayer,
+    isRaffleLocked,
+    raffleEnabled,
+    rafflePrize,
+  ]);
 
   const serializedPayload = useMemo(() => JSON.stringify(currentPayload), [currentPayload]);
   const lastSavedPayloadRef = useRef<string>(serializedPayload);
@@ -230,7 +276,7 @@ export default function ConfigClient({ event }: ConfigClientProps) {
 
         lastSavedPayloadRef.current = serialized;
         setSuccess(true);
-        setTimeout(() => setSuccess(false), 3000);
+        setTimeout(() => setSuccess(false), 3500);
         router.refresh();
       } catch (err: unknown) {
         if (err instanceof Error) {
@@ -251,22 +297,6 @@ export default function ConfigClient({ event }: ConfigClientProps) {
       dict.genericError,
     ]
   );
-
-  useEffect(() => {
-    if (!hasUnsavedChanges) return;
-    if (!currentPayload.parentsNames || !currentPayload.parentsNames.trim()) return;
-
-    const timer = setTimeout(() => {
-      void saveChanges(currentPayload, serializedPayload);
-    }, 700);
-
-    return () => clearTimeout(timer);
-  }, [hasUnsavedChanges, currentPayload, serializedPayload, saveChanges]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await saveChanges(currentPayload, serializedPayload);
-  };
 
   const handleDisconnectMP = async () => {
     if (!confirm(dict.confirmDisconnectMP)) {
@@ -392,54 +422,67 @@ export default function ConfigClient({ event }: ConfigClientProps) {
     }
   };
 
-  return (
-    <div className="max-w-2xl space-y-6">
-      <div className="sticky top-0 z-20 bg-cream-50/95 backdrop-blur-sm py-3 -mx-2 px-2 border-b border-warm-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="font-serif text-2xl text-charcoal-900 font-medium">
-            {dict.pageTitle}
-          </h1>
-          <p className="text-xs text-charcoal-500 mt-0.5 font-sans">
-            {dict.pageSubtitle}
-          </p>
-        </div>
+  const handleSelectEventType = (nextType: 'REVELACAO' | 'FRALDA' | 'AMBOS') => {
+    if (nextType === 'FRALDA' && !babyName && (boyName || girlName)) {
+      const combined =
+        boyName && girlName
+          ? `${boyName.trim()} ${orJoiner} ${girlName.trim()}`
+          : (boyName || girlName).trim();
+      setBabyName(combined);
+    }
+    setEventType(nextType);
+  };
 
-        <div className="flex items-center gap-2.5 shrink-0">
-          {loading ? (
-            <span className="text-[11px] font-mono text-charcoal-500 flex items-center gap-1.5">
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              {dict.savingStatus}
-            </span>
-          ) : success ? (
-            <span className="text-[11px] font-mono text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full flex items-center gap-1">
+  return (
+    <div className="max-w-2xl mx-auto space-y-6 pb-20">
+      {/* Cabeçalho e Abas */}
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h1 className="font-serif text-2xl text-charcoal-900 font-medium">
+              {dict.pageTitle}
+            </h1>
+            <p className="text-xs sm:text-sm text-charcoal-500 mt-0.5">{dict.pageSubtitle}</p>
+          </div>
+
+          {success && (
+            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full self-start sm:self-auto shrink-0">
               <CheckCircle2 className="w-3.5 h-3.5" />
-              {dict.savedStatus}
-            </span>
-          ) : hasUnsavedChanges ? (
-            <span className="text-[11px] font-mono text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-full">
-              {dict.pendingChangesStatus}
-            </span>
-          ) : (
-            <span className="text-[11px] font-mono text-charcoal-400">
-              {dict.allSavedStatus}
+              {dict.savedBadge}
             </span>
           )}
+        </div>
 
-          <button
-            type="button"
-            onClick={() => void saveChanges()}
-            disabled={loading || !hasUnsavedChanges}
-            className="py-2 px-4 rounded-lg font-medium text-xs bg-charcoal-900 text-white hover:bg-charcoal-800 shadow-subtle transition flex items-center gap-1.5 disabled:opacity-50"
-          >
-            <Save className="w-3.5 h-3.5" />
-            <span>{loading ? dict.savingStatus : dict.saveButton}</span>
-          </button>
+        <div className="inline-flex flex-wrap p-1 rounded-xl bg-white border border-warm-border shadow-subtle gap-1 w-full sm:w-auto">
+          {(
+            [
+              { id: 'page', label: dict.tabs.page },
+              { id: 'payments', label: dict.tabs.payments },
+              { id: 'extras', label: dict.tabs.extras },
+            ] as const
+          ).map((tab) => {
+            const isSelected = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition ${
+                  isSelected
+                    ? 'bg-charcoal-900 text-white shadow-xs'
+                    : 'text-charcoal-600 hover:text-charcoal-900 hover:bg-cream-50'
+                }`}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 
       {oauthNotice && (
         <div
-          className={`p-4 rounded-xl text-xs font-sans border flex items-start gap-3 shadow-subtle ${
+          className={`p-4 rounded-xl text-xs sm:text-sm border flex items-start gap-3 ${
             oauthNotice.type === 'success'
               ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
               : oauthNotice.type === 'error'
@@ -453,7 +496,7 @@ export default function ConfigClient({ event }: ConfigClientProps) {
             <AlertCircle className="w-4 h-4 text-stone-600 shrink-0 mt-0.5" />
           )}
           <div className="flex-1">
-            <span className="font-medium block mb-0.5">
+            <span className="font-semibold block mb-0.5">
               {oauthNotice.type === 'success' ? dict.oauthSuccessTitle : dict.oauthWarningTitle}
             </span>
             <span className="leading-relaxed">{oauthNotice.message}</span>
@@ -461,662 +504,668 @@ export default function ConfigClient({ event }: ConfigClientProps) {
         </div>
       )}
 
-      {success && (
-        <div className="p-3 rounded-lg bg-emerald-50 text-emerald-800 text-xs font-sans border border-emerald-200 flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-          <span>{dict.savedToast}</span>
-        </div>
-      )}
-
       {error && (
-        <div className="p-3 rounded-lg bg-dusty-rose-light text-dusty-rose text-xs font-sans border border-dusty-rose/30 flex items-center gap-2">
-          <AlertCircle className="w-4 h-4" />
+        <div className="p-3.5 rounded-xl bg-dusty-rose-light text-dusty-rose text-xs sm:text-sm border border-dusty-rose/30 flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 shrink-0" />
           <span>{error}</span>
         </div>
       )}
 
-      {/* BLOCO 1: MERCADO PAGO */}
-      <div className="bg-white p-6 rounded-2xl border border-warm-border shadow-subtle space-y-4">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 rounded bg-cream-100 text-charcoal-600 border border-warm-border">
-                {dict.mpSection.badge}
-              </span>
+      {/* ABA 1: MINHA PÁGINA */}
+      {activeTab === 'page' && (
+        <div className="space-y-6">
+          {/* Foto de Capa */}
+          <section className="bg-white p-5 sm:p-6 rounded-2xl border border-warm-border shadow-subtle space-y-4">
+            <div>
+              <h2 className="font-serif text-lg text-charcoal-900 font-medium">
+                {dict.coverSection.title}
+              </h2>
+              <p className="text-xs sm:text-sm text-charcoal-500 mt-0.5 leading-relaxed">
+                {dict.coverSection.subtitle}
+              </p>
+            </div>
+
+            {coverNotice && (
+              <div
+                className={`p-3 rounded-xl text-xs border flex items-center gap-2 ${
+                  coverNotice.type === 'success'
+                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                    : 'bg-dusty-rose-light text-dusty-rose border-dusty-rose/30'
+                }`}
+              >
+                {coverNotice.type === 'success' ? (
+                  <CheckCircle2 className="w-4 h-4 shrink-0" />
+                ) : (
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                )}
+                <span>{coverNotice.message}</span>
+              </div>
+            )}
+
+            <input
+              ref={coverInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={handleCoverFileSelected}
+              className="hidden"
+            />
+
+            {coverImageUrl ? (
+              <div className="space-y-3">
+                <div className="relative w-full h-52 rounded-xl overflow-hidden border border-warm-border bg-cream-100">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={coverImageUrl}
+                    alt={t(dict.coverSection.imageAlt, { parents: parentsNames })}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <button
+                    type="button"
+                    disabled={uploadingCover || removingCover}
+                    onClick={() => coverInputRef.current?.click()}
+                    className="py-2 px-4 rounded-xl text-xs sm:text-sm font-medium bg-charcoal-900 text-white hover:bg-charcoal-800 transition inline-flex items-center gap-1.5 disabled:opacity-60"
+                  >
+                    {uploadingCover ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>{dict.coverSection.uploading}</span>
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-3.5 h-3.5" />
+                        <span>{dict.coverSection.changePhoto}</span>
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={uploadingCover || removingCover}
+                    onClick={handleRemoveCover}
+                    className="py-2 px-3.5 rounded-xl text-xs sm:text-sm font-medium text-dusty-rose bg-white hover:bg-dusty-rose-light border border-dusty-rose/30 transition inline-flex items-center gap-1.5 disabled:opacity-60"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>
+                      {removingCover
+                        ? dict.coverSection.removing
+                        : dict.coverSection.removePhoto}
+                    </span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                disabled={uploadingCover}
+                onClick={() => coverInputRef.current?.click()}
+                className="w-full py-7 px-4 rounded-xl border-2 border-dashed border-warm-border bg-cream-50/50 hover:bg-cream-100/70 transition flex flex-col items-center justify-center text-center gap-2 disabled:opacity-60"
+              >
+                <div className="w-10 h-10 rounded-xl bg-white border border-warm-border text-charcoal-700 flex items-center justify-center shadow-subtle">
+                  {uploadingCover ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <ImagePlus className="w-5 h-5" />
+                  )}
+                </div>
+                <div>
+                  <span className="text-xs sm:text-sm font-medium text-charcoal-900 block">
+                    {uploadingCover
+                      ? dict.coverSection.emptyUploading
+                      : dict.coverSection.emptyPrompt}
+                  </span>
+                  <span className="text-xs text-charcoal-500 block mt-0.5">
+                    {dict.coverSection.emptyHint}
+                  </span>
+                </div>
+              </button>
+            )}
+          </section>
+
+          {/* Dados do Chá */}
+          <section className="bg-white p-5 sm:p-6 rounded-2xl border border-warm-border shadow-subtle space-y-5">
+            <h2 className="font-serif text-lg text-charcoal-900 font-medium">
+              {dict.eventForm.detailsTitle}
+            </h2>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-charcoal-700 mb-1.5">
+                  {dict.eventForm.eventTypeLabel}
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { id: 'REVELACAO', label: eventTypesShort.REVELACAO },
+                    { id: 'FRALDA', label: eventTypesShort.FRALDA },
+                    { id: 'AMBOS', label: eventTypesShort.AMBOS },
+                  ].map((type) => (
+                    <button
+                      key={type.id}
+                      type="button"
+                      onClick={() =>
+                        handleSelectEventType(type.id as 'REVELACAO' | 'FRALDA' | 'AMBOS')
+                      }
+                      className={`py-2.5 px-2 text-xs sm:text-sm font-medium rounded-xl border text-center transition ${
+                        eventType === type.id
+                          ? 'border-charcoal-900 bg-charcoal-900 text-white shadow-subtle'
+                          : 'border-warm-border bg-white text-charcoal-600 hover:bg-cream-50'
+                      }`}
+                    >
+                      {type.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-charcoal-700 mb-1.5">
+                  {dict.eventForm.parentsNamesLabel}
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={parentsNames}
+                  onChange={(e) => setParentsNames(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-warm-border text-sm text-charcoal-900 focus:outline-none focus:ring-1 focus:ring-charcoal-900"
+                />
+              </div>
+
+              {/* Nome do bebê adaptado ao tipo de evento */}
+              <div className="pt-2 border-t border-warm-border/70 space-y-3">
+                <div>
+                  <h3 className="text-sm font-medium text-charcoal-900">
+                    {dict.eventForm.babyIdentityTitle}
+                  </h3>
+                  <p className="text-xs text-charcoal-500 mt-0.5">
+                    {eventType === 'FRALDA'
+                      ? dict.eventForm.babyIdentityHintSimple
+                      : dict.eventForm.babyIdentityHintReveal}
+                  </p>
+                </div>
+
+                <label className="flex items-start gap-2.5 cursor-pointer select-none py-1">
+                  <input
+                    type="checkbox"
+                    checked={noNameYet}
+                    onChange={(e) => {
+                      const checked = e.target.checked;
+                      setNoNameYet(checked);
+                      if (checked) {
+                        setBabyName('');
+                        setBoyName('');
+                        setGirlName('');
+                      }
+                    }}
+                    className="mt-0.5 h-4 w-4 rounded border-warm-border text-charcoal-900 focus:ring-charcoal-900 cursor-pointer accent-charcoal-900"
+                  />
+                  <div>
+                    <span className="text-xs sm:text-sm font-medium text-charcoal-900 block">
+                      {dict.eventForm.noNameTitle}
+                    </span>
+                    <span className="text-xs text-charcoal-500 block">
+                      {t(dict.eventForm.noNameHint, {
+                        parents: parentsNames || dict.eventForm.noNameDefaultParents,
+                      })}
+                    </span>
+                  </div>
+                </label>
+
+                {!noNameYet &&
+                  (eventType === 'FRALDA' ? (
+                    <div>
+                      <label className="block text-xs font-medium text-charcoal-700 mb-1.5">
+                        {dict.eventForm.singleBabyLabel}
+                      </label>
+                      <input
+                        type="text"
+                        value={babyName}
+                        onChange={(e) => setBabyName(e.target.value)}
+                        placeholder={dict.eventForm.singleBabyPlaceholder}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-warm-border text-sm text-charcoal-900 focus:outline-none focus:ring-1 focus:ring-charcoal-900"
+                      />
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-dusty-blue mb-1.5">
+                          {dict.eventForm.boyLabel}
+                        </label>
+                        <input
+                          type="text"
+                          value={boyName}
+                          onChange={(e) => setBoyName(e.target.value)}
+                          placeholder={dict.eventForm.boyPlaceholder}
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-dusty-blue/35 bg-white text-sm text-charcoal-900 focus:outline-none focus:ring-1 focus:ring-dusty-blue"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-medium text-dusty-rose mb-1.5">
+                          {dict.eventForm.girlLabel}
+                        </label>
+                        <input
+                          type="text"
+                          value={girlName}
+                          onChange={(e) => setGirlName(e.target.value)}
+                          placeholder={dict.eventForm.girlPlaceholder}
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-dusty-rose/35 bg-white text-sm text-charcoal-900 focus:outline-none focus:ring-1 focus:ring-dusty-rose"
+                        />
+                      </div>
+                    </div>
+                  ))}
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-charcoal-700 mb-1.5">
+                  {dict.eventForm.eventDateLabel}
+                </label>
+                <input
+                  type="date"
+                  value={eventDate}
+                  onChange={(e) => setEventDate(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-warm-border text-sm text-charcoal-900 focus:outline-none focus:ring-1 focus:ring-charcoal-900"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-charcoal-700 mb-1.5">
+                  {dict.eventForm.welcomeMessageLabel}
+                </label>
+                <textarea
+                  rows={3}
+                  value={storyMessage}
+                  onChange={(e) => setStoryMessage(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-warm-border text-sm text-charcoal-900 focus:outline-none focus:ring-1 focus:ring-charcoal-900 resize-none leading-relaxed"
+                />
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-warm-border/70 flex justify-end">
+              <button
+                type="button"
+                disabled={loading || !hasUnsavedChanges}
+                onClick={() => void saveChanges()}
+                className="py-2.5 px-5 rounded-xl font-semibold text-xs sm:text-sm bg-charcoal-900 text-white hover:bg-charcoal-800 shadow-subtle transition inline-flex items-center gap-2 disabled:opacity-45"
+              >
+                {loading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Save className="w-4 h-4" />
+                )}
+                <span>
+                  {loading ? dict.eventForm.savingButton : dict.eventForm.saveChangesButton}
+                </span>
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
+
+      {/* ABA 2: RECEBIMENTO E TAXAS */}
+      {activeTab === 'payments' && (
+        <div className="space-y-6">
+          {/* Mercado Pago */}
+          <section className="bg-white p-5 sm:p-6 rounded-2xl border border-warm-border shadow-subtle space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="font-serif text-lg text-charcoal-900 font-medium">
+                {dict.mpSection.title}
+              </h2>
               {mpConnected ? (
-                <span className="text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1 font-semibold">
+                <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                   {dict.mpSection.connectedBadge}
                 </span>
               ) : (
-                <span className="text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200 font-semibold">
+                <span className="inline-flex items-center gap-1.5 text-xs font-medium text-amber-800 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full">
                   {dict.mpSection.pendingBadge}
                 </span>
               )}
             </div>
-            <h2 className="font-serif text-lg text-charcoal-900 font-medium">
-              {dict.mpSection.title}
-            </h2>
-            <p className="text-xs text-charcoal-500 mt-1 font-sans leading-relaxed">
+
+            <p className="text-xs sm:text-sm text-charcoal-600 leading-relaxed">
               {dict.mpSection.subtitle}
             </p>
-          </div>
-        </div>
 
-        {mpConnected ? (
-          <div className="space-y-3">
-            <div className="bg-cream-50 p-4 rounded-xl border border-warm-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-start gap-2.5">
-                <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold text-charcoal-900">
-                      {dict.mpSection.readyTitle}
-                    </span>
-                    {event.mpUserId && (
-                      <span className="text-[10px] font-mono text-charcoal-400 bg-white px-2 py-0.5 rounded border border-warm-border">
-                        ID: {event.mpUserId}
+            {mpConnected ? (
+              <div className="pt-2 border-t border-warm-border/70 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-start gap-2.5">
+                  <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-sm font-medium text-charcoal-900">
+                        {dict.mpSection.readyTitle}
                       </span>
-                    )}
+                      {event.mpUserId && (
+                        <span className="text-xs text-charcoal-500 tabular-nums">
+                          {t(dict.mpSection.accountIdLabel, { id: event.mpUserId })}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-charcoal-500 mt-0.5">
+                      {dict.mpSection.readyDescription}
+                    </p>
                   </div>
-                  <span className="text-[11px] text-charcoal-500 block mt-1 leading-relaxed">
-                    {dict.mpSection.readyDescription}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleDisconnectMP}
+                  disabled={disconnecting}
+                  className="py-2 px-3.5 rounded-xl text-xs font-medium text-dusty-rose bg-white hover:bg-dusty-rose-light border border-dusty-rose/30 transition inline-flex items-center gap-1.5 shrink-0 self-start sm:self-center"
+                >
+                  <Unlink className="w-3.5 h-3.5" />
+                  <span>
+                    {disconnecting
+                      ? dict.mpSection.disconnecting
+                      : dict.mpSection.disconnectButton}
                   </span>
+                </button>
+              </div>
+            ) : (
+              <div className="pt-2 space-y-4">
+                <ol className="space-y-2.5 border-l-2 border-warm-border pl-4">
+                  {dict.mpSection.steps.map((step) => (
+                    <li key={step.title}>
+                      <strong className="text-xs sm:text-sm font-medium text-charcoal-900 block">
+                        {step.title}
+                      </strong>
+                      <span className="text-xs text-charcoal-500">{step.description}</span>
+                    </li>
+                  ))}
+                </ol>
+
+                <div>
+                  <a
+                    href={`/api/auth/mercadopago/connect?eventId=${event.id}`}
+                    className="py-3 px-5 rounded-xl text-xs sm:text-sm font-semibold bg-[#009EE3] hover:bg-[#0082ba] text-white shadow-subtle transition inline-flex items-center justify-center gap-2 group w-full sm:w-auto"
+                  >
+                    <span>{dict.mpSection.connectButton}</span>
+                    <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+                  </a>
+                </div>
+
+                <div className="pt-3 border-t border-warm-border/70 text-xs text-charcoal-600 space-y-1">
+                  <p className="font-medium text-charcoal-800">{dict.mpSection.helpTitle}</p>
+                  <ul className="list-disc pl-4 space-y-1 text-charcoal-500">
+                    <li>{dict.mpSection.helpTip1}</li>
+                    <li>{dict.mpSection.helpTip2}</li>
+                  </ul>
+                  <a
+                    href="mailto:suporte@fralda.online?subject=Ajuda%20para%20conectar%20Mercado%20Pago%20-%20Fralda%20Online"
+                    className="inline-block font-medium text-[#007eb5] hover:underline pt-1"
+                  >
+                    {dict.mpSection.helpSupportLink}
+                  </a>
                 </div>
               </div>
+            )}
+          </section>
 
+          {/* Escolha das taxas */}
+          <section className="bg-white p-5 sm:p-6 rounded-2xl border border-warm-border shadow-subtle space-y-4">
+            <div>
+              <h2 className="font-serif text-lg text-charcoal-900 font-medium">
+                {dict.feesSection.title}
+              </h2>
+              <p className="text-xs sm:text-sm text-charcoal-500 mt-0.5 leading-relaxed">
+                {dict.feesSection.subtitle}
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <button
                 type="button"
-                onClick={handleDisconnectMP}
-                disabled={disconnecting}
-                className="py-1.5 px-3 rounded-lg text-xs font-medium text-dusty-rose bg-white hover:bg-dusty-rose-light border border-dusty-rose/30 transition flex items-center gap-1.5 shrink-0 self-start sm:self-center"
+                onClick={() => setFeePayer('GUEST')}
+                className={`p-4 rounded-xl border text-left transition flex flex-col justify-between ${
+                  feePayer === 'GUEST'
+                    ? 'border-charcoal-900 bg-cream-50 shadow-subtle'
+                    : 'border-warm-border bg-white hover:bg-cream-50/50'
+                }`}
               >
-                <Unlink className="w-3.5 h-3.5" />
-                <span>
-                  {disconnecting ? dict.mpSection.disconnecting : dict.mpSection.disconnectButton}
-                </span>
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-              <div className="p-3 bg-white rounded-xl border border-warm-border flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-cream-100 flex items-center justify-center text-charcoal-700 shrink-0">
-                  <QrCode className="w-4 h-4" />
-                </div>
                 <div>
-                  <span className="text-xs font-medium text-charcoal-900 block">
-                    {dict.mpSection.pixCardTitle}
-                  </span>
-                  <span className="text-[10px] text-charcoal-500 block">
-                    {dict.mpSection.pixCardSubtitle}
-                  </span>
-                </div>
-              </div>
-
-              <div className="p-3 bg-white rounded-xl border border-warm-border flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-cream-100 flex items-center justify-center text-charcoal-700 shrink-0">
-                  <CreditCard className="w-4 h-4" />
-                </div>
-                <div>
-                  <span className="text-xs font-medium text-charcoal-900 block">
-                    {dict.mpSection.cardCardTitle}
-                  </span>
-                  <span className="text-[10px] text-charcoal-500 block">
-                    {dict.mpSection.cardCardSubtitle}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-4 pt-1">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-              {dict.mpSection.steps.map((step, idx) => (
-                <div key={step.title} className="p-3 rounded-xl bg-cream-50/80 border border-warm-border">
-                  <span className="w-5 h-5 rounded-full bg-charcoal-900 text-white text-[10px] font-mono flex items-center justify-center mb-1.5">
-                    {idx + 1}
-                  </span>
-                  <strong className="block text-charcoal-900 mb-0.5">{step.title}</strong>
-                  <p className="text-[11px] text-charcoal-500 font-sans leading-relaxed">
-                    {step.description}
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <span className="text-sm font-medium text-charcoal-900 inline-flex items-center gap-1.5">
+                      {feePayer === 'GUEST' && <Check className="w-4 h-4 text-charcoal-900" />}
+                      {dict.feesSection.guestTitle}
+                    </span>
+                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-medium shrink-0">
+                      {dict.feesSection.recommendedBadge}
+                    </span>
+                  </div>
+                  <p className="text-xs text-charcoal-600 leading-relaxed">
+                    {dict.feesSection.guestBody}
                   </p>
                 </div>
-              ))}
-            </div>
+                <span className="mt-3 text-xs font-medium text-charcoal-500 block">
+                  {dict.feesSection.guestExample}
+                </span>
+              </button>
 
-            <div className="flex flex-col sm:flex-row gap-2 pt-1">
-              <a
-                href={`/api/auth/mercadopago/connect?eventId=${event.id}`}
-                className="py-3 px-5 rounded-xl text-xs font-semibold bg-[#009EE3] hover:bg-[#0082ba] text-white shadow-subtle transition flex items-center justify-center gap-2 group"
+              <button
+                type="button"
+                onClick={() => setFeePayer('PARENTS')}
+                className={`p-4 rounded-xl border text-left transition flex flex-col justify-between ${
+                  feePayer === 'PARENTS'
+                    ? 'border-charcoal-900 bg-cream-50 shadow-subtle'
+                    : 'border-warm-border bg-white hover:bg-cream-50/50'
+                }`}
               >
-                <span>{dict.mpSection.connectButton}</span>
-                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
-              </a>
-            </div>
-
-            <div className="p-3.5 rounded-xl bg-cream-50/90 border border-warm-border/80 space-y-2">
-              <div className="flex items-center gap-1.5 text-xs font-semibold text-charcoal-900">
-                <HelpCircle className="w-3.5 h-3.5 text-charcoal-600 shrink-0" />
-                <span>{dict.mpSection.helpTitle}</span>
-              </div>
-              <ul className="space-y-1 text-[11px] text-charcoal-600 font-sans leading-relaxed list-disc pl-4">
-                <li>{dict.mpSection.helpTip1}</li>
-                <li>{dict.mpSection.helpTip2}</li>
-              </ul>
-              <a
-                href="mailto:suporte@fralda.online?subject=Ajuda%20para%20conectar%20Mercado%20Pago%20-%20Fralda%20Online"
-                className="inline-block text-[11px] font-medium text-[#007eb5] hover:underline pt-0.5"
-              >
-                {dict.mpSection.helpSupportLink}
-              </a>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* BLOCO 2: TAXAS */}
-      <div className="bg-white p-6 rounded-2xl border border-warm-border shadow-subtle space-y-4">
-        <div>
-          <span className="text-[10px] font-mono uppercase tracking-widest text-charcoal-500 block mb-1">
-            {dict.feesSection.eyebrow}
-          </span>
-          <h2 className="font-serif text-lg text-charcoal-900 font-medium">
-            {dict.feesSection.title}
-          </h2>
-          <p className="text-xs text-charcoal-500 mt-1 font-sans">
-            {dict.feesSection.subtitleBefore} <strong>{dict.feesSection.subtitleBold}</strong>{' '}
-            {dict.feesSection.subtitleAfter}
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-          <button
-            type="button"
-            onClick={() => setFeePayer('GUEST')}
-            className={`p-4 rounded-xl border text-left transition flex flex-col justify-between ${
-              feePayer === 'GUEST'
-                ? 'border-charcoal-900 bg-cream-100/70 shadow-subtle'
-                : 'border-warm-border bg-white hover:bg-stone-50'
-            }`}
-          >
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold text-charcoal-900">
-                  {dict.feesSection.guestTitle}
+                <div>
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <span className="text-sm font-medium text-charcoal-900 inline-flex items-center gap-1.5">
+                      {feePayer === 'PARENTS' && <Check className="w-4 h-4 text-charcoal-900" />}
+                      {dict.feesSection.parentsTitle}
+                    </span>
+                  </div>
+                  <p className="text-xs text-charcoal-600 leading-relaxed">
+                    {dict.feesSection.parentsBody}
+                  </p>
+                </div>
+                <span className="mt-3 text-xs font-medium text-charcoal-500 block">
+                  {dict.feesSection.parentsExample}
                 </span>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-medium">
-                  {dict.feesSection.recommendedBadge}
-                </span>
-              </div>
-              <p className="text-[11px] text-charcoal-600 leading-relaxed font-sans">
-                {dict.feesSection.guestBodyBefore}{' '}
-                <strong>{dict.feesSection.guestBodyBold}</strong>{' '}
-                {dict.feesSection.guestBodyAfter}
-              </p>
+              </button>
             </div>
-            <span className="mt-3 text-[10px] font-mono text-charcoal-500 block">
-              {dict.feesSection.guestExample}
-            </span>
-          </button>
 
-          <button
-            type="button"
-            onClick={() => setFeePayer('PARENTS')}
-            className={`p-4 rounded-xl border text-left transition flex flex-col justify-between ${
-              feePayer === 'PARENTS'
-                ? 'border-charcoal-900 bg-cream-100/70 shadow-subtle'
-                : 'border-warm-border bg-white hover:bg-stone-50'
-            }`}
-          >
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold text-charcoal-900">
-                  {dict.feesSection.parentsTitle}
-                </span>
-              </div>
-              <p className="text-[11px] text-charcoal-600 leading-relaxed font-sans">
-                {dict.feesSection.parentsBody}
-              </p>
-            </div>
-            <span className="mt-3 text-[10px] font-mono text-charcoal-500 block">
-              {dict.feesSection.parentsExample}
-            </span>
-          </button>
-        </div>
-      </div>
-
-      {/* BLOCO 2B: SORTEIO */}
-      <div className="bg-white p-6 rounded-2xl border border-warm-border shadow-subtle space-y-4">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <span className="text-[10px] font-mono uppercase tracking-widest text-charcoal-500 block mb-1">
-              {dict.raffleSection.eyebrow}
-            </span>
-            <h2 className="font-serif text-lg text-charcoal-900 font-medium">
-              {dict.raffleSection.title}
-            </h2>
-            <p className="text-xs text-charcoal-500 mt-1 font-sans leading-relaxed">
-              {dict.raffleSection.bodyBefore}{' '}
-              <strong>{dict.raffleSection.bodyBold}</strong>
-              {dict.raffleSection.bodyAfter}
-            </p>
-          </div>
-
-          <button
-            type="button"
-            disabled={isRaffleLocked}
-            onClick={() => setRaffleEnabled((prev) => !prev)}
-            className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
-              isRaffleLocked ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'
-            } ${raffleEnabled ? 'bg-charcoal-900' : 'bg-stone-200'}`}
-            aria-label={dict.raffleSection.toggleAria}
-          >
-            <span
-              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                raffleEnabled ? 'translate-x-6' : 'translate-x-1'
-              }`}
-            />
-          </button>
-        </div>
-
-        {raffleEnabled && (
-          <div className="pt-2 border-t border-warm-border/60 space-y-2">
-            <label className="block text-[11px] font-mono uppercase text-charcoal-500">
-              {dict.raffleSection.prizeLabel}
-            </label>
-            <input
-              type="text"
-              disabled={isRaffleLocked}
-              value={rafflePrize}
-              onChange={(e) => setRafflePrize(e.target.value)}
-              placeholder={dict.raffleSection.prizePlaceholder}
-              className="w-full px-3.5 py-2.5 rounded-lg border border-warm-border bg-cream-50/50 text-charcoal-900 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-charcoal-900 disabled:opacity-60"
-            />
-            {isRaffleLocked && (
-              <p className="text-[11px] text-amber-700 font-sans">
-                {dict.raffleSection.lockedNotice}
-              </p>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* BLOCO 2C: FOTO DE CAPA */}
-      <div className="bg-white p-6 rounded-2xl border border-warm-border shadow-subtle space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <span className="text-[10px] font-mono uppercase tracking-widest text-charcoal-500 block mb-1">
-              {dict.coverSection.eyebrow}
-            </span>
-            <h2 className="font-serif text-lg text-charcoal-900 font-medium">
-              {dict.coverSection.title}
-            </h2>
-            <p className="text-xs text-charcoal-500 mt-1 font-sans leading-relaxed">
-              {dict.coverSection.subtitle}
-            </p>
-          </div>
-        </div>
-
-        {coverNotice && (
-          <div
-            className={`p-3 rounded-lg text-xs font-sans border flex items-center gap-2 ${
-              coverNotice.type === 'success'
-                ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                : 'bg-dusty-rose-light text-dusty-rose border-dusty-rose/30'
-            }`}
-          >
-            {coverNotice.type === 'success' ? (
-              <CheckCircle2 className="w-4 h-4 shrink-0" />
-            ) : (
-              <AlertCircle className="w-4 h-4 shrink-0" />
-            )}
-            <span>{coverNotice.message}</span>
-          </div>
-        )}
-
-        <input
-          ref={coverInputRef}
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          onChange={handleCoverFileSelected}
-          className="hidden"
-        />
-
-        {coverImageUrl ? (
-          <div className="space-y-3">
-            <div className="relative w-full h-52 rounded-xl overflow-hidden border border-warm-border bg-cream-100">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={coverImageUrl}
-                alt={t(dict.coverSection.imageAlt, { parents: parentsNames })}
-                className="w-full h-full object-cover"
+            <div className="pt-2">
+              <label className="block text-xs font-medium text-charcoal-700 mb-1.5">
+                {dict.feesSection.pixKeyLabel}
+              </label>
+              <input
+                type="text"
+                value={pixKey}
+                onChange={(e) => setPixKey(e.target.value)}
+                placeholder={dict.feesSection.pixKeyPlaceholder}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-warm-border text-sm text-charcoal-900 focus:outline-none focus:ring-1 focus:ring-charcoal-900"
               />
             </div>
-            <div className="flex flex-wrap items-center gap-2.5">
+
+            <div className="pt-2 border-t border-warm-border/70 flex justify-end">
               <button
                 type="button"
-                disabled={uploadingCover || removingCover}
-                onClick={() => coverInputRef.current?.click()}
-                className="py-2 px-4 rounded-xl text-xs font-medium bg-charcoal-900 text-white hover:bg-charcoal-800 transition inline-flex items-center gap-1.5 disabled:opacity-60"
+                disabled={loading || !hasUnsavedChanges}
+                onClick={() => void saveChanges()}
+                className="py-2.5 px-5 rounded-xl font-semibold text-xs sm:text-sm bg-charcoal-900 text-white hover:bg-charcoal-800 shadow-subtle transition inline-flex items-center gap-2 disabled:opacity-45"
               >
-                {uploadingCover ? (
-                  <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>{dict.coverSection.uploading}</span>
-                  </>
+                {loading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
-                  <>
-                    <Upload className="w-3.5 h-3.5" />
-                    <span>{dict.coverSection.changePhoto}</span>
-                  </>
+                  <Save className="w-4 h-4" />
                 )}
+                <span>{loading ? dict.savingButton : dict.saveChangesButton}</span>
               </button>
+            </div>
+          </section>
+        </div>
+      )}
+
+      {/* ABA 3: SORTEIO E CONTA */}
+      {activeTab === 'extras' && (
+        <div className="space-y-6">
+          {/* Sorteio */}
+          <section className="bg-white p-5 sm:p-6 rounded-2xl border border-warm-border shadow-subtle space-y-4">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="font-serif text-lg text-charcoal-900 font-medium">
+                  {dict.raffleSection.title}
+                </h2>
+                <p className="text-xs sm:text-sm text-charcoal-500 mt-0.5 leading-relaxed">
+                  {dict.raffleSection.subtitle}
+                </p>
+              </div>
 
               <button
                 type="button"
-                disabled={uploadingCover || removingCover}
-                onClick={handleRemoveCover}
-                className="py-2 px-3.5 rounded-xl text-xs font-medium text-dusty-rose bg-white hover:bg-dusty-rose-light border border-dusty-rose/30 transition inline-flex items-center gap-1.5 disabled:opacity-60"
+                disabled={isRaffleLocked}
+                onClick={() => setRaffleEnabled((prev) => !prev)}
+                className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors mt-1 ${
+                  isRaffleLocked ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'
+                } ${raffleEnabled ? 'bg-charcoal-900' : 'bg-stone-200'}`}
+                aria-label={dict.raffleSection.toggleAria}
               >
-                <Trash2 className="w-3.5 h-3.5" />
-                <span>
-                  {removingCover ? dict.coverSection.removing : dict.coverSection.removePhoto}
-                </span>
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    raffleEnabled ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
               </button>
             </div>
-          </div>
-        ) : (
-          <button
-            type="button"
-            disabled={uploadingCover}
-            onClick={() => coverInputRef.current?.click()}
-            className="w-full py-7 px-4 rounded-xl border-2 border-dashed border-warm-border bg-cream-50/50 hover:bg-cream-100/70 transition flex flex-col items-center justify-center text-center gap-2 disabled:opacity-60"
-          >
-            <div className="w-10 h-10 rounded-xl bg-white border border-warm-border text-charcoal-700 flex items-center justify-center shadow-subtle">
-              {uploadingCover ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                <ImagePlus className="w-5 h-5" />
-              )}
-            </div>
-            <div>
-              <span className="text-xs font-semibold text-charcoal-900 block">
-                {uploadingCover
-                  ? dict.coverSection.emptyUploading
-                  : dict.coverSection.emptyPrompt}
-              </span>
-              <span className="text-[11px] text-charcoal-500 font-sans block mt-0.5">
-                {dict.coverSection.emptyHint}
-              </span>
-            </div>
-          </button>
-        )}
-      </div>
 
-      {/* BLOCO 3: INFORMAÇÕES DO EVENTO */}
-      <div className="bg-white p-6 rounded-2xl border border-warm-border shadow-subtle">
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1.5">
-              {dict.eventForm.eventTypeLabel}
-            </label>
-            <div className="grid grid-cols-3 gap-2">
-              {[
-                { id: 'REVELACAO', label: eventTypesShort.REVELACAO },
-                { id: 'FRALDA', label: eventTypesShort.FRALDA },
-                { id: 'AMBOS', label: eventTypesShort.AMBOS },
-              ].map((type) => (
-                <button
-                  key={type.id}
-                  type="button"
-                  onClick={() => setEventType(type.id as 'REVELACAO' | 'FRALDA' | 'AMBOS')}
-                  className={`py-2 px-2 text-xs font-medium rounded-lg border text-center transition ${
-                    eventType === type.id
-                      ? 'border-charcoal-900 bg-charcoal-900 text-white shadow-subtle'
-                      : 'border-warm-border bg-white text-charcoal-600 hover:bg-stone-50'
-                  }`}
-                >
-                  {type.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
-              {dict.eventForm.parentsNamesLabel}
-            </label>
-            <input
-              type="text"
-              required
-              value={parentsNames}
-              onChange={(e) => setParentsNames(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-lg border border-warm-border text-xs text-charcoal-900 focus:outline-none focus:ring-1 focus:ring-charcoal-900"
-            />
-          </div>
-
-          <div className="p-4 bg-cream-50/70 rounded-xl border border-warm-border space-y-3">
-            <div>
-              <span className="text-[10px] font-mono uppercase tracking-widest text-charcoal-400 block mb-1">
-                {dict.eventForm.identityEyebrow}
-              </span>
-              <span className="text-xs font-semibold text-charcoal-900 block">
-                {dict.eventForm.identityTitle}
-              </span>
-              <p className="text-[11px] text-charcoal-500 font-sans mt-0.5">
-                {dict.eventForm.identityHint}
-              </p>
-            </div>
-
-            <div className="bg-white p-3 rounded-lg border border-warm-border">
-              <label className="flex items-start gap-2.5 cursor-pointer select-none">
+            {raffleEnabled && (
+              <div className="pt-3 border-t border-warm-border/70 space-y-2">
+                <label className="block text-xs font-medium text-charcoal-700">
+                  {dict.raffleSection.prizeLabel}
+                </label>
                 <input
-                  type="checkbox"
-                  checked={noNameYet}
-                  onChange={(e) => {
-                    const checked = e.target.checked;
-                    setNoNameYet(checked);
-                    if (checked) {
-                      setBabyName('');
-                      setBoyName('');
-                      setGirlName('');
-                    }
-                  }}
-                  className="mt-0.5 h-4 w-4 rounded border-warm-border text-charcoal-900 focus:ring-charcoal-900 cursor-pointer accent-charcoal-900"
+                  type="text"
+                  disabled={isRaffleLocked}
+                  value={rafflePrize}
+                  onChange={(e) => setRafflePrize(e.target.value)}
+                  placeholder={dict.raffleSection.prizePlaceholder}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-warm-border bg-cream-50/40 text-charcoal-900 text-sm focus:bg-white focus:outline-none focus:ring-1 focus:ring-charcoal-900 disabled:opacity-60"
                 />
-                <div className="flex-1">
-                  <span className="text-xs font-semibold text-charcoal-900 block">
-                    {dict.eventForm.noNameTitle}
-                  </span>
-                  <span className="text-[11px] text-charcoal-500 block mt-0.5 font-sans leading-relaxed">
-                    {dict.eventForm.noNameExamplePrefix}{' '}
-                    <em>
-                      {dict.eventForm.noNameExampleShower}{' '}
-                      {parentsNames || dict.eventForm.noNameDefaultParents}
-                    </em>
-                    ).
-                  </span>
-                </div>
-              </label>
-            </div>
-
-            {!noNameYet && (
-              <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                  <div>
-                    <label className="block text-[11px] font-mono uppercase text-dusty-blue mb-1 font-semibold">
-                      {dict.eventForm.boyLabel}
-                    </label>
-                    <input
-                      type="text"
-                      value={boyName}
-                      onChange={(e) => setBoyName(e.target.value)}
-                      placeholder={dict.eventForm.boyPlaceholder}
-                      className="w-full px-3.5 py-2.5 rounded-lg border border-dusty-blue/30 bg-white text-xs text-charcoal-900 focus:outline-none focus:ring-1 focus:ring-dusty-blue"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-mono uppercase text-dusty-rose mb-1 font-semibold">
-                      {dict.eventForm.girlLabel}
-                    </label>
-                    <input
-                      type="text"
-                      value={girlName}
-                      onChange={(e) => setGirlName(e.target.value)}
-                      placeholder={dict.eventForm.girlPlaceholder}
-                      className="w-full px-3.5 py-2.5 rounded-lg border border-dusty-rose/30 bg-white text-xs text-charcoal-900 focus:outline-none focus:ring-1 focus:ring-dusty-rose"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
-                    {dict.eventForm.generalNameLabel}
-                  </label>
-                  <input
-                    type="text"
-                    value={babyName}
-                    onChange={(e) => setBabyName(e.target.value)}
-                    placeholder={dict.eventForm.generalNamePlaceholder}
-                    className="w-full px-3.5 py-2 rounded-lg border border-warm-border bg-white text-xs text-charcoal-700 focus:outline-none focus:ring-1 focus:ring-charcoal-900"
-                  />
-                </div>
-              </>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
-              {dict.eventForm.eventDateLabel}
-            </label>
-            <input
-              type="date"
-              value={eventDate}
-              onChange={(e) => setEventDate(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-lg border border-warm-border text-xs text-charcoal-900 focus:outline-none focus:ring-1 focus:ring-charcoal-900"
-            />
-          </div>
-
-          <div>
-            <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
-              {dict.eventForm.welcomeMessageLabel}
-            </label>
-            <textarea
-              rows={3}
-              value={storyMessage}
-              onChange={(e) => setStoryMessage(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-lg border border-warm-border text-xs text-charcoal-900 focus:outline-none focus:ring-1 focus:ring-charcoal-900 resize-none leading-relaxed"
-            />
-          </div>
-
-          <div className="pt-2">
-            <label className="block text-[11px] font-mono uppercase text-charcoal-500 mb-1">
-              {dict.eventForm.pixKeyLabel}
-            </label>
-            <input
-              type="text"
-              value={pixKey}
-              onChange={(e) => setPixKey(e.target.value)}
-              placeholder={dict.eventForm.pixKeyPlaceholder}
-              className="w-full px-3.5 py-2.5 rounded-lg border border-warm-border text-xs font-mono text-charcoal-900 focus:outline-none focus:ring-1 focus:ring-charcoal-900"
-            />
-          </div>
-
-          <div className="pt-4 border-t border-warm-border">
-            <button
-              type="submit"
-              disabled={loading}
-              className="py-2.5 px-5 rounded-lg font-medium text-xs bg-charcoal-900 text-white hover:bg-charcoal-800 shadow-subtle transition flex items-center gap-2"
-            >
-              <Save className="w-3.5 h-3.5" />
-              <span>
-                {loading ? dict.eventForm.savingButton : dict.eventForm.saveChangesButton}
-              </span>
-            </button>
-          </div>
-        </form>
-      </div>
-
-      {/* BLOCO 4: LGPD CONTA */}
-      <div className="bg-white p-6 rounded-2xl border border-warm-border shadow-subtle space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <span className="text-[10px] font-mono uppercase tracking-widest text-charcoal-500 block mb-1">
-              {dict.deleteSection.eyebrow}
-            </span>
-            <h2 className="font-serif text-lg text-charcoal-900 font-medium">
-              {dict.deleteSection.title}
-            </h2>
-            <p className="text-xs text-charcoal-500 mt-1 font-sans leading-relaxed">
-              {dict.deleteSection.description}
-            </p>
-          </div>
-
-          {!showDeleteAccount && (
-            <button
-              type="button"
-              onClick={() => {
-                setShowDeleteAccount(true);
-                setDeleteError('');
-              }}
-              className="py-2 px-3.5 rounded-xl text-xs font-medium text-dusty-rose bg-white hover:bg-dusty-rose-light border border-dusty-rose/30 transition shrink-0 self-start sm:self-center"
-            >
-              {dict.deleteSection.openButton}
-            </button>
-          )}
-        </div>
-
-        {showDeleteAccount && (
-          <form
-            onSubmit={handleDeleteAccount}
-            className="p-4 rounded-xl bg-dusty-rose-light/50 border border-dusty-rose/30 space-y-3"
-          >
-            <p className="text-xs text-charcoal-800 font-sans leading-relaxed">
-              {dict.deleteSection.confirmPrompt}
-            </p>
-
-            {deleteError && (
-              <div className="p-2.5 rounded-lg bg-white border border-dusty-rose/40 text-xs text-dusty-rose font-sans">
-                {deleteError}
+                {isRaffleLocked && (
+                  <p className="text-xs text-amber-700">{dict.raffleSection.lockedNotice}</p>
+                )}
               </div>
             )}
 
-            <input
-              type="password"
-              required
-              value={deletePassword}
-              onChange={(e) => setDeletePassword(e.target.value)}
-              placeholder={dict.deleteSection.passwordPlaceholder}
-              className="w-full px-3.5 py-2.5 rounded-lg border border-warm-border bg-white text-xs text-charcoal-900 focus:outline-none focus:ring-1 focus:ring-dusty-rose"
-            />
-
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="submit"
-                disabled={deletingAccount}
-                className="py-2 px-4 rounded-lg text-xs font-semibold bg-rose-700 hover:bg-rose-800 text-white transition disabled:opacity-60"
-              >
-                {deletingAccount
-                  ? dict.deleteSection.deletingButton
-                  : dict.deleteSection.confirmDeleteButton}
-              </button>
+            <div className="pt-2 border-t border-warm-border/70 flex justify-end">
               <button
                 type="button"
-                disabled={deletingAccount}
-                onClick={() => {
-                  setShowDeleteAccount(false);
-                  setDeletePassword('');
-                  setDeleteError('');
-                }}
-                className="py-2 px-3.5 rounded-lg text-xs text-charcoal-600 bg-white border border-warm-border hover:bg-cream-50 transition"
+                disabled={loading || !hasUnsavedChanges}
+                onClick={() => void saveChanges()}
+                className="py-2.5 px-5 rounded-xl font-semibold text-xs sm:text-sm bg-charcoal-900 text-white hover:bg-charcoal-800 shadow-subtle transition inline-flex items-center gap-2 disabled:opacity-45"
               >
-                {dict.deleteSection.cancelButton}
+                {loading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Save className="w-4 h-4" />
+                )}
+                <span>{loading ? dict.savingButton : dict.saveChangesButton}</span>
               </button>
             </div>
-          </form>
-        )}
-      </div>
+          </section>
+
+          {/* Excluir conta */}
+          <section className="bg-white p-5 sm:p-6 rounded-2xl border border-warm-border shadow-subtle space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h2 className="font-serif text-lg text-charcoal-900 font-medium">
+                  {dict.deleteSection.title}
+                </h2>
+                <p className="text-xs sm:text-sm text-charcoal-500 mt-0.5 leading-relaxed">
+                  {dict.deleteSection.description}
+                </p>
+              </div>
+
+              {!showDeleteAccount && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowDeleteAccount(true);
+                    setDeleteError('');
+                  }}
+                  className="py-2 px-4 rounded-xl text-xs font-medium text-dusty-rose bg-white hover:bg-dusty-rose-light border border-dusty-rose/30 transition shrink-0 self-start sm:self-center"
+                >
+                  {dict.deleteSection.openButton}
+                </button>
+              )}
+            </div>
+
+            {showDeleteAccount && (
+              <form
+                onSubmit={handleDeleteAccount}
+                className="p-4 rounded-xl bg-dusty-rose-light/50 border border-dusty-rose/30 space-y-3"
+              >
+                <p className="text-xs sm:text-sm text-charcoal-800 leading-relaxed">
+                  {dict.deleteSection.confirmPrompt}
+                </p>
+
+                {deleteError && (
+                  <div className="p-2.5 rounded-lg bg-white border border-dusty-rose/40 text-xs text-dusty-rose">
+                    {deleteError}
+                  </div>
+                )}
+
+                <input
+                  type="password"
+                  required
+                  value={deletePassword}
+                  onChange={(e) => setDeletePassword(e.target.value)}
+                  placeholder={dict.deleteSection.passwordPlaceholder}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-warm-border bg-white text-sm text-charcoal-900 focus:outline-none focus:ring-1 focus:ring-dusty-rose"
+                />
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="submit"
+                    disabled={deletingAccount}
+                    className="py-2 px-4 rounded-xl text-xs sm:text-sm font-semibold bg-rose-700 hover:bg-rose-800 text-white transition disabled:opacity-60"
+                  >
+                    {deletingAccount
+                      ? dict.deleteSection.deletingButton
+                      : dict.deleteSection.confirmDeleteButton}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={deletingAccount}
+                    onClick={() => {
+                      setShowDeleteAccount(false);
+                      setDeletePassword('');
+                      setDeleteError('');
+                    }}
+                    className="py-2 px-4 rounded-xl text-xs sm:text-sm text-charcoal-600 bg-white border border-warm-border hover:bg-cream-50 transition"
+                  >
+                    {dict.deleteSection.cancelButton}
+                  </button>
+                </div>
+              </form>
+            )}
+          </section>
+        </div>
+      )}
+
+      {/* Barra flutuante discreta quando houver alterações não salvas */}
+      {hasUnsavedChanges && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-30 w-[calc(100%-2rem)] max-w-xl bg-charcoal-900 text-white px-4 py-3 rounded-2xl shadow-elevated flex items-center justify-between gap-3">
+          <span className="text-xs sm:text-sm">{dict.unsavedNotice}</span>
+          <button
+            type="button"
+            disabled={loading}
+            onClick={() => void saveChanges()}
+            className="py-2 px-4 rounded-xl text-xs sm:text-sm font-semibold bg-white text-charcoal-900 hover:bg-cream-100 transition inline-flex items-center gap-1.5 shrink-0 disabled:opacity-60"
+          >
+            {loading ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Save className="w-3.5 h-3.5" />
+            )}
+            <span>{loading ? dict.savingButton : dict.saveChangesButton}</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 }

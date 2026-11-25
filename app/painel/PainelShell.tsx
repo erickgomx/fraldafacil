@@ -1,13 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import {
-  LayoutDashboard,
-  Gift,
-  MessageSquare,
-  Settings,
-  ExternalLink,
-} from 'lucide-react';
+import { usePathname } from 'next/navigation';
+import { ExternalLink } from 'lucide-react';
 import LogoutButton from './LogoutButton';
 import BrandLogo from '@/components/BrandLogo';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -24,100 +19,72 @@ interface PainelShellProps {
   children: React.ReactNode;
 }
 
-export default function PainelShell({
-  userName,
-  userEmail,
-  eventSlug,
-  eventBabyName,
-  eventParentsNames,
-  children,
-}: PainelShellProps) {
+export default function PainelShell(props: PainelShellProps) {
+  const { userName, eventSlug, children } = props;
+  const pathname = usePathname();
   const { locale } = useI18n();
   const dict = painelDict[locale].shell;
 
+  const navItems = [
+    { href: '/painel', label: dict.nav.overview },
+    { href: '/painel/presentes', label: dict.nav.gifts },
+    { href: '/painel/recados', label: dict.nav.messages },
+    { href: '/painel/configuracoes', label: dict.nav.settings },
+  ];
+
   return (
-    <div className="min-h-screen bg-cream-50 flex flex-col md:flex-row text-charcoal-900 font-sans">
-      <aside className="w-full md:w-64 bg-white border-r border-warm-border flex flex-col justify-between shrink-0">
-        <div>
-          <div className="p-4 border-b border-warm-border flex flex-wrap items-center justify-between gap-2">
-            <Link href="/painel" className="group shrink-0">
-              <BrandLogo size="sm" showTagline={false} />
-            </Link>
-            <div className="flex items-center gap-1.5 shrink-0">
-              <LanguageSwitcher size="sm" />
-              <ThemeToggle size="sm" />
-            </div>
-          </div>
+    <div className="min-h-screen bg-cream-50 flex flex-col text-charcoal-900 font-sans overflow-x-hidden">
+      <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-warm-border">
+        <div className="max-w-4xl mx-auto px-3.5 sm:px-6 h-14 flex items-center justify-between gap-2">
+          <Link href="/painel" className="group shrink-0">
+            <BrandLogo size="sm" showTagline={false} />
+          </Link>
 
-          <div className="p-4 mx-4 my-4 rounded-xl bg-cream-50/80 border border-warm-border">
-            <span className="text-[10px] uppercase font-mono text-charcoal-500 block mb-0.5">
-              {dict.activePageLabel}
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            <span className="hidden md:inline text-xs text-charcoal-500 truncate max-w-[160px] mr-1">
+              {userName}
             </span>
-            <strong className="font-serif text-sm font-medium text-charcoal-900 block truncate">
-              {eventBabyName ? `${dict.showerPrefix} ${eventBabyName}` : eventParentsNames}
-            </strong>
-            <Link
-              href={`/${eventSlug}`}
-              target="_blank"
-              className="mt-2 inline-flex items-center gap-1 text-[11px] font-medium text-charcoal-700 hover:text-charcoal-900 underline underline-offset-2"
-            >
-              <span>{dict.viewPublicPage}</span>
-              <ExternalLink className="w-3 h-3 text-charcoal-400" />
-            </Link>
-          </div>
-
-          <nav className="px-3 space-y-1">
-            <Link
-              href="/painel"
-              className="flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium text-charcoal-700 hover:bg-cream-100/70 hover:text-charcoal-900 transition"
-            >
-              <LayoutDashboard className="w-4 h-4 text-charcoal-500" />
-              <span>{dict.nav.overview}</span>
-            </Link>
-
-            <Link
-              href="/painel/presentes"
-              className="flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium text-charcoal-700 hover:bg-cream-100/70 hover:text-charcoal-900 transition"
-            >
-              <Gift className="w-4 h-4 text-charcoal-500" />
-              <span>{dict.nav.gifts}</span>
-            </Link>
-
-            <Link
-              href="/painel/recados"
-              className="flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium text-charcoal-700 hover:bg-cream-100/70 hover:text-charcoal-900 transition"
-            >
-              <MessageSquare className="w-4 h-4 text-charcoal-500" />
-              <span>{dict.nav.messages}</span>
-            </Link>
-
-            <Link
-              href="/painel/configuracoes"
-              className="flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium text-charcoal-700 hover:bg-cream-100/70 hover:text-charcoal-900 transition"
-            >
-              <Settings className="w-4 h-4 text-charcoal-500" />
-              <span>{dict.nav.settings}</span>
-            </Link>
-          </nav>
-        </div>
-
-        <div className="p-4 border-t border-warm-border">
-          <div className="flex items-center justify-between">
-            <div className="truncate pr-2">
-              <span className="text-xs font-medium text-charcoal-900 block truncate">
-                {userName}
-              </span>
-              <span className="text-[11px] font-mono text-charcoal-400 block truncate">
-                {userEmail}
-              </span>
-            </div>
+            <LanguageSwitcher size="sm" />
+            <ThemeToggle size="sm" />
             <LogoutButton />
           </div>
         </div>
-      </aside>
 
-      <main className="flex-1 overflow-y-auto p-6 md:p-10">
-        <div className="max-w-5xl mx-auto">{children}</div>
+        <div className="border-t border-warm-border/60">
+          <div className="max-w-4xl mx-auto px-3.5 sm:px-6 flex items-center justify-between gap-4 overflow-x-auto">
+            <nav className="flex items-center gap-4 sm:gap-6 shrink-0" aria-label={dict.nav.overview}>
+              {navItems.map((item) => {
+                const isActive = pathname === item.href;
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`border-b-2 py-2.5 text-xs sm:text-sm whitespace-nowrap transition-colors ${
+                      isActive
+                        ? 'border-charcoal-900 text-charcoal-900 font-semibold'
+                        : 'border-transparent text-charcoal-500 hover:text-charcoal-800'
+                    }`}
+                  >
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </nav>
+
+            <Link
+              href={`/${eventSlug}`}
+              target="_blank"
+              className="inline-flex items-center gap-1 text-xs font-medium text-terracotta hover:underline underline-offset-2 whitespace-nowrap py-2 shrink-0"
+            >
+              <span>{dict.openPublicPage}</span>
+              <ExternalLink className="w-3 h-3" />
+            </Link>
+          </div>
+        </div>
+      </header>
+
+      <main className="flex-1 w-full max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        {children}
       </main>
     </div>
   );

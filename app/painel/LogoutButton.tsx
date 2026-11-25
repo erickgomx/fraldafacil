@@ -22,10 +22,11 @@ export default function LogoutButton() {
 
   return (
     <button
+      type="button"
       onClick={handleLogout}
       title={dict.signOutTitle}
       aria-label={dict.signOutAria}
-      className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-500 flex items-center justify-center transition"
+      className="w-8 h-8 rounded-lg border border-warm-border/80 bg-white/80 hover:bg-dusty-rose-light hover:text-dusty-rose hover:border-dusty-rose/30 text-charcoal-600 shrink-0 flex items-center justify-center transition cursor-pointer"
     >
       <LogOut className="w-4 h-4" />
     </button>
